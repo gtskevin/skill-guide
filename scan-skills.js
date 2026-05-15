@@ -526,7 +526,10 @@ function main() {
       skills: skills.map(s => cleanSkill(s, false)),
     };
   } else if (mode === 'skill') {
-    const found = skills.find(s => s.name.toLowerCase() === skillName.toLowerCase());
+    // Strip plugin prefix (e.g. "everything-claude-code:tdd-workflow" → "tdd-workflow")
+    const bareName = skillName.replace(/^[^:]+:/, '');
+    const found = skills.find(s => s.name.toLowerCase() === bareName.toLowerCase()
+      || s.name.toLowerCase() === skillName.toLowerCase());
     if (!found) {
       output = { error: `Skill "${skillName}" not found`, skills: [] };
     } else {
