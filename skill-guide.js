@@ -23,17 +23,86 @@ function getArgValue(flag) {
 function usage() {
   return [
     'Usage:',
-    '  skill-guide [--open] [--output <file>] [--format html|json] [--refresh]',
-    '  skill-guide --search <query> [--open] [--output <file>] [--format html|json]',
-    '  skill-guide --skill <name> [--open] [--output <file>] [--format html|json]',
-    '  skill-guide --full [--open] [--output <file>] [--format html|json]',
+    '  skill-guide [--open] [--output <file>] [--format html|json] [--lang en|zh] [--refresh]',
+    '  skill-guide --search <query> [--open] [--output <file>] [--format html|json] [--lang en|zh]',
+    '  skill-guide --skill <name> [--open] [--output <file>] [--format html|json] [--lang en|zh]',
+    '  skill-guide --full [--open] [--output <file>] [--format html|json] [--lang en|zh]',
     '  skill-guide --doctor [--refresh]',
     '',
     'Examples:',
     '  npx skill-guide --open',
     '  npx skill-guide --search security --open',
+    '  npx skill-guide --skill tdd --lang zh --open',
     '  npx skill-guide --doctor',
   ].join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// i18n labels
+// ---------------------------------------------------------------------------
+const LABELS = {
+  en: {
+    yourAgentSkills: 'Your Agent Skills',
+    yourClaudeSkills: 'Your Claude Code Skills',
+    yourCodexSkills: 'Your Codex Skills',
+    skillsScanned: 'skills scanned',
+    noSources: 'No skill sources found',
+    discovery: 'Discovery',
+    toolSelection: 'Tool Selection',
+    skillDeepDive: 'Skill Deep Dive',
+    completeManual: 'Complete Manual',
+    categoryMap: 'Category Map',
+    highlights: 'Highlights',
+    quickReference: 'Quick Reference',
+    completeReference: 'Complete Reference',
+    comparisonReference: 'Comparison Reference',
+    whenToUse: 'When to Use',
+    howItWorks: 'How It Works',
+    limitations: 'Limitations',
+    matchResults: 'Match Results',
+    skillsCount: '{count} skills',
+    noSkills: 'No skills found.',
+    name: 'Name',
+    category: 'Category',
+    description: 'Description',
+    triggers: 'Triggers',
+  },
+  zh: {
+    yourAgentSkills: '你的 Agent Skills 技能库',
+    yourClaudeSkills: '你的 Claude Code 技能库',
+    yourCodexSkills: '你的 Codex 技能库',
+    skillsScanned: '个技能已扫描',
+    noSources: '未找到技能来源',
+    discovery: '技能发现',
+    toolSelection: '工具选择',
+    skillDeepDive: '技能深入',
+    completeManual: '完整技能手册',
+    categoryMap: '分类概览',
+    highlights: '精选推荐',
+    quickReference: '快速参考',
+    completeReference: '完整参考',
+    comparisonReference: '对比参考',
+    whenToUse: '何时使用',
+    howItWorks: '运作原理',
+    limitations: '使用限制',
+    matchResults: '匹配结果',
+    skillsCount: '{count} 个技能',
+    noSkills: '未找到技能。',
+    name: '名称',
+    category: '分类',
+    description: '描述',
+    triggers: '触发词',
+  },
+};
+
+function lang() {
+  const l = getArgValue('--lang');
+  if (l === 'zh') return 'zh';
+  return 'en';
+}
+
+function t(key) {
+  return LABELS[lang()][key] || LABELS.en[key] || key;
 }
 
 function parseMode() {
@@ -105,10 +174,10 @@ function titleForSources(sources) {
   const labels = Object.keys(sources || {}).filter((key) => sources[key] > 0);
   const hasClaude = labels.some((label) => label.startsWith('claude'));
   const hasCodex = labels.some((label) => label.startsWith('codex'));
-  if (hasClaude && hasCodex) return 'Your Agent Skills';
-  if (hasCodex) return 'Your Codex Skills';
-  if (hasClaude) return 'Your Claude Code Skills';
-  return 'Your Agent Skills';
+  if (hasClaude && hasCodex) return t('yourAgentSkills');
+  if (hasCodex) return t('yourCodexSkills');
+  if (hasClaude) return t('yourClaudeSkills');
+  return t('yourAgentSkills');
 }
 
 function sourceSummary(sources) {
@@ -145,19 +214,19 @@ function sourceBadges(sources) {
 
 function renderCover(data, mode) {
   const title = titleForSources(data.sources);
-  const subtitle = sourceSummary(data.sources) || 'No skill sources found';
+  const subtitle = sourceSummary(data.sources) || t('noSources');
   const modeLabel = {
-    list: 'Discovery',
-    search: 'Tool Selection',
-    skill: 'Skill Deep Dive',
-    full: 'Complete Manual',
-  }[mode.mode] || 'Discovery';
+    list: t('discovery'),
+    search: t('toolSelection'),
+    skill: t('skillDeepDive'),
+    full: t('completeManual'),
+  }[mode.mode] || t('discovery');
 
   return `<section class="slide cover">
     <div class="rv center">
       <div class="kicker">${escapeHtml(modeLabel)}</div>
       <h1>${escapeHtml(title)}</h1>
-      <p class="sub">${escapeHtml(data.totalCount || 0)} skills scanned · ${escapeHtml(subtitle)}</p>
+      <p class="sub">${escapeHtml(data.totalCount || 0)} ${t('skillsScanned')} · ${escapeHtml(subtitle)}</p>
       <div class="stats">${Object.entries(data.sources || {}).map(([source, count]) => `<div class="stat"><b>${count}</b><span>${escapeHtml(source)}</span></div>`).join('')}</div>
     </div>
   </section>`;
@@ -169,14 +238,14 @@ function renderCategorySlide(skills) {
     .sort((a, b) => b[1].length - a[1].length)
     .map(([category, items]) => `<article class="card">
       <h3>${escapeHtml(category)}</h3>
-      <p>${items.length} skills</p>
+      <p>${t('skillsCount').replace('{count}', items.length)}</p>
       <div class="chips">${items.slice(0, 8).map((skill) => `<span>${escapeHtml(skill.name)}</span>`).join('')}</div>
     </article>`).join('');
 
   return `<section class="slide">
     <div class="rv wide">
-      <h2>Category Map</h2>
-      <div class="grid">${cards || '<p class="empty">No skills found.</p>'}</div>
+      <h2>${t('categoryMap')}</h2>
+      <div class="grid">${cards || `<p class="empty">${t('noSkills')}</p>`}</div>
     </div>
   </section>`;
 }
@@ -188,7 +257,7 @@ function renderHighlights(skills) {
 
   return `<section class="slide">
     <div class="rv wide">
-      <h2>Highlights</h2>
+      <h2>${t('highlights')}</h2>
       <div class="list">${highlights.map((skill, index) => `<article class="row">
         <strong>${index + 1}</strong>
         <div>
@@ -201,7 +270,8 @@ function renderHighlights(skills) {
   </section>`;
 }
 
-function renderReference(skills, title = 'Quick Reference') {
+function renderReference(skills, title) {
+  const refTitle = title || t('quickReference');
   const rows = skills.map((skill) => `<tr>
     <td>${escapeHtml(skill.name)}</td>
     <td>${categoryBadge(skill.category)}</td>
@@ -211,9 +281,9 @@ function renderReference(skills, title = 'Quick Reference') {
 
   return `<section class="slide">
     <div class="rv wide">
-      <h2>${escapeHtml(title)}</h2>
+      <h2>${escapeHtml(refTitle)}</h2>
       <div class="table-wrap"><table>
-        <thead><tr><th>Name</th><th>Category</th><th>Description</th><th>Triggers</th></tr></thead>
+        <thead><tr><th>${t('name')}</th><th>${t('category')}</th><th>${t('description')}</th><th>${t('triggers')}</th></tr></thead>
         <tbody>${rows}</tbody>
       </table></div>
     </div>
@@ -226,9 +296,9 @@ function renderSkillDetails(skills) {
       <h2>${escapeHtml(skill.name)}</h2>
       <p class="sub">${escapeHtml(skill.description)}</p>
       <div class="meta">${categoryBadge(skill.category)}${sourceBadges(skill.sources)}${(skill.allowedTools || []).map((tool) => `<code>${escapeHtml(tool)}</code>`).join('')}</div>
-      ${skill.whenToUse ? `<h3>When to Use</h3><p>${escapeHtml(skill.whenToUse)}</p>` : ''}
-      ${skill.howItWorks ? `<h3>How It Works</h3><p>${escapeHtml(skill.howItWorks)}</p>` : ''}
-      ${skill.limitations ? `<h3>Limitations</h3><p>${escapeHtml(skill.limitations)}</p>` : ''}
+      ${skill.whenToUse ? `<h3>${t('whenToUse')}</h3><p>${escapeHtml(skill.whenToUse)}</p>` : ''}
+      ${skill.howItWorks ? `<h3>${t('howItWorks')}</h3><p>${escapeHtml(skill.howItWorks)}</p>` : ''}
+      ${skill.limitations ? `<h3>${t('limitations')}</h3><p>${escapeHtml(skill.limitations)}</p>` : ''}
       ${(skill.sections || []).length ? `<div class="steps">${skill.sections.slice(0, 8).map((section, index) => `<article><b>${index + 1}</b><span>${escapeHtml(section.title)}</span><p>${escapeHtml(section.summary)}</p></article>`).join('')}</div>` : ''}
     </div>
   </section>`).join('');
@@ -237,7 +307,7 @@ function renderSkillDetails(skills) {
 function renderSelection(data, mode) {
   return `<section class="slide">
     <div class="rv wide">
-      <h2>Match Results</h2>
+      <h2>${t('matchResults')}</h2>
       <p class="quote">${escapeHtml(mode.value || '')}</p>
       <div class="list">${data.skills.slice(0, 12).map((skill, index) => `<article class="row">
         <strong>${index + 1}</strong>
@@ -248,7 +318,7 @@ function renderSelection(data, mode) {
         </div>
       </article>`).join('')}</div>
     </div>
-  </section>${renderReference(data.skills.slice(0, 20), 'Comparison Reference')}`;
+  </section>${renderReference(data.skills.slice(0, 20), t('comparisonReference'))}`;
 }
 
 function renderSlides(data, mode) {
@@ -258,14 +328,15 @@ function renderSlides(data, mode) {
 
   if (mode.mode === 'search') return `${renderCover(data, mode)}${renderSelection(data, mode)}`;
   if (mode.mode === 'skill') return `${renderCover(data, mode)}${renderSkillDetails(data.skills)}`;
-  if (mode.mode === 'full') return `${renderCover(data, mode)}${renderCategorySlide(data.skills)}${renderSkillDetails(data.skills)}${renderReference(data.skills, 'Complete Reference')}`;
+  if (mode.mode === 'full') return `${renderCover(data, mode)}${renderCategorySlide(data.skills)}${renderSkillDetails(data.skills)}${renderReference(data.skills, t('completeReference'))}`;
   return `${renderCover(data, mode)}${renderCategorySlide(data.skills)}${renderHighlights(data.skills)}${renderReference(data.skills)}`;
 }
 
 function renderHtml(data, mode) {
   const slides = renderSlides(data, mode);
+  const htmlLang = lang();
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${htmlLang}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">

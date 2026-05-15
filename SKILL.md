@@ -49,14 +49,16 @@ Determine the mode from user input:
 Follow these steps exactly:
 
 1. **Determine mode** from user input using the rules in section 2.
-2. **Run the deterministic CLI**: `node <skill-dir>/skill-guide.js <flag> [args] --open`, where `<skill-dir>` is the directory containing this SKILL.md file.
-3. Map modes to CLI flags:
+2. **Detect language**: Check user input for Chinese characters (`/[一-鿿]/`). If found, set `--lang zh`; otherwise omit (defaults to English).
+3. **Run the deterministic CLI**: `node <skill-dir>/skill-guide.js <flag> [args] [--lang zh] --open`, where `<skill-dir>` is the directory containing this SKILL.md file.
+4. Map modes to CLI flags:
    - Discovery: `node <skill-dir>/skill-guide.js --open`
    - Deep-dive: `node <skill-dir>/skill-guide.js --skill <name> --open`
    - Tool-selection: `node <skill-dir>/skill-guide.js --search "<query>" --open`
    - Full manual: `node <skill-dir>/skill-guide.js --full --open`
    - Diagnostics: `node <skill-dir>/skill-guide.js --doctor`
-4. If `skill-guide.js` is unavailable, fall back to running `scan-skills.js` and generating HTML using the rules below.
+   Append `--lang zh` to any command when Chinese input is detected.
+5. If `skill-guide.js` is unavailable, fall back to running `scan-skills.js` and generating HTML using the rules below.
 
 ## 4. HTML Generation Rules
 
