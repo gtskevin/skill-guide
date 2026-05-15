@@ -5,8 +5,8 @@
   "license": "MIT",
   "type": "commonjs",
   "bin": {
-    "skill-guide": "./bin/skill-guide",
-    "skill-guide-scan": "./scan-skills.js"
+    "skill-guide": "bin/skill-guide",
+    "skill-guide-scan": "scan-skills.js"
   },
   "files": [
     "agents/openai.yaml",
