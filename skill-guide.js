@@ -105,6 +105,217 @@ function t(key) {
   return LABELS[lang()][key] || LABELS.en[key] || key;
 }
 
+// ---------------------------------------------------------------------------
+// Content translation (EN -> ZH via phrase glossary)
+// ---------------------------------------------------------------------------
+const GLOSSARY_ZH = [
+  ['comprehensive accessibility audit', '全面的无障碍审计'],
+  ['structured design feedback', '结构化设计反馈'],
+  ['systematic debugging workflow', '系统性调试工作流'],
+  ['infrastructure-first security audit', '基础设施优先安全审计'],
+  ['every important claim needs a source', '每个重要论点需要附带来源'],
+  ['prefer recent data and call out stale data', '优先使用最新数据并标注过期数据'],
+  ['include contrarian evidence and downside cases', '包含反面证据和下行情况'],
+  ['translate findings into a decision', '将发现转化为决策建议'],
+  ['not just a summary', '而非仅罗列事实'],
+  ['all numbers are sourced or labeled as estimates', '所有数字有来源或标注为估算'],
+  ['old data is flagged', '过期数据已标记'],
+  ['the recommendation follows from the evidence', '建议基于证据得出'],
+  ['risks and counterarguments are included', '包含风险和反面论据'],
+  ['default structure', '默认结构'],
+  ['executive summary', '执行摘要'],
+  ['key findings', '核心发现'],
+  ['risks and caveats', '风险与注意事项'],
+  ['competitive analysis', '竞争分析'],
+  ['market research', '市场调研'],
+  ['market sizing', '市场规模估算'],
+  ['investor research', '投资者研究'],
+  ['due diligence', '尽职调查'],
+  ['industry intelligence', '行业情报'],
+  ['source attribution', '来源引用'],
+  ['decision-oriented', '决策导向'],
+  ['technology trend', '技术趋势'],
+  ['investor dossier', '投资者档案'],
+  ['portfolio company', '投资组合公司'],
+  ['integration complexity', '集成复杂度'],
+  ['adoption signals', '采纳信号'],
+  ['code review', '代码审查'],
+  ['code quality', '代码质量'],
+  ['unit test', '单元测试'],
+  ['regression test', '回归测试'],
+  ['e2e testing', '端到端测试'],
+  ['security audit', '安全审计'],
+  ['slide presentation', '幻灯片演示'],
+  ['code example', '代码示例'],
+  ['design specification', '设计规范'],
+  ['best practice', '最佳实践'],
+  ['trade-off', '权衡取舍'],
+  ['lock-in risk', '锁定风险'],
+  ['red flag', '红旗警告'],
+  ['check size', '投资规模'],
+  ['fund size', '基金规模'],
+  ['action recommendation', '行动建议'],
+  ['fund research', '基金研究'],
+  ['vendor research', '供应商调研'],
+  ['technology scan', '技术扫描'],
+  ['business decision', '商业决策'],
+  ['product strategy', '产品策略'],
+  ['user interface', '用户界面'],
+  ['design system', '设计系统'],
+  ['project overview', '项目概述'],
+  ['use case', '使用场景'],
+  ['skill content', '技能内容'],
+  ['how it works', '运作原理'],
+  ['when to use', '何时使用'],
+  ['how to use', '使用方法'],
+  ['use when', '当以下情况时使用'],
+  ['use this', '使用此'],
+  ['researching a market', '研究市场'],
+  ['comparing competitors', '对比竞争对手'],
+  ['preparing investor', '准备投资者'],
+  ['building estimates', '构建估算'],
+  ['quality gate', '质量把关'],
+  ['before delivering', '交付前'],
+  ['research standard', '调研标准'],
+  ['output format', '输出格式'],
+  ['common research mode', '常用调研模式'],
+  ['public thesis', '公开投资理念'],
+  ['recent activity', '近期动态'],
+  ['obvious mismatch', '明显不匹配'],
+  ['relevant portfolio', '相关投资组合'],
+  ['security compliance', '安全合规'],
+  ['operational risk', '运营风险'],
+  ['visual hierarchy', '视觉层次'],
+  ['color scheme', '色彩方案'],
+  ['brand guideline', '品牌规范'],
+  ['design principle', '设计原则'],
+  ['test driven', '测试驱动'],
+  ['continuous integration', '持续集成'],
+  ['code coverage', '代码覆盖率'],
+  ['dependency management', '依赖管理'],
+  ['error handling', '错误处理'],
+  ['performance optimization', '性能优化'],
+  ['data validation', '数据验证'],
+  ['API reference', 'API 参考'],
+  ['quick reference', '快速参考'],
+  ['step by step', '逐步'],
+  ['front matter', '前置元数据'],
+  ['security vulnerability', '安全漏洞'],
+  ['threat model', '威胁建模'],
+  ['supply chain', '供应链'],
+  ['CI/CD pipeline', 'CI/CD 流水线'],
+  ['landing page', '落地页'],
+  ['admin panel', '管理后台'],
+  ['slide deck', '幻灯片组'],
+  ['conference talk', '会议演讲'],
+  ['teaching material', '教学材料'],
+  ['tech stack', '技术栈'],
+  ['project structure', '项目结构'],
+  ['file structure', '文件结构'],
+  ['data flow', '数据流'],
+  ['user flow', '用户流程'],
+  ['state management', '状态管理'],
+  ['route config', '路由配置'],
+  ['database schema', '数据库结构'],
+  ['data model', '数据模型'],
+  ['SEO audit', 'SEO 审计'],
+  ['presentation', '演示文稿'],
+  ['dashboard', '仪表板'],
+  ['screenshot', '截图'],
+  ['checklist', '检查清单'],
+  ['workflow', '工作流'],
+  ['algorithm', '算法'],
+  ['framework', '框架'],
+  ['template', '模板'],
+  ['component', '组件'],
+  ['interface', '接口'],
+  ['abstraction', '抽象'],
+  ['refactoring', '重构'],
+  ['debugging', '调试'],
+  ['profiling', '性能分析'],
+  ['benchmark', '基准测试'],
+  ['deployment', '部署'],
+  ['migration', '迁移'],
+  ['automation', '自动化'],
+  ['orchestration', '编排'],
+  ['scalability', '可扩展性'],
+  ['reliability', '可靠性'],
+  ['monitoring', '监控'],
+  ['observability', '可观测性'],
+  ['resilience', '韧性'],
+  ['encryption', '加密'],
+  ['authentication', '认证'],
+  ['authorization', '授权'],
+  ['compliance', '合规'],
+  ['governance', '治理'],
+  ['vulnerability', '漏洞'],
+  ['architecture', '架构'],
+  ['infrastructure', '基础设施'],
+  ['microservice', '微服务'],
+  ['serverless', '无服务器'],
+  ['containerization', '容器化'],
+  ['concurrency', '并发'],
+  ['asynchronous', '异步'],
+  ['synchronous', '同步'],
+  ['idiomatic', '惯用'],
+  ['boilerplate', '样板代码'],
+  ['implement', '实现'],
+  ['integrate', '集成'],
+  ['configure', '配置'],
+  ['troubleshoot', '排查'],
+  ['diagnose', '诊断'],
+  ['repository', '仓库'],
+  ['endpoint', '端点'],
+  ['middleware', '中间件'],
+  ['dependency', '依赖'],
+  ['plugin', '插件'],
+  ['extension', '扩展'],
+  ['webhook', 'Webhook'],
+  ['payload', '负载'],
+  ['schema', '模式'],
+  ['fixture', '测试夹具'],
+  ['snapshot', '快照'],
+  ['mock', '模拟'],
+  ['keyword', '关键词'],
+  ['security', '安全'],
+  ['performance', '性能'],
+  ['testing', '测试'],
+  ['documentation', '文档'],
+  ['development', '开发'],
+  ['quality', '质量'],
+  ['collection', '收集'],
+  ['recommendation', '建议'],
+  ['implications', '影响'],
+  ['summary', '摘要'],
+  ['overview', '概述'],
+  ['examples', '示例'],
+  ['sources', '来源'],
+  ['middleware', '中间件'],
+];
+
+let _compiledGlossary = null;
+function getCompiledGlossary() {
+  if (_compiledGlossary) return _compiledGlossary;
+  _compiledGlossary = GLOSSARY_ZH.map(([en, zh]) => ({
+    re: new RegExp('\\b' + en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi'),
+    zh,
+  }));
+  return _compiledGlossary;
+}
+
+function translateContent(text) {
+  if (lang() !== 'zh' || !text) return text;
+  let result = text;
+  for (const { re, zh } of getCompiledGlossary()) {
+    result = result.replace(re, zh);
+  }
+  return result;
+}
+
+function te(text) {
+  return escapeHtml(translateContent(text));
+}
+
 function parseMode() {
   if (hasFlag('--help') || hasFlag('-h')) return { mode: 'help' };
   if (hasFlag('--doctor')) return { mode: 'doctor' };
@@ -116,7 +327,7 @@ function parseMode() {
   const search = getArgValue('--search');
   if (search) return { mode: 'search', value: search };
 
-  const valueFlags = new Set(['--output', '--skill', '--search', '--format']);
+  const valueFlags = new Set(['--output', '--skill', '--search', '--format', '--lang']);
   const positional = args.find((arg, index) => !arg.startsWith('-') && !valueFlags.has(args[index - 1]));
   if (positional) return { mode: 'skill', value: positional };
 
@@ -181,7 +392,15 @@ function titleForSources(sources) {
 }
 
 function sourceSummary(sources) {
-  const labels = {
+  const isZh = lang() === 'zh';
+  const labels = isZh ? {
+    'claude-user': 'Claude',
+    'codex-user': 'Codex',
+    'openai-system': 'OpenAI 系统',
+    'cc-switch': 'cc-switch',
+    'claude-plugin': 'Claude 插件',
+    'codex-plugin': 'Codex 插件',
+  } : {
     'claude-user': 'Claude',
     'codex-user': 'Codex',
     'openai-system': 'OpenAI system',
@@ -262,7 +481,7 @@ function renderHighlights(skills) {
         <strong>${index + 1}</strong>
         <div>
           <h3>${escapeHtml(skill.name)}</h3>
-          <p>${escapeHtml(truncate(skill.description, 180))}</p>
+          <p>${te(truncate(skill.description, 180))}</p>
           <div>${categoryBadge(skill.category)}${sourceBadges(skill.sources)}</div>
         </div>
       </article>`).join('')}</div>
@@ -275,7 +494,7 @@ function renderReference(skills, title) {
   const rows = skills.map((skill) => `<tr>
     <td>${escapeHtml(skill.name)}</td>
     <td>${categoryBadge(skill.category)}</td>
-    <td>${escapeHtml(truncate(skill.description, 160))}</td>
+    <td>${te(truncate(skill.description, 160))}</td>
     <td>${escapeHtml((skill.triggers || []).slice(0, 4).join(', '))}</td>
   </tr>`).join('');
 
@@ -294,12 +513,12 @@ function renderSkillDetails(skills) {
   return skills.map((skill) => `<section class="slide">
     <div class="rv wide detail">
       <h2>${escapeHtml(skill.name)}</h2>
-      <p class="sub">${escapeHtml(skill.description)}</p>
+      <p class="sub">${te(skill.description)}</p>
       <div class="meta">${categoryBadge(skill.category)}${sourceBadges(skill.sources)}${(skill.allowedTools || []).map((tool) => `<code>${escapeHtml(tool)}</code>`).join('')}</div>
-      ${skill.whenToUse ? `<h3>${t('whenToUse')}</h3><p>${escapeHtml(skill.whenToUse)}</p>` : ''}
-      ${skill.howItWorks ? `<h3>${t('howItWorks')}</h3><p>${escapeHtml(skill.howItWorks)}</p>` : ''}
-      ${skill.limitations ? `<h3>${t('limitations')}</h3><p>${escapeHtml(skill.limitations)}</p>` : ''}
-      ${(skill.sections || []).length ? `<div class="steps">${skill.sections.slice(0, 8).map((section, index) => `<article><b>${index + 1}</b><span>${escapeHtml(section.title)}</span><p>${escapeHtml(section.summary)}</p></article>`).join('')}</div>` : ''}
+      ${skill.whenToUse ? `<h3>${t('whenToUse')}</h3><p>${te(skill.whenToUse)}</p>` : ''}
+      ${skill.howItWorks ? `<h3>${t('howItWorks')}</h3><p>${te(skill.howItWorks)}</p>` : ''}
+      ${skill.limitations ? `<h3>${t('limitations')}</h3><p>${te(skill.limitations)}</p>` : ''}
+      ${(skill.sections || []).length ? `<div class="steps">${skill.sections.slice(0, 8).map((section, index) => `<article><b>${index + 1}</b><span>${te(section.title)}</span><p>${te(section.summary)}</p></article>`).join('')}</div>` : ''}
     </div>
   </section>`).join('');
 }
@@ -313,7 +532,7 @@ function renderSelection(data, mode) {
         <strong>${index + 1}</strong>
         <div>
           <h3>${escapeHtml(skill.name)}</h3>
-          <p>${escapeHtml(truncate(skill.description, 220))}</p>
+          <p>${te(truncate(skill.description, 220))}</p>
           <div>${categoryBadge(skill.category)}${sourceBadges(skill.sources)}</div>
         </div>
       </article>`).join('')}</div>
