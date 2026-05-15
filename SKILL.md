@@ -50,15 +50,29 @@ Follow these steps exactly:
 
 1. **Determine mode** from user input using the rules in section 2.
 2. **Detect language**: Check user input for Chinese characters (`/[一-鿿]/`). If found, set `--lang zh`; otherwise omit (defaults to English).
-3. **Run the deterministic CLI**: `node <skill-dir>/skill-guide.js <flag> [args] [--lang zh] --open`, where `<skill-dir>` is the directory containing this SKILL.md file.
+3. **Run the deterministic CLI**: `node <skill-dir>/skill-guide.js <flag> [args] [--lang zh]`, where `<skill-dir>` is the directory containing this SKILL.md file. Do NOT add `--open` yet when `--lang zh` is active (translation happens before opening).
 4. Map modes to CLI flags:
-   - Discovery: `node <skill-dir>/skill-guide.js --open`
-   - Deep-dive: `node <skill-dir>/skill-guide.js --skill <name> --open`
-   - Tool-selection: `node <skill-dir>/skill-guide.js --search "<query>" --open`
-   - Full manual: `node <skill-dir>/skill-guide.js --full --open`
+   - Discovery: `node <skill-dir>/skill-guide.js`
+   - Deep-dive: `node <skill-dir>/skill-guide.js --skill <name>`
+   - Tool-selection: `node <skill-dir>/skill-guide.js --search "<query>"`
+   - Full manual: `node <skill-dir>/skill-guide.js --full`
    - Diagnostics: `node <skill-dir>/skill-guide.js --doctor`
    Append `--lang zh` to any command when Chinese input is detected.
 5. If `skill-guide.js` is unavailable, fall back to running `scan-skills.js` and generating HTML using the rules below.
+6. **Post-translate for Chinese mode** (only when `--lang zh`):
+   After the CLI generates the HTML file, perform a full translation pass:
+   a. Read the generated HTML file.
+   b. Translate ALL English text content inside elements with `data-i18n` attributes to natural, fluent Chinese.
+      - The `data-i18n` attributes mark exactly which elements contain translatable content: `desc` (descriptions), `section-title` (step/section titles), `section-body` (step/section content), `how-it-works`, `when-to-use`, `limitations`.
+      - Preserve ALL HTML tags, CSS classes, JavaScript, attribute names, and document structure exactly as-is.
+      - Only translate the **text content** between tags — never modify tag names, attributes, CSS, or JavaScript.
+      - Do NOT translate: content inside `<code>` tags, skill names, tool names, CSS property values, JavaScript code.
+      - Translate naturally as a fluent Chinese speaker would write it — not word-by-word. Adapt sentence structure for Chinese readability.
+      - Keep markdown-derived formatting: `**bold**` stays as `<strong>bold</strong>`, `` `code` `` stays as `<code>code</code>`.
+   c. Write the translated HTML back to the same file path using the Write tool.
+   d. Open the file in the browser: `open <filepath>` (macOS) or equivalent.
+   e. Report completion to the user with a brief summary in Chinese.
+7. **Non-Chinese mode**: When `--lang zh` is NOT active, add `--open` to the CLI command directly and skip step 6.
 
 ## 4. HTML Generation Rules
 

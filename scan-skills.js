@@ -210,6 +210,16 @@ function categorize(name, description, triggers) {
   return 'other';
 }
 
+function smartTruncate(text, maxLen) {
+  if (text.length <= maxLen) return text;
+  const truncated = text.slice(0, maxLen);
+  const lastSentence = Math.max(truncated.lastIndexOf('. '), truncated.lastIndexOf('! '), truncated.lastIndexOf('? '));
+  if (lastSentence > maxLen * 0.5) return truncated.slice(0, lastSentence + 1);
+  const lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > maxLen * 0.5) return truncated.slice(0, lastSpace) + '...';
+  return truncated + '...';
+}
+
 // ---------------------------------------------------------------------------
 // Layer 2: Extract sections (## headings with first paragraph)
 // ---------------------------------------------------------------------------
@@ -226,7 +236,7 @@ function extractSections(content) {
     if (headingMatch) {
       // Save previous section
       if (currentHeading && para.trim().length > 0) {
-        sections.push({ title: currentHeading, summary: para.trim().slice(0, 200) });
+        sections.push({ title: currentHeading, summary: smartTruncate(para.trim(), 600) });
         if (sections.length >= 15) break;
       }
       currentHeading = headingMatch[1].trim();
@@ -250,7 +260,7 @@ function extractSections(content) {
 
   // Last section
   if (currentHeading && para.trim().length > 0 && sections.length < 15) {
-    sections.push({ title: currentHeading, summary: para.trim().slice(0, 200) });
+    sections.push({ title: currentHeading, summary: smartTruncate(para.trim(), 600) });
   }
 
   return sections;

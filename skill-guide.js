@@ -381,6 +381,20 @@ function truncate(value, length) {
   return text.length > length ? `${text.slice(0, length - 1)}...` : text;
 }
 
+function renderMd(text) {
+  if (!text) return '';
+  let html = escapeHtml(translateContent(text));
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
+  html = html.replace(/`([^`]+?)`/g, '<code>$1</code>');
+  html = html.replace(/^&gt;\s?(.+)$/gm, '<blockquote>$1</blockquote>');
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/^\d+\.\s(.+)$/gm, '<li>$1</li>');
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+  html = html.replace(/<\/blockquote>\n<blockquote>/g, '<br>');
+  return html;
+}
+
 function titleForSources(sources) {
   const labels = Object.keys(sources || {}).filter((key) => sources[key] > 0);
   const hasClaude = labels.some((label) => label.startsWith('claude'));
@@ -444,7 +458,7 @@ function renderCover(data, mode) {
   return `<section class="slide cover">
     <div class="rv center">
       <div class="kicker">${escapeHtml(modeLabel)}</div>
-      <h1>${escapeHtml(title)}</h1>
+      <h1><span class="grad">${escapeHtml(title)}</span></h1>
       <p class="sub">${escapeHtml(data.totalCount || 0)} ${t('skillsScanned')} · ${escapeHtml(subtitle)}</p>
       <div class="stats">${Object.entries(data.sources || {}).map(([source, count]) => `<div class="stat"><b>${count}</b><span>${escapeHtml(source)}</span></div>`).join('')}</div>
     </div>
@@ -481,7 +495,7 @@ function renderHighlights(skills) {
         <strong>${index + 1}</strong>
         <div>
           <h3>${escapeHtml(skill.name)}</h3>
-          <p>${te(truncate(skill.description, 180))}</p>
+          <p data-i18n="desc">${te(truncate(skill.description, 180))}</p>
           <div>${categoryBadge(skill.category)}${sourceBadges(skill.sources)}</div>
         </div>
       </article>`).join('')}</div>
@@ -494,7 +508,7 @@ function renderReference(skills, title) {
   const rows = skills.map((skill) => `<tr>
     <td>${escapeHtml(skill.name)}</td>
     <td>${categoryBadge(skill.category)}</td>
-    <td>${te(truncate(skill.description, 160))}</td>
+    <td data-i18n="desc">${te(truncate(skill.description, 160))}</td>
     <td>${escapeHtml((skill.triggers || []).slice(0, 4).join(', '))}</td>
   </tr>`).join('');
 
@@ -513,12 +527,12 @@ function renderSkillDetails(skills) {
   return skills.map((skill) => `<section class="slide">
     <div class="rv wide detail">
       <h2>${escapeHtml(skill.name)}</h2>
-      <p class="sub">${te(skill.description)}</p>
+      <div class="sub-md" data-i18n="desc">${renderMd(skill.description)}</div>
       <div class="meta">${categoryBadge(skill.category)}${sourceBadges(skill.sources)}${(skill.allowedTools || []).map((tool) => `<code>${escapeHtml(tool)}</code>`).join('')}</div>
-      ${skill.whenToUse ? `<h3>${t('whenToUse')}</h3><p>${te(skill.whenToUse)}</p>` : ''}
-      ${skill.howItWorks ? `<h3>${t('howItWorks')}</h3><p>${te(skill.howItWorks)}</p>` : ''}
-      ${skill.limitations ? `<h3>${t('limitations')}</h3><p>${te(skill.limitations)}</p>` : ''}
-      ${(skill.sections || []).length ? `<div class="steps">${skill.sections.slice(0, 8).map((section, index) => `<article><b>${index + 1}</b><span>${te(section.title)}</span><p>${te(section.summary)}</p></article>`).join('')}</div>` : ''}
+      ${skill.whenToUse ? `<h3>${t('whenToUse')}</h3><div class="md-content" data-i18n="when-to-use">${renderMd(skill.whenToUse)}</div>` : ''}
+      ${skill.howItWorks ? `<h3>${t('howItWorks')}</h3><div class="md-content" data-i18n="how-it-works">${renderMd(skill.howItWorks)}</div>` : ''}
+      ${skill.limitations ? `<h3>${t('limitations')}</h3><div class="md-content" data-i18n="limitations">${renderMd(skill.limitations)}</div>` : ''}
+      ${(skill.sections || []).length ? `<div class="steps">${skill.sections.slice(0, 8).map((section, index) => `<article><b>${index + 1}</b><span data-i18n="section-title">${te(section.title)}</span><div class="md-content" data-i18n="section-body">${renderMd(section.summary)}</div></article>`).join('')}</div>` : ''}
     </div>
   </section>`).join('');
 }
@@ -532,7 +546,7 @@ function renderSelection(data, mode) {
         <strong>${index + 1}</strong>
         <div>
           <h3>${escapeHtml(skill.name)}</h3>
-          <p>${te(truncate(skill.description, 220))}</p>
+          <p data-i18n="desc">${te(truncate(skill.description, 220))}</p>
           <div>${categoryBadge(skill.category)}${sourceBadges(skill.sources)}</div>
         </div>
       </article>`).join('')}</div>
@@ -561,16 +575,49 @@ function renderHtml(data, mode) {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(titleForSources(data.sources))} - skill-guide</title>
 <style>
-:root{--bg:#eef2ff;--card:#fff;--t:#1e293b;--muted:#64748b;--ab:#818cf8;--ap:#f0abfc;--am:#6ee7b7;--ao:#fdba74;--r:14px;--shadow:0 14px 45px rgba(79,70,229,.10)}
-*{box-sizing:border-box}html{scroll-snap-type:y mandatory;scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--t);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}.slide{min-height:100vh;min-height:100dvh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:clamp(28px,5vw,64px)}.slide:before,.slide:after{content:"";position:absolute;border-radius:999px;filter:blur(80px);opacity:.28;pointer-events:none}.slide:before{width:420px;height:420px;background:var(--ab);left:-120px;top:-120px}.slide:after{width:360px;height:360px;background:var(--ap);right:-120px;bottom:-120px}.center,.wide{position:relative;z-index:1}.center{text-align:center;max-width:980px}.wide{width:min(1120px,100%)}h1{font-size:clamp(42px,7vw,86px);line-height:1.02;margin:0 0 18px;font-weight:850;letter-spacing:0;background:linear-gradient(135deg,var(--ab),var(--ap),var(--am));-webkit-background-clip:text;color:transparent}h2{font-size:clamp(28px,4vw,52px);line-height:1.08;margin:0 0 28px;text-align:center;letter-spacing:0}h3{margin:0 0 8px;font-size:18px}.sub{font-size:clamp(16px,2vw,22px);line-height:1.5;color:var(--muted);margin:0 auto 26px;max-width:880px}.kicker{text-transform:uppercase;letter-spacing:.14em;color:#6366f1;font-size:12px;font-weight:800;margin-bottom:18px}.stats{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}.stat{background:rgba(255,255,255,.78);box-shadow:var(--shadow);border-radius:var(--r);padding:14px 18px;min-width:126px}.stat b{display:block;font-size:28px}.stat span{display:block;color:var(--muted);font-size:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}.card,.row{background:rgba(255,255,255,.86);box-shadow:var(--shadow);border-radius:var(--r)}.card{padding:20px}.card p,.row p,.detail p{color:var(--muted);line-height:1.5}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.chips span,.badge,.source{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:700}.chips span{background:#f8fafc;color:#475569}.badge{background:#e0e7ff;color:#3730a3;margin-right:6px}.source{background:#ecfeff;color:#0e7490;margin-right:6px}.list{display:flex;flex-direction:column;gap:14px}.row{display:grid;grid-template-columns:48px 1fr;gap:14px;padding:18px}.row strong{font-size:28px;color:var(--ab);line-height:1}.table-wrap{max-height:72vh;overflow:auto;border-radius:var(--r);box-shadow:var(--shadow);background:var(--card)}table{border-collapse:collapse;width:100%;font-size:14px}th{position:sticky;top:0;background:#6366f1;color:white;text-align:left}th,td{padding:12px 14px;border-bottom:1px solid #eef2ff}tr:nth-child(even){background:#fafbff}.meta{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:16px 0 26px}.meta code{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px}.detail{text-align:center}.detail h3{margin-top:24px}.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:20px;text-align:left}.steps article{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px}.steps b{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;background:var(--ab);color:white;margin-right:8px}.quote{font-size:20px;color:var(--muted);text-align:center;background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}.empty{text-align:center;color:var(--muted)}.rv{opacity:0;transform:translateY(24px);transition:opacity .55s ease,transform .55s ease}.rv.v{opacity:1;transform:none}@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}@media(max-width:760px){.slide{padding:24px 16px}.row{grid-template-columns:1fr}.row strong{font-size:18px}.table-wrap{max-height:65vh}}
+:root{--bg:#0F172A;--bg2:#1E293B;--card:#1E293B;--card-h:#273347;--t:#F8FAFC;--muted:#94A3B8;--accent:#22C55E;--accent2:#34D399;--ab:#818cf8;--ap:#c084fc;--am:#6ee7b7;--r:12px;--border:#334155;--shadow:0 4px 24px rgba(0,0,0,.35);--mono:"SF Mono","Fira Code","Cascadia Code",monospace}
+*{box-sizing:border-box}html{scroll-snap-type:y mandatory;scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--t);font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+a.skip{position:absolute;top:-100%;left:16px;background:var(--accent);color:#0F172A;padding:8px 16px;border-radius:var(--r);z-index:999;font-weight:600;text-decoration:none}a.skip:focus{top:8px}
+.slide{min-height:100vh;min-height:100dvh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:clamp(24px,5vw,64px)}.slide::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(34,197,94,.04),transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(129,140,248,.04),transparent 50%);pointer-events:none}
+.center,.wide{position:relative;z-index:1}.center{text-align:center;max-width:960px}.wide{width:min(1120px,100%)}
+h1{font-size:clamp(36px,6vw,72px);line-height:1.05;margin:0 0 16px;font-weight:800;letter-spacing:-.02em;color:var(--t)}h1 .grad{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;color:transparent}
+h2{font-size:clamp(24px,3.5vw,44px);line-height:1.1;margin:0 0 24px;text-align:center;letter-spacing:-.01em;color:var(--t)}h3{margin:0 0 6px;font-size:16px;font-weight:600}
+.sub{font-size:clamp(15px,1.8vw,20px);line-height:1.6;color:var(--muted);margin:0 auto 24px;max-width:860px}
+.kicker{text-transform:uppercase;letter-spacing:.16em;color:var(--accent);font-size:11px;font-weight:700;margin-bottom:16px;font-family:var(--mono)}
+.stats{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px}.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 20px;min-width:120px;transition:border-color .2s}.stat:hover{border-color:var(--accent)}.stat b{display:block;font-size:26px;color:var(--t)}.stat span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card,.row{background:var(--card);border:1px solid var(--border);border-radius:var(--r);transition:border-color .2s,transform .15s;cursor:default}.card:hover,.row:hover{border-color:var(--accent);transform:translateY(-1px)}
+.card{padding:18px}.card p,.row p,.detail p{color:var(--muted);line-height:1.55;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;overflow:hidden;max-height:72px}.chips span,.badge,.source{display:inline-flex;align-items:center;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}.chips span{background:var(--bg);color:var(--muted);border:1px solid var(--border)}.badge{background:rgba(34,197,94,.12);color:var(--accent2);border:1px solid rgba(34,197,94,.2);margin-right:4px}.source{background:rgba(129,140,248,.1);color:var(--ab);border:1px solid rgba(129,140,248,.18);margin-right:4px}
+.list{display:flex;flex-direction:column;gap:10px}.row{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:16px}.row strong{font-size:24px;color:var(--accent);line-height:1;font-family:var(--mono);font-weight:700}
+.table-wrap{max-height:72vh;overflow:auto;border-radius:var(--r);border:1px solid var(--border);background:var(--card)}table{border-collapse:collapse;width:100%;font-size:13px}th{position:sticky;top:0;background:var(--bg2);color:var(--accent);text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em}th,td{padding:10px 14px;border-bottom:1px solid var(--border)}tr:hover td{background:rgba(34,197,94,.04)}
+.meta{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:14px 0 22px}.meta code{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.detail{text-align:center}.detail h3{margin-top:20px;color:var(--accent);font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:18px;text-align:left}.steps article{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;transition:border-color .2s}.steps article:hover{border-color:var(--accent)}.steps b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:6px;background:var(--accent);color:#0F172A;margin-right:8px;font-size:13px;font-weight:700}.steps span{font-weight:600;color:var(--t)}.steps p{font-size:13px;margin-top:4px}
+.quote{font-size:18px;color:var(--muted);text-align:center;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;font-family:var(--mono)}.empty{text-align:center;color:var(--muted)}
+.md-content{color:var(--muted);line-height:1.6;font-size:14px;text-align:left}.md-content strong{color:var(--t);font-weight:600}.md-content code{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:var(--mono);font-size:12px;color:var(--accent2)}.md-content blockquote{border-left:3px solid var(--accent);margin:8px 0;padding:6px 12px;color:var(--muted);font-style:italic}.md-content ul{margin:6px 0;padding-left:20px}.md-content li{margin:3px 0}.sub-md{color:var(--muted);line-height:1.6;font-size:clamp(15px,1.8vw,20px);margin:0 auto 24px;max-width:860px;text-align:center}.sub-md strong{color:var(--t);font-weight:600}.sub-md code{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:var(--mono);font-size:12px;color:var(--accent2)}
+.rv{opacity:0;transform:translateY(18px);transition:opacity .4s ease,transform .4s ease}.rv.v{opacity:1;transform:none}
+nav.progress{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10;padding:6px 12px;background:var(--card);border:1px solid var(--border);border-radius:999px}nav.progress button{width:8px;height:8px;border-radius:50%;border:none;background:var(--border);cursor:pointer;padding:0;transition:background .2s,transform .15s}nav.progress button.active{background:var(--accent);transform:scale(1.3)}nav.progress button:hover{background:var(--muted)}nav.progress button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.shortcut{position:fixed;bottom:16px;right:16px;font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 8px;z-index:10;opacity:.5}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.card:hover,.row:hover,.steps article:hover{transform:none}}
+@media(max-width:760px){.slide{padding:20px 14px}.row{grid-template-columns:1fr}.row strong{font-size:18px}.table-wrap{max-height:60vh}nav.progress{bottom:10px}nav.progress button{width:10px;height:10px}.shortcut{display:none}.stats{gap:8px}.stat{min-width:90px;padding:10px 14px}.stat b{font-size:22px}.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+<a class="skip" href="#main">${lang() === 'zh' ? '跳到主要内容' : 'Skip to content'}</a>
+<main id="main">
 ${slides}
+</main>
+<nav class="progress" aria-label="${lang() === 'zh' ? '幻灯片导航' : 'Slide navigation'}"></nav>
+<div class="shortcut" aria-hidden="true">↓ ↑ Space</div>
 <script>
-const seen=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('v')}),{threshold:.15});
+const seen=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('v')}),{threshold:.12});
 document.querySelectorAll('.rv').forEach(el=>seen.observe(el));
 const slides=[...document.querySelectorAll('.slide')];
+const nav=document.querySelector('nav.progress');
+slides.forEach((_,i)=>{const b=document.createElement('button');b.setAttribute('aria-label','${htmlLang==='zh'?'幻灯片':'Slide'} '+(i+1));b.addEventListener('click',()=>slides[i]?.scrollIntoView());nav.appendChild(b)});
+function updateNav(){const i=slides.findIndex(s=>{const r=s.getBoundingClientRect();return r.top>-10&&r.top<innerHeight/2});nav.querySelectorAll('button').forEach((b,j)=>b.classList.toggle('active',j===i))}
+document.addEventListener('scroll',updateNav,{passive:true});updateNav();
 document.addEventListener('keydown',e=>{const i=slides.findIndex(s=>{const r=s.getBoundingClientRect();return r.top>-10&&r.top<innerHeight/2});if(['ArrowDown','ArrowRight',' '].includes(e.key)){e.preventDefault();slides[Math.min(i+1,slides.length-1)]?.scrollIntoView()}if(['ArrowUp','ArrowLeft'].includes(e.key)){e.preventDefault();slides[Math.max(i-1,0)]?.scrollIntoView()}});
 </script>
 </body>
