@@ -457,10 +457,10 @@ function renderCover(data, mode) {
 
   return `<section class="slide cover">
     <div class="rv center">
-      <div class="kicker">${escapeHtml(modeLabel)}</div>
-      <h1><span class="grad">${escapeHtml(title)}</span></h1>
+      <div class="kicker" data-i18n="label">${escapeHtml(modeLabel)}</div>
+      <h1><span class="grad" data-i18n="label">${escapeHtml(title)}</span></h1>
       <p class="sub">${escapeHtml(data.totalCount || 0)} ${t('skillsScanned')} · ${escapeHtml(subtitle)}</p>
-      <div class="stats">${Object.entries(data.sources || {}).map(([source, count]) => `<div class="stat"><b>${count}</b><span>${escapeHtml(source)}</span></div>`).join('')}</div>
+      <div class="stats">${Object.entries(data.sources || {}).map(([source, count]) => `<div class="stat"><b>${count}</b><span data-i18n="label">${escapeHtml(source)}</span></div>`).join('')}</div>
     </div>
   </section>`;
 }
@@ -477,7 +477,7 @@ function renderCategorySlide(skills) {
 
   return `<section class="slide">
     <div class="rv wide">
-      <h2>${t('categoryMap')}</h2>
+      <h2 data-i18n="label">${t('categoryMap')}</h2>
       <div class="grid">${cards || `<p class="empty">${t('noSkills')}</p>`}</div>
     </div>
   </section>`;
@@ -490,7 +490,7 @@ function renderHighlights(skills) {
 
   return `<section class="slide">
     <div class="rv wide">
-      <h2>${t('highlights')}</h2>
+      <h2 data-i18n="label">${t('highlights')}</h2>
       <div class="list">${highlights.map((skill, index) => `<article class="row">
         <strong>${index + 1}</strong>
         <div>
@@ -514,7 +514,7 @@ function renderReference(skills, title) {
 
   return `<section class="slide">
     <div class="rv wide">
-      <h2>${escapeHtml(refTitle)}</h2>
+      <h2 data-i18n="label">${escapeHtml(refTitle)}</h2>
       <div class="table-wrap"><table>
         <thead><tr><th>${t('name')}</th><th>${t('category')}</th><th>${t('description')}</th><th>${t('triggers')}</th></tr></thead>
         <tbody>${rows}</tbody>
@@ -529,9 +529,9 @@ function renderSkillDetails(skills) {
       <h2>${escapeHtml(skill.name)}</h2>
       <div class="sub-md" data-i18n="desc">${renderMd(skill.description)}</div>
       <div class="meta">${categoryBadge(skill.category)}${sourceBadges(skill.sources)}${(skill.allowedTools || []).map((tool) => `<code>${escapeHtml(tool)}</code>`).join('')}</div>
-      ${skill.whenToUse ? `<h3>${t('whenToUse')}</h3><div class="md-content" data-i18n="when-to-use">${renderMd(skill.whenToUse)}</div>` : ''}
-      ${skill.howItWorks ? `<h3>${t('howItWorks')}</h3><div class="md-content" data-i18n="how-it-works">${renderMd(skill.howItWorks)}</div>` : ''}
-      ${skill.limitations ? `<h3>${t('limitations')}</h3><div class="md-content" data-i18n="limitations">${renderMd(skill.limitations)}</div>` : ''}
+      ${skill.whenToUse ? `<h3 data-i18n="label">${t('whenToUse')}</h3><div class="md-content" data-i18n="when-to-use">${renderMd(skill.whenToUse)}</div>` : ''}
+      ${skill.howItWorks ? `<h3 data-i18n="label">${t('howItWorks')}</h3><div class="md-content" data-i18n="how-it-works">${renderMd(skill.howItWorks)}</div>` : ''}
+      ${skill.limitations ? `<h3 data-i18n="label">${t('limitations')}</h3><div class="md-content" data-i18n="limitations">${renderMd(skill.limitations)}</div>` : ''}
       ${(skill.sections || []).length ? `<div class="steps">${skill.sections.slice(0, 8).map((section, index) => `<article><b>${index + 1}</b><span data-i18n="section-title">${te(section.title)}</span><div class="md-content" data-i18n="section-body">${renderMd(section.summary)}</div></article>`).join('')}</div>` : ''}
     </div>
   </section>`).join('');
@@ -540,7 +540,7 @@ function renderSkillDetails(skills) {
 function renderSelection(data, mode) {
   return `<section class="slide">
     <div class="rv wide">
-      <h2>${t('matchResults')}</h2>
+      <h2 data-i18n="label">${t('matchResults')}</h2>
       <p class="quote">${escapeHtml(mode.value || '')}</p>
       <div class="list">${data.skills.slice(0, 12).map((skill, index) => `<article class="row">
         <strong>${index + 1}</strong>

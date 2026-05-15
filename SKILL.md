@@ -49,30 +49,38 @@ Determine the mode from user input:
 Follow these steps exactly:
 
 1. **Determine mode** from user input using the rules in section 2.
-2. **Detect language**: Check user input for Chinese characters (`/[一-鿿]/`). If found, set `--lang zh`; otherwise omit (defaults to English).
-3. **Run the deterministic CLI**: `node <skill-dir>/skill-guide.js <flag> [args] [--lang zh]`, where `<skill-dir>` is the directory containing this SKILL.md file. Do NOT add `--open` yet when `--lang zh` is active (translation happens before opening).
+2. **Detect language**: Determine the user's language from their input.
+   - Chinese: input contains Chinese characters → lang = `zh`
+   - Japanese: input contains Japanese characters (`/[あ-んア-ンヶッ]/` or hiragana/katakana) → lang = `ja`
+   - Korean: input contains Hangul (`/[가-힣]/`) → lang = `ko`
+   - Any other non-English language: if the user writes in a language other than English, detect it and set lang accordingly (e.g., `fr`, `de`, `es`, `pt`, `ru`, etc.)
+   - English or cannot determine: lang = `en` (default, no translation needed)
+3. **Run the deterministic CLI**: `node <skill-dir>/skill-guide.js <flag> [args] [--lang <lang>]`, where `<skill-dir>` is the directory containing this SKILL.md file.
+   - If lang is `en`, add `--open` to the CLI command (open directly, no translation needed).
+   - If lang is NOT `en`, do NOT add `--open` (translation happens before opening).
 4. Map modes to CLI flags:
    - Discovery: `node <skill-dir>/skill-guide.js`
    - Deep-dive: `node <skill-dir>/skill-guide.js --skill <name>`
    - Tool-selection: `node <skill-dir>/skill-guide.js --search "<query>"`
    - Full manual: `node <skill-dir>/skill-guide.js --full`
    - Diagnostics: `node <skill-dir>/skill-guide.js --doctor`
-   Append `--lang zh` to any command when Chinese input is detected.
+   Append `--lang <lang>` to any command when a non-English language is detected.
 5. If `skill-guide.js` is unavailable, fall back to running `scan-skills.js` and generating HTML using the rules below.
-6. **Post-translate for Chinese mode** (only when `--lang zh`):
+6. **Post-translate for non-English languages** (when lang is NOT `en`):
    After the CLI generates the HTML file, perform a full translation pass:
    a. Read the generated HTML file.
-   b. Translate ALL English text content inside elements with `data-i18n` attributes to natural, fluent Chinese.
-      - The `data-i18n` attributes mark exactly which elements contain translatable content: `desc` (descriptions), `section-title` (step/section titles), `section-body` (step/section content), `how-it-works`, `when-to-use`, `limitations`.
+   b. Translate ALL English text content inside elements with `data-i18n` attributes, AND all UI label text (headings, kicker, subtitle, section headers like "运作原理", "何时使用", etc.) to the user's detected language.
+      - The `data-i18n` attributes mark translatable content: `desc` (descriptions), `section-title` (step/section titles), `section-body` (step/section content), `how-it-works`, `when-to-use`, `limitations`.
+      - Also translate any other visible text: cover titles, category names, stats labels, navigation text, and any Chinese/English UI labels already in the HTML.
       - Preserve ALL HTML tags, CSS classes, JavaScript, attribute names, and document structure exactly as-is.
       - Only translate the **text content** between tags — never modify tag names, attributes, CSS, or JavaScript.
       - Do NOT translate: content inside `<code>` tags, skill names, tool names, CSS property values, JavaScript code.
-      - Translate naturally as a fluent Chinese speaker would write it — not word-by-word. Adapt sentence structure for Chinese readability.
-      - Keep markdown-derived formatting: `**bold**` stays as `<strong>bold</strong>`, `` `code` `` stays as `<code>code</code>`.
+      - Translate naturally as a fluent native speaker would write it — not word-by-word. Adapt sentence structure for natural readability in the target language.
+      - Keep markdown-derived formatting: `<strong>` stays `<strong>`, `<code>` stays `<code>`, `<blockquote>` stays `<blockquote>`.
    c. Write the translated HTML back to the same file path using the Write tool.
    d. Open the file in the browser: `open <filepath>` (macOS) or equivalent.
-   e. Report completion to the user with a brief summary in Chinese.
-7. **Non-Chinese mode**: When `--lang zh` is NOT active, add `--open` to the CLI command directly and skip step 6.
+   e. Report completion to the user with a brief summary in their language.
+7. **English mode**: When lang is `en`, add `--open` to the CLI command directly and skip step 6.
 
 ## 4. HTML Generation Rules
 
@@ -221,9 +229,11 @@ Map scanner JSON fields to HTML content:
 
 ### Language Handling
 
-Check user input for Chinese characters (`/[一-鿿]/`). If found:
+The CLI uses `--lang zh` for Chinese labels as a built-in default. For any other language, the agent-side translation step (workflow step 6) handles ALL UI labels and content translation. The agent translates everything — both `data-i18n` marked content and any other visible text (headings, kicker, stats labels, etc.) — to the detected target language.
 
-| English Label | Chinese Label |
+The CLI's built-in Chinese label map is used as a starting point when `--lang zh` is passed. For all other languages, the CLI generates English labels and the agent translates them.
+
+| English Label | Chinese Label (built-in) |
 |--------------|---------------|
 | Your Agent Skills | 你的 Agent Skills 技能库 |
 | Your Claude Code Skills | 你的 Claude Code 技能库 |
@@ -245,7 +255,7 @@ Check user input for Chinese characters (`/[一-鿿]/`). If found:
 | Source | 来源 |
 | Category | 分类 |
 
-Otherwise, use English labels throughout.
+For all other languages (Japanese, Korean, French, German, etc.), the agent translates these labels as part of step 6.
 
 ## 5. Anti-Patterns
 
