@@ -1,18 +1,13 @@
 ---
 name: skill-guide
 description: |
-  Discover, understand, and choose from installed Claude Code skills.
-  Generates HTML slide presentations with skill overviews, deep-dives,
-  and tool recommendations. Use when user says "skill-guide", "what skills
-  do I have", "tell me about <skill>", "which skill for X", or wants to
-  explore their installed capabilities.
-triggers:
-  - skill-guide
-  - what skills do I have
-  - which skill should I use
-  - tell me about this skill
-  - help me understand my skills
-  - show me my skills
+  Discover, understand, compare, and choose from installed Agent Skills across
+  Claude Code, Codex, local skill folders, and plugin marketplaces. Generates
+  HTML slide presentations with skill overviews, deep-dives, and tool
+  recommendations. Use when user says "skill-guide", asks what skills they
+  have, wants to explore Claude Code or Codex skills, asks "tell me about
+  a skill", "which skill for X", "help me understand my skills", or wants to
+  map installed agent capabilities.
 allowed-tools:
   - Bash
   - Read
@@ -23,11 +18,11 @@ allowed-tools:
 
 ## 1. When to Use
 
-Activate this skill when the user wants to explore, discover, compare, or learn about their installed Claude Code skills. The output is a polished HTML slide presentation opened in the browser.
+Activate this skill when the user wants to explore, discover, compare, or learn about their installed Agent Skills across Claude Code, Codex, local skill folders, and plugin marketplaces. The output is a polished HTML slide presentation opened in the browser.
 
 **Trigger conditions:**
 - User types `/skill-guide` (bare or with arguments)
-- User asks "what skills do I have", "show me my skills"
+- User asks "what skills do I have", "show me my skills", "what Codex skills do I have"
 - User asks about a specific skill: "tell me about frontend-slides"
 - User describes a task and wants to know which skill fits: "which skill for code review"
 - User says "help me understand my skills"
@@ -54,12 +49,14 @@ Determine the mode from user input:
 Follow these steps exactly:
 
 1. **Determine mode** from user input using the rules in section 2.
-2. **Run the scanner**: `node <skill-dir>/scan-skills.js <flag> [args]` where `<skill-dir>` is the directory containing this SKILL.md file. The flags are `--list`, `--skill <name>`, `--search <query>`, or `--full`.
-3. **Read JSON output** from scanner stdout. Parse it as a JSON array of skill objects.
-4. **Detect language**: Check user input for Chinese characters (Unicode range `一-鿿`). If found, generate Chinese HTML. Otherwise English.
-5. **Generate HTML** following the rules in section 4.
-6. **Save file**: `skill-guide-{mode}-{YYYY-MM-DD}.html` in the current working directory.
-7. **Open in browser**: Run `open <filename>` on macOS or `xdg-open <filename>` on Linux.
+2. **Run the deterministic CLI**: `node <skill-dir>/skill-guide.js <flag> [args] --open`, where `<skill-dir>` is the directory containing this SKILL.md file.
+3. Map modes to CLI flags:
+   - Discovery: `node <skill-dir>/skill-guide.js --open`
+   - Deep-dive: `node <skill-dir>/skill-guide.js --skill <name> --open`
+   - Tool-selection: `node <skill-dir>/skill-guide.js --search "<query>" --open`
+   - Full manual: `node <skill-dir>/skill-guide.js --full --open`
+   - Diagnostics: `node <skill-dir>/skill-guide.js --doctor`
+4. If `skill-guide.js` is unavailable, fall back to running `scan-skills.js` and generating HTML using the rules below.
 
 ## 4. HTML Generation Rules
 
@@ -112,8 +109,8 @@ Each slide gets a subtle gradient background and decorative blurred circles (pse
 #### Discovery Mode (4 pages)
 
 **Page 1 - Cover:**
-- Title: "Your Claude Code Skills" (EN) or "你的 Claude Code 技能库" (ZH)
-- Subtitle: total skill count + per-source breakdown (e.g., "12 from .claude/skills, 8 from plugins")
+- Title: If scanner sources include both Claude and Codex, use "Your Agent Skills" (EN) or "你的 Agent Skills 技能库" (ZH). If only Claude sources are present, use "Your Claude Code Skills" / "你的 Claude Code 技能库". If only Codex sources are present, use "Your Codex Skills" / "你的 Codex 技能库".
+- Subtitle: total skill count + per-source breakdown (e.g., "12 Claude skills, 8 Codex skills, 20 plugin skills")
 - Decorative background with gradient and blurred circles
 
 **Page 2 - Category Map:**
@@ -212,7 +209,9 @@ Check user input for Chinese characters (`/[一-鿿]/`). If found:
 
 | English Label | Chinese Label |
 |--------------|---------------|
+| Your Agent Skills | 你的 Agent Skills 技能库 |
 | Your Claude Code Skills | 你的 Claude Code 技能库 |
+| Your Codex Skills | 你的 Codex 技能库 |
 | Category Map | 分类概览 |
 | Highlights | 精选推荐 |
 | Quick Reference | 快速参考 |

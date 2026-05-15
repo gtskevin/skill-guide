@@ -1,0 +1,56 @@
+{
+  "name": "skill-guide",
+  "version": "0.2.0",
+  "description": "Discover, understand, and choose from installed Agent Skills across Claude Code and Codex.",
+  "license": "MIT",
+  "type": "commonjs",
+  "bin": {
+    "skill-guide": "./bin/skill-guide",
+    "skill-guide-scan": "./scan-skills.js"
+  },
+  "files": [
+    "agents/openai.yaml",
+    "bin/skill-guide",
+    "SKILL.md",
+    "skill-guide.js",
+    "scan-skills.js",
+    "demo.html",
+    "demo.gif",
+    "social-preview.png",
+    "demo-*.png",
+    "README.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "scan": "node scan-skills.js --list",
+    "scan:refresh": "node scan-skills.js --refresh --list",
+    "scan:skill": "node scan-skills.js --skill",
+    "scan:search": "node scan-skills.js --search",
+    "scan:full": "node scan-skills.js --full",
+    "guide": "node skill-guide.js --open",
+    "doctor": "node skill-guide.js --doctor",
+    "test": "node --check scan-skills.js && node --check skill-guide.js && node --test test/*.test.js && node scan-skills.js --list >/dev/null && node scan-skills.js --search security >/dev/null && node scan-skills.js --full >/dev/null"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "agent-skills",
+    "skills",
+    "skill",
+    "html-slides",
+    "developer-tools"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gtskevin/skill-guide.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gtskevin/skill-guide/issues"
+  },
+  "homepage": "https://github.com/gtskevin/skill-guide#readme"
+}

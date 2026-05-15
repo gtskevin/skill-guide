@@ -1,0 +1,8 @@
+interface:
+  display_name: "Skill Guide"
+  short_description: "Visual map of installed Agent Skills"
+  brand_color: "#818CF8"
+  default_prompt: "Use $skill-guide to show my installed Agent Skills and recommend which ones fit my current work."
+
+policy:
+  allow_implicit_invocation: true

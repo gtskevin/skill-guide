@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 
 // ---------------------------------------------------------------------------
 // CLI parsing
@@ -55,11 +56,20 @@ if (mode === 'search' && !searchQuery) {
 // Cache helpers
 // ---------------------------------------------------------------------------
 const CACHE_DIR = path.join(os.tmpdir(), 'claude');
-const CACHE_FILE = path.join(CACHE_DIR, 'skill-guide-cache.json');
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey() {
+  const roots = SCAN_SOURCES.map((source) => `${source.label}:${path.resolve(source.dir)}`).join('|');
+  return crypto.createHash('sha1').update(roots).digest('hex').slice(0, 12);
+}
+
+function getCacheFile() {
+  return path.join(CACHE_DIR, `skill-guide-cache-${getCacheKey()}.json`);
+}
 
 function readCache() {
   try {
+    const CACHE_FILE = getCacheFile();
     const raw = fs.readFileSync(CACHE_FILE, 'utf8');
     const cached = JSON.parse(raw);
     if (Date.now() - cached._ts < CACHE_TTL_MS) {
@@ -71,6 +81,7 @@ function readCache() {
 
 function writeCache(data) {
   try {
+    const CACHE_FILE = getCacheFile();
     fs.mkdirSync(CACHE_DIR, { recursive: true });
     data._ts = Date.now();
     fs.writeFileSync(CACHE_FILE, JSON.stringify(data), 'utf8');
@@ -281,18 +292,34 @@ function extractContextual(content) {
 // Skill scanning
 // ---------------------------------------------------------------------------
 const HOME = os.homedir();
+const CODEX_HOME = process.env.CODEX_HOME || path.join(HOME, '.codex');
 
-const SCAN_SOURCES = [
-  { dir: path.join(HOME, '.claude', 'skills'),                  label: 'user',      priority: 1, depth: 1 },
-  { dir: path.join(HOME, '.cc-switch', 'skills'),               label: 'cc-switch', priority: 2, depth: 1 },
-  { dir: path.join(HOME, '.claude', 'plugins', 'marketplaces'), label: 'plugins',   priority: 3, depth: 2 },
-];
+function buildScanSources() {
+  const rawSources = [
+    { dir: path.join(HOME, '.claude', 'skills'),                  label: 'claude-user',  priority: 1, depth: 1 },
+    { dir: path.join(CODEX_HOME, 'skills', '.system'),            label: 'openai-system', priority: 0, depth: 1 },
+    { dir: path.join(CODEX_HOME, 'skills'),                       label: 'codex-user',   priority: 1, depth: 1 },
+    { dir: path.join(HOME, '.cc-switch', 'skills'),               label: 'cc-switch',    priority: 2, depth: 1 },
+    { dir: path.join(HOME, '.claude', 'plugins', 'marketplaces'), label: 'claude-plugin', priority: 3, depth: 2 },
+    { dir: path.join(CODEX_HOME, 'plugins', 'cache'),             label: 'codex-plugin', priority: 3, depth: 4 },
+  ];
+
+  const seen = new Set();
+  return rawSources.filter((source) => {
+    const key = path.resolve(source.dir);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+const SCAN_SOURCES = buildScanSources();
 
 function tryStatDir(p) {
   try { return fs.statSync(p).isDirectory(); } catch (_) { return false; }
 }
 
-function scanDirectory(dirPath, maxDepth, currentDepth) {
+function scanDirectory(dirPath, maxDepth, currentDepth, options = {}) {
   if (currentDepth > maxDepth) return [];
   let entries;
   try {
@@ -304,7 +331,7 @@ function scanDirectory(dirPath, maxDepth, currentDepth) {
     // Follow symlinks — entry.isDirectory() is false for symlinks without this
     const isDir = entry.isDirectory() || (entry.isSymbolicLink() && tryStatDir(path.join(dirPath, entry.name)));
     if (!isDir) continue;
-    if (entry.name.startsWith('.')) continue;
+    if (!options.includeHidden && entry.name.startsWith('.')) continue;
 
     const subDir = path.join(dirPath, entry.name);
 
@@ -325,7 +352,7 @@ function scanDirectory(dirPath, maxDepth, currentDepth) {
 
     // Recurse deeper
     if (currentDepth < maxDepth) {
-      const deeper = scanDirectory(subDir, maxDepth, currentDepth + 1);
+      const deeper = scanDirectory(subDir, maxDepth, currentDepth + 1, options);
       results.push(...deeper);
     }
   }
@@ -370,10 +397,10 @@ function loadSkill(dir, mdFile) {
 
 function scanAllSkills() {
   const allSkills = {};
-  const sourceCounts = { user: 0, 'cc-switch': 0, plugins: 0 };
+  const sourceCounts = Object.fromEntries(SCAN_SOURCES.map((source) => [source.label, 0]));
 
   for (const source of SCAN_SOURCES) {
-    const dirs = scanDirectory(source.dir, source.depth, 0);
+    const dirs = scanDirectory(source.dir, source.depth, 0, { includeHidden: source.includeHidden });
     for (const { dir, mdFile } of dirs) {
       const skill = loadSkill(dir, mdFile);
       if (!skill) continue;
@@ -385,7 +412,9 @@ function scanAllSkills() {
       if (allSkills[key]) {
         // Keep higher priority, track all sources
         const existing = allSkills[key];
-        existing.sources.push(source.label);
+        if (!existing.sources.includes(source.label)) {
+          existing.sources.push(source.label);
+        }
         if (source.priority < existing._priority) {
           // Replace with higher priority data
           skill.sources = existing.sources;
