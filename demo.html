@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your Claude Code Skills — Skill Guide</title>
+<style>
+:root {
+  --bg:#eef2ff;--card:#fff;--cs:0 4px 20px rgba(100,100,180,.07);
+  --t:#1e293b;--ts2:#64748b;
+  --ab:#818cf8;--ap:#f0abfc;--am:#6ee7b7;--ao:#fdba74;--ay:#fde047;--al:#c4b5fd;--ar:#fda4af;--as:#7dd3fc;
+  --r:clamp(10px,1.8vw,18px);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-snap-type:y mandatory;scroll-behavior:smooth;overflow-y:scroll}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--t)}
+.slide{min-height:100vh;min-height:100dvh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(24px,5vw,60px) clamp(20px,4vw,48px);position:relative;overflow:hidden}
+.slide::before,.slide::after{content:'';position:absolute;border-radius:50%;filter:blur(80px);opacity:.25;pointer-events:none}
+.slide::before{width:clamp(200px,40vw,500px);height:clamp(200px,40vw,500px);top:-10%;left:-10%;background:var(--ab)}
+.slide::after{width:clamp(150px,30vw,400px);height:clamp(150px,30vw,400px);bottom:-10%;right:-10%;background:var(--ap)}
+
+.progress{position:fixed;top:0;left:0;height:4px;background:linear-gradient(90deg,var(--ab),var(--ap));z-index:100;transition:width .3s}
+.nav-dots{position:fixed;right:clamp(12px,2vw,24px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:100}
+.nav-dot{width:10px;height:10px;border-radius:50%;background:rgba(100,100,180,.2);border:none;cursor:pointer;transition:.3s}
+.nav-dot.active{background:var(--ab);transform:scale(1.4)}
+.sn-txt{position:fixed;bottom:clamp(12px,2vw,24px);right:clamp(16px,3vw,36px);font-size:clamp(11px,1.2vw,14px);color:var(--ts2);z-index:100}
+
+h1{font-size:clamp(28px,5vw,64px);font-weight:800;line-height:1.1;text-align:center;margin-bottom:clamp(12px,2vw,24px)}
+h2{font-size:clamp(22px,3.5vw,42px);font-weight:700;margin-bottom:clamp(12px,2vw,24px);text-align:center}
+.sub{font-size:clamp(14px,1.8vw,22px);color:var(--ts2);text-align:center;max-width:640px;line-height:1.5}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(clamp(180px,18vw,240px),1fr));gap:clamp(10px,1.5vw,18px);width:100%;max-width:1100px}
+.card{background:var(--card);border-radius:var(--r);padding:clamp(14px,2vw,24px);box-shadow:var(--cs);transition:transform .25s}
+.card:hover{transform:translateY(-3px)}
+.card h3{font-size:clamp(13px,1.5vw,17px);font-weight:600;margin-bottom:6px}
+.card p{font-size:clamp(11px,1.2vw,14px);color:var(--ts2);line-height:1.45}
+
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:clamp(10px,1vw,12px);font-weight:600;margin:2px}
+.badge-test{background:#dbeafe;color:#1d4ed8}.badge-design{background:#fae8ff;color:#a21caf}
+.badge-sec{background:#fee2e2;color:#dc2626}.badge-doc{background:#d1fae5;color:#065f46}
+.badge-auto{background:#fef3c7;color:#92400e}.badge-deploy{background:#e0e7ff;color:#3730a3}
+.badge-quality{background:#fce7f3;color:#9d174d}.badge-dev{background:#f0fdf4;color:#166534}
+.badge-other{background:#f1f5f9;color:#475569}
+
+.stats{display:flex;gap:clamp(16px,3vw,40px);margin-top:clamp(16px,3vw,32px);flex-wrap:wrap;justify-content:center}
+.stat{text-align:center}
+.stat-num{font-size:clamp(28px,4vw,52px);font-weight:800;background:linear-gradient(135deg,var(--ab),var(--ap));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:clamp(11px,1.2vw,14px);color:var(--ts2);margin-top:4px}
+
+.table-wrap{width:100%;max-width:1100px;overflow:auto;max-height:70vh;border-radius:var(--r);background:var(--card);box-shadow:var(--cs)}
+table{width:100%;border-collapse:collapse;font-size:clamp(11px,1.2vw,14px)}
+th{background:linear-gradient(135deg,var(--ab),#6366f1);color:#fff;padding:clamp(8px,1.2vw,14px);text-align:left;position:sticky;top:0}
+td{padding:clamp(6px,1vw,12px) clamp(8px,1.2vw,14px);border-bottom:1px solid #f1f5f9}
+tr:nth-child(even){background:#fafbff}
+td:first-child{font-weight:600}
+
+.hl-list{display:flex;flex-direction:column;gap:clamp(10px,1.5vw,18px);width:100%;max-width:900px}
+.hl-item{background:var(--card);border-radius:var(--r);padding:clamp(14px,2vw,24px);box-shadow:var(--cs);border-left:4px solid var(--ab);display:flex;gap:clamp(10px,1.5vw,16px);align-items:flex-start}
+.hl-num{font-size:clamp(20px,3vw,36px);font-weight:800;color:var(--ab);line-height:1}
+.hl-item h3{font-size:clamp(14px,1.6vw,18px);margin-bottom:4px}
+.hl-item p{font-size:clamp(11px,1.2vw,14px);color:var(--ts2)}
+.hl-triggers{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
+.hl-trigger{padding:2px 8px;border-radius:6px;font-size:clamp(10px,1vw,12px);background:#f0f0ff;color:var(--ab)}
+
+.rv{opacity:0;transform:translateY(24px);transition:opacity .5s,transform .5s}
+.rv.v{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+
+.cover-icon{font-size:clamp(48px,8vw,96px);margin-bottom:clamp(12px,2vw,24px)}
+.gradient-text{background:linear-gradient(135deg,var(--ab),var(--ap),var(--am));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+<div class="nav-dots" id="dots"></div>
+<div class="sn-txt" id="sn">1/4</div>
+
+<section class="slide" id="s1">
+<div class="rv">
+  <div class="cover-icon">🎯</div>
+  <h1 class="gradient-text">Your Claude Code Skills</h1>
+  <p class="sub">Discover, understand, and choose from every skill you have installed.</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-num">256</div><div class="stat-label">Total Skills</div></div>
+    <div class="stat"><div class="stat-num">21</div><div class="stat-label">User Skills</div></div>
+    <div class="stat"><div class="stat-num">51</div><div class="stat-label">cc-switch</div></div>
+    <div class="stat"><div class="stat-num">208</div><div class="stat-label">Plugins</div></div>
+  </div>
+</div>
+</section>
+
+<section class="slide" id="s2">
+<div class="rv" style="width:100%;max-width:1100px">
+  <h2>Category Map</h2>
+  <div class="grid">
+    <div class="card"><h3>🧪 Testing</h3><p>28 skills</p><span class="badge badge-test">tdd</span><span class="badge badge-test">e2e</span><span class="badge badge-test">playwright</span></div>
+    <div class="card"><h3>🎨 Design</h3><p>34 skills</p><span class="badge badge-design">frontend-slides</span><span class="badge badge-design">ui-ux-pro-max</span></div>
+    <div class="card"><h3>🔐 Security</h3><p>18 skills</p><span class="badge badge-sec">security-audit</span><span class="badge badge-sec">django-security</span></div>
+    <div class="card"><h3>📝 Documentation</h3><p>12 skills</p><span class="badge badge-doc">docx</span><span class="badge badge-doc">pdf</span></div>
+    <div class="card"><h3>🤖 Automation</h3><p>22 skills</p><span class="badge badge-auto">loop</span><span class="badge badge-auto">santa-loop</span></div>
+    <div class="card"><h3>🚀 Deployment</h3><p>15 skills</p><span class="badge badge-deploy">vercel</span><span class="badge badge-deploy">docker-patterns</span></div>
+    <div class="card"><h3>🔍 Code Quality</h3><p>20 skills</p><span class="badge badge-quality">review</span><span class="badge badge-quality">simplify</span></div>
+    <div class="card"><h3>💻 Development</h3><p>45 skills</p><span class="badge badge-dev">brainstorm</span><span class="badge badge-dev">investigate</span></div>
+    <div class="card"><h3>📦 Other</h3><p>62 skills</p><span class="badge badge-other">skill-guide</span><span class="badge badge-other">careful</span></div>
+  </div>
+</div>
+</section>
+
+<section class="slide" id="s3">
+<div class="rv" style="width:100%;max-width:900px">
+  <h2>Top Picks</h2>
+  <div class="hl-list">
+    <div class="hl-item"><div class="hl-num">1</div><div><h3>careful</h3><p>Safety guardrails for destructive commands. Warns before rm -rf, git push --force, kubectl delete, and more.</p><div class="hl-triggers"><span class="hl-trigger">be careful</span><span class="hl-trigger">safety mode</span><span class="hl-trigger">careful mode</span></div></div></div>
+    <div class="hl-item"><div class="hl-num">2</div><div><h3>investigate</h3><p>Deep investigation of code issues — traces execution paths, reads logs, identifies root causes systematically.</p><div class="hl-triggers"><span class="hl-trigger">investigate</span><span class="hl-trigger">debug</span><span class="hl-trigger">trace</span></div></div></div>
+    <div class="hl-item"><div class="hl-num">3</div><div><h3>frontend-slides</h3><p>Create zero-dependency, animation-rich HTML presentations that run entirely in the browser.</p><div class="hl-triggers"><span class="hl-trigger">presentation</span><span class="hl-trigger">slides</span><span class="hl-trigger">deck</span></div></div></div>
+    <div class="hl-item"><div class="hl-num">4</div><div><h3>design-critique</h3><p>Structured design feedback on usability, hierarchy, and consistency at any stage.</p><div class="hl-triggers"><span class="hl-trigger">review design</span><span class="hl-trigger">critique</span></div></div></div>
+    <div class="hl-item"><div class="hl-num">5</div><div><h3>skill-guide</h3><p>Discover, understand, and choose from your installed skills via beautiful HTML presentations.</p><div class="hl-triggers"><span class="hl-trigger">what skills do I have</span><span class="hl-trigger">which skill</span></div></div></div>
+  </div>
+</div>
+</section>
+
+<section class="slide" id="s4">
+<div class="rv" style="width:100%;max-width:1100px">
+  <h2>Quick Reference</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Skill</th><th>Category</th><th>Description</th><th>Triggers</th></tr></thead>
+    <tbody>
+      <tr><td>careful</td><td><span class="badge badge-deploy">deployment</span></td><td>Safety guardrails for destructive commands</td><td>be careful, safety mode</td></tr>
+      <tr><td>design-critique</td><td><span class="badge badge-design">design</span></td><td>Structured design feedback</td><td>review design, critique</td></tr>
+      <tr><td>find-skills</td><td><span class="badge badge-other">other</span></td><td>Discover and install agent skills</td><td>find a skill, how do I do X</td></tr>
+      <tr><td>frontend-slides</td><td><span class="badge badge-design">design</span></td><td>Zero-dependency HTML presentations</td><td>presentation, slides, deck</td></tr>
+      <tr><td>investigate</td><td><span class="badge badge-dev">development</span></td><td>Deep code investigation</td><td>investigate, debug, trace</td></tr>
+      <tr><td>loop</td><td><span class="badge badge-auto">automation</span></td><td>Run commands on recurring intervals</td><td>loop, recurring, poll</td></tr>
+      <tr><td>qa</td><td><span class="badge badge-test">testing</span></td><td>Quality assurance testing</td><td>qa, quality check</td></tr>
+      <tr><td>security-audit</td><td><span class="badge badge-sec">security</span></td><td>Security vulnerability detection</td><td>security, audit, vuln</td></tr>
+      <tr><td>simplify</td><td><span class="badge badge-quality">code-quality</span></td><td>Review code for reuse and efficiency</td><td>simplify, clean up</td></tr>
+      <tr><td>skill-guide</td><td><span class="badge badge-other">other</span></td><td>Discover your installed skills</td><td>what skills, which skill</td></tr>
+      <tr><td>tdd</td><td><span class="badge badge-test">testing</span></td><td>Test-driven development workflow</td><td>tdd, test-first</td></tr>
+      <tr><td>vercel</td><td><span class="badge badge-deploy">deployment</span></td><td>Vercel deployment tools</td><td>deploy, vercel</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+</section>
+
+<script>
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+const prog=document.getElementById('prog');
+const dots=document.getElementById('dots');
+const sn=document.getElementById('sn');
+
+slides.forEach((_,i)=>{const d=document.createElement('button');d.className='nav-dot'+(i===0?' active':'');d.onclick=()=>slides[i].scrollIntoView();dots.appendChild(d)});
+
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){const i=[...slides].indexOf(e.target);sn.textContent=`${i+1}/${total}`;prog.style.width=((i+1)/total*100)+'%';document.querySelectorAll('.nav-dot').forEach((d,j)=>d.classList.toggle('active',j===i))}})},{threshold:.5});
+slides.forEach(s=>io.observe(s));
+
+const rio=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('v')})},{threshold:.15});
+document.querySelectorAll('.rv').forEach(el=>rio.observe(el));
+
+document.addEventListener('keydown',e=>{const ci=[...slides].findIndex(s=>{const r=s.getBoundingClientRect();return r.top>=0&&r.top<window.innerHeight/2});if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key===' '){e.preventDefault();const n=Math.min(ci+1,total-1);slides[n].scrollIntoView()}if(e.key==='ArrowUp'||e.key==='ArrowLeft'){e.preventDefault();const n=Math.max(ci-1,0);slides[n].scrollIntoView()}});
+</script>
+</body>
+</html>
