@@ -1,29 +1,32 @@
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=skill-guide&fontSize=42&fontColor=fff&animation=fadeIn&fontAlignY=32&desc=Map%20your%20Agent%20Skills&descSize=18&descAlignY=52" />
+  <img src="https://img.shields.io/badge/Zero%20Dependencies-Node.js-6ee7b7?style=flat-square" />
+  <img src="https://img.shields.io/badge/Output-HTML%20Slides-f0abfc?style=flat-square" />
+  <img src="https://img.shields.io/badge/Platform-Claude%20Code%20%7C%20Codex%20%7C%20cc--switch-818cf8?style=flat-square" />
+  <img src="https://img.shields.io/github/actions/workflow/status/gtskevin/skill-guide/test.yml?branch=main&style=flat-square&label=tests" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
+  <img src="https://img.shields.io/badge/Language-Any%20%F0%9F%8C%90-7dd3fc?style=flat-square" />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Claude%20Code%20%7C%20Codex-818cf8?style=flat-square" />
-  <img src="https://img.shields.io/github/actions/workflow/status/gtskevin/skill-guide/test.yml?branch=main&style=flat-square&label=test" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
-  <img src="https://img.shields.io/badge/Zero%20Dependencies-Node.js-6ee7b7?style=flat-square" />
-  <img src="https://img.shields.io/badge/Output-HTML%20Slides-f0abfc?style=flat-square" />
-  <img src="https://img.shields.io/badge/Language-EN%20%7C%20%E4%B8%AD%E6%96%87-7dd3fc?style=flat-square" />
+  <img src="demo.gif" alt="skill-guide demo — npx skill-guide --open generates HTML slides" width="760" />
 </p>
 
-> **200+ agent skills installed but you only use 3?** skill-guide scans Claude Code, Codex, and plugin skill folders, then generates beautiful HTML presentations — so you actually know what you have, how it works, and when to use it.
+> **200+ agent skills installed but you only use 3?**
+> One command scans everything — Claude Code, Codex, cc-switch, plugins — and generates a beautiful slide deck so you actually know what you have.
 
 <p align="center">
   <a href="https://gtskevin.github.io/skill-guide/"><strong>Live Demo</strong></a>
   ·
-  <a href="demo.html">Download Demo</a>
+  <a href="#quick-start">Try it now</a>
   ·
-  <a href="#quick-start">Try with your skills</a>
+  <a href="#install-methods">Install</a>
+  ·
+  <a href="#how-it-works">How it works</a>
 </p>
 
-<p align="center">
-  <img src="demo.gif" alt="skill-guide demo showing Agent Skills slides" width="760" />
-</p>
+```bash
+npx skill-guide --open        # ← that's it. HTML slides open in your browser.
+```
 
 ## What it does
 
@@ -74,29 +77,24 @@ skill-guide reads every skill from Claude Code, Codex, `~/.cc-switch/skills/`, a
 
 ## Quick Start
 
-**1. Try instantly**
+**1. Try instantly** — no install needed:
 ```bash
 npx skill-guide --open
 ```
 
-**2. Or install for Claude Code**
+**2. Install for Claude Code:**
 ```bash
 npx skills add gtskevin/skill-guide
 ```
 
-**Or install for Codex**
+**3. Use it** — type `/skill-guide` in Claude Code, or use the CLI:
 ```bash
-git clone https://github.com/gtskevin/skill-guide.git
-mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-ln -s "$(pwd)/skill-guide" "${CODEX_HOME:-$HOME/.codex}/skills/skill-guide"
+npx skill-guide --open                        # Discover all skills
+npx skill-guide --search security --open      # Find skills for a task
+npx skill-guide --skill tdd --open            # Deep-dive one skill
+npx skill-guide --full --open                 # Generate a full manual
+npx skill-guide --doctor                      # Diagnose your setup
 ```
-
-**3. Run in Claude Code or Codex**
-```
-/skill-guide
-```
-
-**4. View** — HTML slides open in your browser automatically.
 
 ## Install Methods
 
@@ -191,6 +189,7 @@ skill-guide/
 | `--search <query>` | Generate recommendations for a task |
 | `--skill <name>` | Generate a deep-dive for one skill |
 | `--full` | Generate a complete manual |
+| `--lang <code>` | UI language (en, zh, or any — auto-translated) |
 | `--doctor` | Check paths, sources, and scan counts |
 
 ### Doctor checks
@@ -203,27 +202,35 @@ Skills are automatically sorted into 9 categories: `testing`, `design`, `securit
 
 ## Language Support
 
-Automatic — ask in Chinese, get Chinese output. Ask in English, get English output. No configuration needed.
+Automatic — ask in any language, get output in that language. No configuration needed.
+
+- **English** — default
+- **Chinese** — built-in (`--lang zh`)
+- **Japanese, Korean, French, German, Spanish, ...** — agent-side translation (works in Claude Code and Codex)
 
 ## Why skill-guide?
 
 - **The only skill that maps your skills** — scans Claude Code, Codex, cc-switch, and plugin sources in one visual overview
-- **Zero dependencies** — pure Node.js with `fs`, `path`, `os`. No npm install needed
+- **Zero dependencies** — pure Node.js with `fs`, `path`, `os`. No `npm install` needed
 - **Beautiful output** — scroll-snap slides with keyboard nav, animations, and responsive design
-- **Bilingual** — Chinese and English auto-detected from your input
+- **Any language** — ask in Chinese, get Chinese. Ask in Japanese, get Japanese. Auto-detected.
 - **Smart caching** — 5-minute TTL so repeated queries are instant
-- **GitHub-ready** — CI, GitHub Pages demo, social preview, and topic metadata included
+- **5 seconds to "wow"** — `npx skill-guide --open` is all you need
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## Roadmap
+
+- [ ] `--share` — generate a shareable standalone HTML or Markdown summary
+- [ ] Gemini CLI skill scanning (`~/.gemini/skills`)
+- [ ] `--diff` — show recently added/removed skills since last scan
+- [ ] `--export markdown` — output a Markdown table for pasting into issues and docs
+- [ ] Skill health scores based on frontmatter completeness
+
+Have an idea? [Open a feature request](https://github.com/gtskevin/skill-guide/issues/new?template=feature_request.yml).
+
 ## License
 
 MIT
-
----
-
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" />
-</p>

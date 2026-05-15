@@ -5,21 +5,47 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Your Agent Skills - skill-guide</title>
 <style>
-:root{--bg:#eef2ff;--card:#fff;--t:#1e293b;--muted:#64748b;--ab:#818cf8;--ap:#f0abfc;--am:#6ee7b7;--ao:#fdba74;--r:14px;--shadow:0 14px 45px rgba(79,70,229,.10)}
-*{box-sizing:border-box}html{scroll-snap-type:y mandatory;scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--t);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}.slide{min-height:100vh;min-height:100dvh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:clamp(28px,5vw,64px)}.slide:before,.slide:after{content:"";position:absolute;border-radius:999px;filter:blur(80px);opacity:.28;pointer-events:none}.slide:before{width:420px;height:420px;background:var(--ab);left:-120px;top:-120px}.slide:after{width:360px;height:360px;background:var(--ap);right:-120px;bottom:-120px}.center,.wide{position:relative;z-index:1}.center{text-align:center;max-width:980px}.wide{width:min(1120px,100%)}h1{font-size:clamp(42px,7vw,86px);line-height:1.02;margin:0 0 18px;font-weight:850;letter-spacing:0;background:linear-gradient(135deg,var(--ab),var(--ap),var(--am));-webkit-background-clip:text;color:transparent}h2{font-size:clamp(28px,4vw,52px);line-height:1.08;margin:0 0 28px;text-align:center;letter-spacing:0}h3{margin:0 0 8px;font-size:18px}.sub{font-size:clamp(16px,2vw,22px);line-height:1.5;color:var(--muted);margin:0 auto 26px;max-width:880px}.kicker{text-transform:uppercase;letter-spacing:.14em;color:#6366f1;font-size:12px;font-weight:800;margin-bottom:18px}.stats{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}.stat{background:rgba(255,255,255,.78);box-shadow:var(--shadow);border-radius:var(--r);padding:14px 18px;min-width:126px}.stat b{display:block;font-size:28px}.stat span{display:block;color:var(--muted);font-size:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}.card,.row{background:rgba(255,255,255,.86);box-shadow:var(--shadow);border-radius:var(--r)}.card{padding:20px}.card p,.row p,.detail p{color:var(--muted);line-height:1.5}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.chips span,.badge,.source{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:700}.chips span{background:#f8fafc;color:#475569}.badge{background:#e0e7ff;color:#3730a3;margin-right:6px}.source{background:#ecfeff;color:#0e7490;margin-right:6px}.list{display:flex;flex-direction:column;gap:14px}.row{display:grid;grid-template-columns:48px 1fr;gap:14px;padding:18px}.row strong{font-size:28px;color:var(--ab);line-height:1}.table-wrap{max-height:72vh;overflow:auto;border-radius:var(--r);box-shadow:var(--shadow);background:var(--card)}table{border-collapse:collapse;width:100%;font-size:14px}th{position:sticky;top:0;background:#6366f1;color:white;text-align:left}th,td{padding:12px 14px;border-bottom:1px solid #eef2ff}tr:nth-child(even){background:#fafbff}.meta{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:16px 0 26px}.meta code{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px}.detail{text-align:center}.detail h3{margin-top:24px}.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:20px;text-align:left}.steps article{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px}.steps b{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;background:var(--ab);color:white;margin-right:8px}.quote{font-size:20px;color:var(--muted);text-align:center;background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}.empty{text-align:center;color:var(--muted)}.rv{opacity:0;transform:translateY(24px);transition:opacity .55s ease,transform .55s ease}.rv.v{opacity:1;transform:none}@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}@media(max-width:760px){.slide{padding:24px 16px}.row{grid-template-columns:1fr}.row strong{font-size:18px}.table-wrap{max-height:65vh}}
+:root{--bg:#0F172A;--bg2:#1E293B;--card:#1E293B;--card-h:#273347;--t:#F8FAFC;--muted:#94A3B8;--accent:#22C55E;--accent2:#34D399;--ab:#818cf8;--ap:#c084fc;--am:#6ee7b7;--r:12px;--border:#334155;--shadow:0 4px 24px rgba(0,0,0,.35);--mono:"SF Mono","Fira Code","Cascadia Code",monospace}
+*{box-sizing:border-box}html{scroll-snap-type:y mandatory;scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--t);font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+a.skip{position:absolute;top:-100%;left:16px;background:var(--accent);color:#0F172A;padding:8px 16px;border-radius:var(--r);z-index:999;font-weight:600;text-decoration:none}a.skip:focus{top:8px}
+.slide{min-height:100vh;min-height:100dvh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:clamp(24px,5vw,64px)}.slide::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(34,197,94,.04),transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(129,140,248,.04),transparent 50%);pointer-events:none}
+.center,.wide{position:relative;z-index:1}.center{text-align:center;max-width:960px}.wide{width:min(1120px,100%)}
+h1{font-size:clamp(36px,6vw,72px);line-height:1.05;margin:0 0 16px;font-weight:800;letter-spacing:-.02em;color:var(--t)}h1 .grad{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;color:transparent}
+h2{font-size:clamp(24px,3.5vw,44px);line-height:1.1;margin:0 0 24px;text-align:center;letter-spacing:-.01em;color:var(--t)}h3{margin:0 0 6px;font-size:16px;font-weight:600}
+.sub{font-size:clamp(15px,1.8vw,20px);line-height:1.6;color:var(--muted);margin:0 auto 24px;max-width:860px}
+.kicker{text-transform:uppercase;letter-spacing:.16em;color:var(--accent);font-size:11px;font-weight:700;margin-bottom:16px;font-family:var(--mono)}
+.stats{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px}.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 20px;min-width:120px;transition:border-color .2s}.stat:hover{border-color:var(--accent)}.stat b{display:block;font-size:26px;color:var(--t)}.stat span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card,.row{background:var(--card);border:1px solid var(--border);border-radius:var(--r);transition:border-color .2s,transform .15s;cursor:default}.card:hover,.row:hover{border-color:var(--accent);transform:translateY(-1px)}
+.card{padding:18px}.card p,.row p,.detail p{color:var(--muted);line-height:1.55;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;overflow:hidden;max-height:72px}.chips span,.badge,.source{display:inline-flex;align-items:center;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}.chips span{background:var(--bg);color:var(--muted);border:1px solid var(--border)}.badge{background:rgba(34,197,94,.12);color:var(--accent2);border:1px solid rgba(34,197,94,.2);margin-right:4px}.source{background:rgba(129,140,248,.1);color:var(--ab);border:1px solid rgba(129,140,248,.18);margin-right:4px}
+.list{display:flex;flex-direction:column;gap:10px}.row{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:16px}.row strong{font-size:24px;color:var(--accent);line-height:1;font-family:var(--mono);font-weight:700}
+.table-wrap{max-height:72vh;overflow:auto;border-radius:var(--r);border:1px solid var(--border);background:var(--card)}table{border-collapse:collapse;width:100%;font-size:13px}th{position:sticky;top:0;background:var(--bg2);color:var(--accent);text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em}th,td{padding:10px 14px;border-bottom:1px solid var(--border)}tr:hover td{background:rgba(34,197,94,.04)}
+.meta{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:14px 0 22px}.meta code{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.detail{text-align:center}.detail h3{margin-top:20px;color:var(--accent);font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:18px;text-align:left}.steps article{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;transition:border-color .2s}.steps article:hover{border-color:var(--accent)}.steps b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:6px;background:var(--accent);color:#0F172A;margin-right:8px;font-size:13px;font-weight:700}.steps span{font-weight:600;color:var(--t)}.steps p{font-size:13px;margin-top:4px}
+.quote{font-size:18px;color:var(--muted);text-align:center;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;font-family:var(--mono)}.empty{text-align:center;color:var(--muted)}
+.md-content{color:var(--muted);line-height:1.6;font-size:14px;text-align:left}.md-content strong{color:var(--t);font-weight:600}.md-content code{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:var(--mono);font-size:12px;color:var(--accent2)}.md-content blockquote{border-left:3px solid var(--accent);margin:8px 0;padding:6px 12px;color:var(--muted);font-style:italic}.md-content ul{margin:6px 0;padding-left:20px}.md-content li{margin:3px 0}.sub-md{color:var(--muted);line-height:1.6;font-size:clamp(15px,1.8vw,20px);margin:0 auto 24px;max-width:860px;text-align:center}.sub-md strong{color:var(--t);font-weight:600}.sub-md code{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:var(--mono);font-size:12px;color:var(--accent2)}
+.rv{opacity:0;transform:translateY(18px);transition:opacity .4s ease,transform .4s ease}.rv.v{opacity:1;transform:none}
+nav.progress{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10;padding:6px 12px;background:var(--card);border:1px solid var(--border);border-radius:999px}nav.progress button{width:8px;height:8px;border-radius:50%;border:none;background:var(--border);cursor:pointer;padding:0;transition:background .2s,transform .15s}nav.progress button.active{background:var(--accent);transform:scale(1.3)}nav.progress button:hover{background:var(--muted)}nav.progress button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.shortcut{position:fixed;bottom:16px;right:16px;font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 8px;z-index:10;opacity:.5}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.card:hover,.row:hover,.steps article:hover{transform:none}}
+@media(max-width:760px){.slide{padding:20px 14px}.row{grid-template-columns:1fr}.row strong{font-size:18px}.table-wrap{max-height:60vh}nav.progress{bottom:10px}nav.progress button{width:10px;height:10px}.shortcut{display:none}.stats{gap:8px}.stat{min-width:90px;padding:10px 14px}.stat b{font-size:22px}.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
+<main id="main">
 <section class="slide cover">
     <div class="rv center">
-      <div class="kicker">Discovery</div>
-      <h1>Your Agent Skills</h1>
-      <p class="sub">338 skills scanned · 21 Claude · 5 OpenAI system · 38 Codex · 51 cc-switch · 208 Claude plugins · 75 Codex plugins</p>
-      <div class="stats"><div class="stat"><b>21</b><span>claude-user</span></div><div class="stat"><b>5</b><span>openai-system</span></div><div class="stat"><b>38</b><span>codex-user</span></div><div class="stat"><b>51</b><span>cc-switch</span></div><div class="stat"><b>208</b><span>claude-plugin</span></div><div class="stat"><b>75</b><span>codex-plugin</span></div></div>
+      <div class="kicker" data-i18n="label">Discovery</div>
+      <h1><span class="grad" data-i18n="label">Your Agent Skills</span></h1>
+      <p class="sub">338 skills scanned · 21 Claude · 5 OpenAI system · 39 Codex · 51 cc-switch · 208 Claude plugins · 75 Codex plugins</p>
+      <div class="stats"><div class="stat"><b>21</b><span data-i18n="label">claude-user</span></div><div class="stat"><b>5</b><span data-i18n="label">openai-system</span></div><div class="stat"><b>39</b><span data-i18n="label">codex-user</span></div><div class="stat"><b>51</b><span data-i18n="label">cc-switch</span></div><div class="stat"><b>208</b><span data-i18n="label">claude-plugin</span></div><div class="stat"><b>75</b><span data-i18n="label">codex-plugin</span></div></div>
     </div>
   </section><section class="slide">
     <div class="rv wide">
-      <h2>Category Map</h2>
+      <h2 data-i18n="label">Category Map</h2>
       <div class="grid"><article class="card">
       <h3>other</h3>
       <p>123 skills</p>
@@ -60,1768 +86,1775 @@
     </div>
   </section><section class="slide">
     <div class="rv wide">
-      <h2>Highlights</h2>
+      <h2 data-i18n="label">Highlights</h2>
       <div class="list"><article class="row">
         <strong>1</strong>
         <div>
           <h3>investigate</h3>
-          <p>Systematic debugging with Iron Law discipline. Four phases: investigate, analyze, hypothesize, implement. Iron Law: no fixes without root cause. 3-strike rule prevents whack-a-mol...</p>
+          <p data-i18n="desc">Systematic debugging with Iron Law discipline. Four phases: investigate, analyze, hypothesize, implement. Iron Law: no fixes without root cause. 3-strike rule prevents whack-a-mol...</p>
           <div><span class="badge badge-development">development</span><span class="source">claude-user</span><span class="source">cc-switch</span></div>
         </div>
       </article><article class="row">
         <strong>2</strong>
         <div>
           <h3>qa</h3>
-          <p>Systematically QA test a web application and fix bugs found. Uses browser MCP tools (Playwright or Chrome DevTools) to navigate, interact, and verify the app. Finds bugs, fixes ea...</p>
+          <p data-i18n="desc">Systematically QA test a web application and fix bugs found. Uses browser MCP tools (Playwright or Chrome DevTools) to navigate, interact, and verify the app. Finds bugs, fixes ea...</p>
           <div><span class="badge badge-testing">testing</span><span class="source">claude-user</span><span class="source">cc-switch</span></div>
         </div>
       </article><article class="row">
         <strong>3</strong>
         <div>
           <h3>careful</h3>
-          <p>Safety guardrails for destructive commands. When active, warns before executing rm -rf, DROP TABLE, git push --force, git reset --hard, kubectl delete, docker system prune, and si...</p>
+          <p data-i18n="desc">Safety guardrails for destructive commands. When active, warns before executing rm -rf, DROP TABLE, git push --force, git reset --hard, kubectl delete, docker system prune, and si...</p>
           <div><span class="badge badge-deployment">deployment</span><span class="source">claude-user</span><span class="source">cc-switch</span></div>
         </div>
       </article><article class="row">
         <strong>4</strong>
         <div>
           <h3>security-audit</h3>
-          <p>Infrastructure-first security audit: OWASP Top 10, STRIDE threat modeling, secrets archaeology, dependency supply chain, LLM/AI security, and CI/CD pipeline security. Two modes: d...</p>
+          <p data-i18n="desc">Infrastructure-first security audit: OWASP Top 10, STRIDE threat modeling, secrets archaeology, dependency supply chain, LLM/AI security, and CI/CD pipeline security. Two modes: d...</p>
           <div><span class="badge badge-security">security</span><span class="source">claude-user</span><span class="source">cc-switch</span></div>
         </div>
       </article><article class="row">
         <strong>5</strong>
         <div>
           <h3>frontend-slides</h3>
-          <p>Create stunning, animation-rich HTML presentations from scratch or by converting PowerPoint files. Use when the user wants to build a presentation, convert a PPT/PPTX to web, or c...</p>
+          <p data-i18n="desc">Create stunning, animation-rich HTML presentations from scratch or by converting PowerPoint files. Use when the user wants to build a presentation, convert a PPT/PPTX to web, or c...</p>
           <div><span class="badge badge-design">design</span><span class="source">claude-user</span><span class="source">cc-switch</span><span class="source">claude-plugin</span></div>
         </div>
       </article><article class="row">
         <strong>6</strong>
         <div>
           <h3>mba-thesis-review</h3>
-          <p>Use when reviewing an MBA thesis PDF, especially a 20k-30k word practice-oriented Chinese thesis that needs academic comments plus deficiencies or revision suggestions. Supports r...</p>
+          <p data-i18n="desc">Use when reviewing an MBA thesis PDF, especially a 20k-30k word practice-oriented Chinese thesis that needs academic comments plus deficiencies or revision suggestions. Supports r...</p>
           <div><span class="badge badge-code-quality">code-quality</span><span class="source">claude-user</span><span class="source">codex-user</span><span class="source">cc-switch</span></div>
         </div>
       </article><article class="row">
         <strong>7</strong>
         <div>
           <h3>gh-fix-ci</h3>
-          <p>Use when a user asks to debug or fix failing GitHub PR checks that run in GitHub Actions; use `gh` to inspect checks and logs, summarize failure context, draft a fix plan, and imp...</p>
+          <p data-i18n="desc">Use when a user asks to debug or fix failing GitHub PR checks that run in GitHub Actions; use `gh` to inspect checks and logs, summarize failure context, draft a fix plan, and imp...</p>
           <div><span class="badge badge-development">development</span><span class="source">codex-user</span><span class="source">cc-switch</span><span class="source">codex-plugin</span></div>
         </div>
       </article><article class="row">
         <strong>8</strong>
         <div>
           <h3>pdf</h3>
-          <p>Use when tasks involve reading, creating, or reviewing PDF files where rendering and layout matter; prefer visual checks by rendering pages (Poppler) and use Python tools such as ...</p>
+          <p data-i18n="desc">Use when tasks involve reading, creating, or reviewing PDF files where rendering and layout matter; prefer visual checks by rendering pages (Poppler) and use Python tools such as ...</p>
           <div><span class="badge badge-design">design</span><span class="source">codex-user</span><span class="source">cc-switch</span><span class="source">claude-plugin</span></div>
         </div>
       </article></div>
     </div>
   </section><section class="slide">
     <div class="rv wide">
-      <h2>Quick Reference</h2>
+      <h2 data-i18n="label">Quick Reference</h2>
       <div class="table-wrap"><table>
         <thead><tr><th>Name</th><th>Category</th><th>Description</th><th>Triggers</th></tr></thead>
         <tbody><tr>
     <td>webflow-mcp:accessibility-audit</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Run comprehensive accessibility audit (WCAG 2.1) on Webflow pages - checks buttons, forms, links, focus states, headings, keyboard navigation, and generates de...</td>
+    <td data-i18n="desc">Run comprehensive accessibility audit (WCAG 2.1) on Webflow pages - checks buttons, forms, links, focus states, headings, keyboard navigation, and generates de...</td>
     <td></td>
   </tr><tr>
     <td>careful</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Safety guardrails for destructive commands. When active, warns before executing rm -rf, DROP TABLE, git push --force, git reset --hard, kubectl delete, docker ...</td>
+    <td data-i18n="desc">Safety guardrails for destructive commands. When active, warns before executing rm -rf, DROP TABLE, git push --force, git reset --hard, kubectl delete, docker ...</td>
     <td>be careful, warn before destructive, safety mode, careful mode</td>
   </tr><tr>
     <td>design-critique</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Get structured design feedback on usability, hierarchy, and consistency. Trigger with &quot;review this design&quot;, &quot;critique this mockup&quot;, &quot;what do you think of this ...</td>
+    <td data-i18n="desc">Get structured design feedback on usability, hierarchy, and consistency. Trigger with &quot;review this design&quot;, &quot;critique this mockup&quot;, &quot;what do you think of this ...</td>
     <td></td>
   </tr><tr>
     <td>elite-powerpoint-designer</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Create world-class PowerPoint presentations with professional design, consistent branding, sophisticated animations, and polished visual hierarchy. Use when us...</td>
+    <td data-i18n="desc">Create world-class PowerPoint presentations with professional design, consistent branding, sophisticated animations, and polished visual hierarchy. Use when us...</td>
     <td></td>
   </tr><tr>
     <td>excel-automation</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>&gt;</td>
+    <td data-i18n="desc">&gt;</td>
     <td></td>
   </tr><tr>
     <td>find-docs</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>&gt;-</td>
+    <td data-i18n="desc">&gt;-</td>
     <td></td>
   </tr><tr>
     <td>find-skills</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Helps users discover and install agent skills when they ask questions like &quot;how do I do X&quot;, &quot;find a skill for X&quot;, &quot;is there a skill that can...&quot;, or express in...</td>
+    <td data-i18n="desc">Helps users discover and install agent skills when they ask questions like &quot;how do I do X&quot;, &quot;find a skill for X&quot;, &quot;is there a skill that can...&quot;, or express in...</td>
     <td></td>
   </tr><tr>
     <td>follow-builders</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>AI builders digest — monitors top AI builders on X and YouTube podcasts, remixes their content into digestible summaries. Use when the user wants AI industry i...</td>
+    <td data-i18n="desc">AI builders digest — monitors top AI builders on X and YouTube podcasts, remixes their content into digestible summaries. Use when the user wants AI industry i...</td>
     <td></td>
   </tr><tr>
     <td>frontend-slides</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Create stunning, animation-rich HTML presentations from scratch or by converting PowerPoint files. Use when the user wants to build a presentation, convert a P...</td>
+    <td data-i18n="desc">Create stunning, animation-rich HTML presentations from scratch or by converting PowerPoint files. Use when the user wants to build a presentation, convert a P...</td>
     <td></td>
   </tr><tr>
     <td>interface-design</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>This skill is for interface design — dashboards, admin panels, apps, tools, and interactive products. NOT for marketing design (landing pages, marketing sites,...</td>
+    <td data-i18n="desc">This skill is for interface design — dashboards, admin panels, apps, tools, and interactive products. NOT for marketing design (landing pages, marketing sites,...</td>
     <td></td>
   </tr><tr>
     <td>investigate</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Systematic debugging with Iron Law discipline. Four phases: investigate, analyze, hypothesize, implement. Iron Law: no fixes without root cause. 3-strike rule ...</td>
+    <td data-i18n="desc">Systematic debugging with Iron Law discipline. Four phases: investigate, analyze, hypothesize, implement. Iron Law: no fixes without root cause. 3-strike rule ...</td>
     <td>debug this, fix this bug, why is this broken, root cause analysis</td>
   </tr><tr>
     <td>mba-thesis-review</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Use when reviewing an MBA thesis PDF, especially a 20k-30k word practice-oriented Chinese thesis that needs academic comments plus deficiencies or revision sug...</td>
+    <td data-i18n="desc">Use when reviewing an MBA thesis PDF, especially a 20k-30k word practice-oriented Chinese thesis that needs academic comments plus deficiencies or revision sug...</td>
     <td></td>
   </tr><tr>
     <td>office-automation</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>自动化处理 Word 和 Excel 文件。使用 Python 脚本读取、写入、格式化文档和表格。支持批量处理、模板填充、数据提取和格式转换。</td>
+    <td data-i18n="desc">自动化处理 Word 和 Excel 文件。使用 Python 脚本读取、写入、格式化文档和表格。支持批量处理、模板填充、数据提取和格式转换。</td>
     <td></td>
   </tr><tr>
     <td>office-hours</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>YC-style validation for new ideas. Three modes: Startup (demand validation), Research (novelty validation), Builder (structured ideation). Produces validated c...</td>
+    <td data-i18n="desc">YC-style validation for new ideas. Three modes: Startup (demand validation), Research (novelty validation), Builder (structured ideation). Produces validated c...</td>
     <td></td>
   </tr><tr>
     <td>ppt-visual</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Design presentation visuals and slide layouts. Create visual concepts, suggest graphics, and provide design specifications for impactful PowerPoint slides.</td>
+    <td data-i18n="desc">Design presentation visuals and slide layouts. Create visual concepts, suggest graphics, and provide design specifications for impactful PowerPoint slides.</td>
     <td></td>
   </tr><tr>
     <td>presentation-design</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Design and evaluate presentations that communicate effectively. Use when designing a presentation, creating slides, getting presentation feedback, structuring ...</td>
+    <td data-i18n="desc">Design and evaluate presentations that communicate effectively. Use when designing a presentation, creating slides, getting presentation feedback, structuring ...</td>
     <td></td>
   </tr><tr>
     <td>qa</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Systematically QA test a web application and fix bugs found. Uses browser MCP tools (Playwright or Chrome DevTools) to navigate, interact, and verify the app. ...</td>
+    <td data-i18n="desc">Systematically QA test a web application and fix bugs found. Uses browser MCP tools (Playwright or Chrome DevTools) to navigate, interact, and verify the app. ...</td>
     <td>qa test this, find bugs on site, test the site, does this work</td>
   </tr><tr>
     <td>security-audit</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Infrastructure-first security audit: OWASP Top 10, STRIDE threat modeling, secrets archaeology, dependency supply chain, LLM/AI security, and CI/CD pipeline se...</td>
+    <td data-i18n="desc">Infrastructure-first security audit: OWASP Top 10, STRIDE threat modeling, secrets archaeology, dependency supply chain, LLM/AI security, and CI/CD pipeline se...</td>
     <td>security audit, check for vulnerabilities, owasp review, threat model</td>
   </tr><tr>
     <td>skill-guide</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Discover, understand, compare, and choose from installed Agent Skills across Claude Code, Codex, local skill folders, and plugin marketplaces. Generates HTML s...</td>
+    <td data-i18n="desc">Discover, understand, compare, and choose from installed Agent Skills across Claude Code, Codex, local skill folders, and plugin marketplaces. Generates HTML s...</td>
     <td></td>
   </tr><tr>
     <td>slidev</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>Create and present web-based slidedecks for developers using Slidev with Markdown, Vue components, code highlighting, animations, and interactive features. Use...</td>
+    <td data-i18n="desc">Create and present web-based slidedecks for developers using Slidev with Markdown, Vue components, code highlighting, animations, and interactive features. Use...</td>
     <td></td>
   </tr><tr>
     <td>ui-design-review</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Comprehensive visual design and aesthetics evaluation. Analyzes typography, color, spacing, hierarchy, consistency, branding, and modern design trends for poli...</td>
+    <td data-i18n="desc">Comprehensive visual design and aesthetics evaluation. Analyzes typography, color, spacing, hierarchy, consistency, branding, and modern design trends for poli...</td>
     <td></td>
   </tr><tr>
     <td>imagegen</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-...</td>
+    <td data-i18n="desc">Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-...</td>
     <td></td>
   </tr><tr>
     <td>openai-docs</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Use when the user asks how to build with OpenAI products or APIs and needs up-to-date official documentation with citations, help choosing the latest model for...</td>
+    <td data-i18n="desc">Use when the user asks how to build with OpenAI products or APIs and needs up-to-date official documentation with citations, help choosing the latest model for...</td>
     <td></td>
   </tr><tr>
     <td>plugin-creator</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Create and scaffold plugin directories for Codex with a required `.codex-plugin/plugin.json`, optional plugin folders/files, and baseline placeholders you can ...</td>
+    <td data-i18n="desc">Create and scaffold plugin directories for Codex with a required `.codex-plugin/plugin.json`, optional plugin folders/files, and baseline placeholders you can ...</td>
     <td></td>
   </tr><tr>
     <td>skill-creator</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Codex&#39;s capabil...</td>
+    <td data-i18n="desc">Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Codex&#39;s capabil...</td>
     <td></td>
   </tr><tr>
     <td>skill-installer</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Install Codex skills into $CODEX_HOME/skills from a curated list or a GitHub repo path. Use when a user asks to list installable skills, install a curated skil...</td>
+    <td data-i18n="desc">Install Codex skills into $CODEX_HOME/skills from a curated list or a GitHub repo path. Use when a user asks to list installable skills, install a curated skil...</td>
     <td></td>
   </tr><tr>
     <td>alibabacloud-cloudbackup-ecs-file-backup-essential-edition</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Alibaba Cloud ECS File Backup Essential Edition (ECS文件备份基础版). One-click activation, daily automatic backup, 30-day file recovery, 100 GiB free quota. Trigger w...</td>
+    <td data-i18n="desc">Alibaba Cloud ECS File Backup Essential Edition (ECS文件备份基础版). One-click activation, daily automatic backup, 30-day file recovery, 100 GiB free quota. Trigger w...</td>
     <td></td>
   </tr><tr>
     <td>alibabacloud-ecs-diagnose</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Comprehensive Alibaba Cloud ECS instance diagnostics skill. Performs systematic troubleshooting including cloud platform status checks and GuestOS internal dia...</td>
+    <td data-i18n="desc">Comprehensive Alibaba Cloud ECS instance diagnostics skill. Performs systematic troubleshooting including cloud platform status checks and GuestOS internal dia...</td>
     <td></td>
   </tr><tr>
     <td>alibabacloud-find-skills</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use this skill when users want to search, discover, browse, or find Alibaba Cloud (阿里云) agent skills. Triggers include: &quot;find a skill for X&quot;, &quot;search alicloud ...</td>
+    <td data-i18n="desc">Use this skill when users want to search, discover, browse, or find Alibaba Cloud (阿里云) agent skills. Triggers include: &quot;find a skill for X&quot;, &quot;search alicloud ...</td>
     <td></td>
   </tr><tr>
     <td>alibabacloud-network-reachability-analysis</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Perform Alibaba Cloud NIS (Network Intelligence Service) network path reachability analysis with forward/reverse path diagnosis, topology visualization, and re...</td>
+    <td data-i18n="desc">Perform Alibaba Cloud NIS (Network Intelligence Service) network path reachability analysis with forward/reverse path diagnosis, topology visualization, and re...</td>
     <td></td>
   </tr><tr>
     <td>alibabacloud-oss-manage-cron-upload</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Alibaba Cloud OSS scheduled local-folder sync skill using aliyun CLI, including integrated ossutil commands for incremental upload. Use when the user wants to ...</td>
+    <td data-i18n="desc">Alibaba Cloud OSS scheduled local-folder sync skill using aliyun CLI, including integrated ossutil commands for incremental upload. Use when the user wants to ...</td>
     <td></td>
   </tr><tr>
     <td>alibabacloud-ram-permission-diagnose</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Alibaba Cloud RAM permission diagnosis and repair assistant. When an agent encounters any permission-related error while operating Alibaba Cloud resources (403...</td>
+    <td data-i18n="desc">Alibaba Cloud RAM permission diagnosis and repair assistant. When an agent encounters any permission-related error while operating Alibaba Cloud resources (403...</td>
     <td></td>
   </tr><tr>
     <td>caveman</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Ultra-compressed communication mode. Cuts token usage ~75% by speaking like caveman while keeping full technical accuracy. Supports intensity levels: lite, ful...</td>
+    <td data-i18n="desc">Ultra-compressed communication mode. Cuts token usage ~75% by speaking like caveman while keeping full technical accuracy. Supports intensity levels: lite, ful...</td>
     <td></td>
   </tr><tr>
     <td>create-plan</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Create a concise plan. Use when a user explicitly asks for a plan related to a coding task.</td>
+    <td data-i18n="desc">Create a concise plan. Use when a user explicitly asks for a plan related to a coding task.</td>
     <td></td>
   </tr><tr>
     <td>cso-review</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Use when reviewing authentication, authorization, secrets, untrusted input, external integrations, or pre-release security risks</td>
+    <td data-i18n="desc">Use when reviewing authentication, authorization, secrets, untrusted input, external integrations, or pre-release security risks</td>
     <td></td>
   </tr><tr>
     <td>doc</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Use when the task involves reading, creating, or editing `.docx` documents, especially when formatting or layout fidelity matters; prefer `python-docx` plus th...</td>
+    <td data-i18n="desc">Use when the task involves reading, creating, or editing `.docx` documents, especially when formatting or layout fidelity matters; prefer `python-docx` plus th...</td>
     <td></td>
   </tr><tr>
     <td>fast-feature</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Use when the user asks to build or add a new feature, implement functionality quickly, or prioritize speed and stability with minimal back-and-forth in Codex C...</td>
+    <td data-i18n="desc">Use when the user asks to build or add a new feature, implement functionality quickly, or prioritize speed and stability with minimal back-and-forth in Codex C...</td>
     <td></td>
   </tr><tr>
     <td>gh-fix-ci</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Use when a user asks to debug or fix failing GitHub PR checks that run in GitHub Actions; use `gh` to inspect checks and logs, summarize failure context, draft...</td>
+    <td data-i18n="desc">Use when a user asks to debug or fix failing GitHub PR checks that run in GitHub Actions; use `gh` to inspect checks and logs, summarize failure context, draft...</td>
     <td></td>
   </tr><tr>
     <td>gstack</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Fast headless browser for QA testing and site dogfooding. Navigate pages, interact with elements, verify state, diff before/after, take annotated screenshots, ...</td>
+    <td data-i18n="desc">Fast headless browser for QA testing and site dogfooding. Navigate pages, interact with elements, verify state, diff before/after, take annotated screenshots, ...</td>
     <td></td>
   </tr><tr>
     <td>gstack-upgrade</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Upgrade gstack to the latest version. Detects global vs vendored install, runs the upgrade, and shows what&#39;s new. Use when asked to &quot;upgrade gstack&quot;, &quot;update g...</td>
+    <td data-i18n="desc">Upgrade gstack to the latest version. Detects global vs vendored install, runs the upgrade, and shows what&#39;s new. Use when asked to &quot;upgrade gstack&quot;, &quot;update g...</td>
     <td></td>
   </tr><tr>
     <td>gstack-autoplan</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Auto-review pipeline — reads the full CEO, design, eng, and DX review skills from disk and runs them sequentially with auto-decisions using 6 decision principl...</td>
+    <td data-i18n="desc">Auto-review pipeline — reads the full CEO, design, eng, and DX review skills from disk and runs them sequentially with auto-decisions using 6 decision principl...</td>
     <td></td>
   </tr><tr>
     <td>gstack-devex-review</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Live developer experience audit. Uses the browse tool to actually TEST the developer experience: navigates docs, tries the getting started flow, times TTHW, sc...</td>
+    <td data-i18n="desc">Live developer experience audit. Uses the browse tool to actually TEST the developer experience: navigates docs, tries the getting started flow, times TTHW, sc...</td>
     <td></td>
   </tr><tr>
     <td>gstack-investigate</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Systematic debugging with root cause investigation. Four phases: investigate, analyze, hypothesize, implement. Iron Law: no fixes without root cause. Use when ...</td>
+    <td data-i18n="desc">Systematic debugging with root cause investigation. Four phases: investigate, analyze, hypothesize, implement. Iron Law: no fixes without root cause. Use when ...</td>
     <td></td>
   </tr><tr>
     <td>gstack-learn</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Manage project learnings. Review, search, prune, and export what gstack has learned across sessions. Use when asked to &quot;what have we learned&quot;, &quot;show learnings&quot;...</td>
+    <td data-i18n="desc">Manage project learnings. Review, search, prune, and export what gstack has learned across sessions. Use when asked to &quot;what have we learned&quot;, &quot;show learnings&quot;...</td>
     <td></td>
   </tr><tr>
     <td>gstack-office-hours</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>YC Office Hours — two modes. Startup mode: six forcing questions that expose demand reality, status quo, desperate specificity, narrowest wedge, observation, a...</td>
+    <td data-i18n="desc">YC Office Hours — two modes. Startup mode: six forcing questions that expose demand reality, status quo, desperate specificity, narrowest wedge, observation, a...</td>
     <td></td>
   </tr><tr>
     <td>gstack-plan-ceo-review</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>CEO/founder-mode plan review. Rethink the problem, find the 10-star product, challenge premises, expand scope when it creates a better product. Four modes: SCO...</td>
+    <td data-i18n="desc">CEO/founder-mode plan review. Rethink the problem, find the 10-star product, challenge premises, expand scope when it creates a better product. Four modes: SCO...</td>
     <td></td>
   </tr><tr>
     <td>gstack-plan-devex-review</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Interactive developer experience plan review. Explores developer personas, benchmarks against competitors, designs magical moments, and traces friction points ...</td>
+    <td data-i18n="desc">Interactive developer experience plan review. Explores developer personas, benchmarks against competitors, designs magical moments, and traces friction points ...</td>
     <td></td>
   </tr><tr>
     <td>gstack-plan-eng-review</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Eng manager-mode plan review. Lock in the execution plan — architecture, data flow, diagrams, edge cases, test coverage, performance. Walks through issues inte...</td>
+    <td data-i18n="desc">Eng manager-mode plan review. Lock in the execution plan — architecture, data flow, diagrams, edge cases, test coverage, performance. Walks through issues inte...</td>
     <td></td>
   </tr><tr>
     <td>gstack-review</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Pre-landing PR review. Analyzes diff against the base branch for SQL safety, LLM trust boundary violations, conditional side effects, and other structural issu...</td>
+    <td data-i18n="desc">Pre-landing PR review. Analyzes diff against the base branch for SQL safety, LLM trust boundary violations, conditional side effects, and other structural issu...</td>
     <td></td>
   </tr><tr>
     <td>humanizer-zh</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>去除文本中的 AI 生成痕迹。适用于编辑或审阅文本，使其听起来更自然、更像人类书写。 基于维基百科的&quot;AI 写作特征&quot;综合指南。检测并修复以下模式：夸大的象征意义、 宣传性语言、以 -ing 结尾的肤浅分析、模糊的归因、破折号过度使用、三段式法则、 AI 词汇、否定式排比、过多的连接性短语。</td>
+    <td data-i18n="desc">去除文本中的 AI 生成痕迹。适用于编辑或审阅文本，使其听起来更自然、更像人类书写。 基于维基百科的&quot;AI 写作特征&quot;综合指南。检测并修复以下模式：夸大的象征意义、 宣传性语言、以 -ing 结尾的肤浅分析、模糊的归因、破折号过度使用、三段式法则、 AI 词汇、否定式排比、过多的连接性短语。</td>
     <td></td>
   </tr><tr>
     <td>markitdown</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>Use when a user asks to convert a local file or batch-convert a directory of PDFs or Word documents to Markdown with the markitdown CLI, provides input paths, ...</td>
+    <td data-i18n="desc">Use when a user asks to convert a local file or batch-convert a directory of PDFs or Word documents to Markdown with the markitdown CLI, provides input paths, ...</td>
     <td></td>
   </tr><tr>
     <td>ob-reviewer</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use when reviewing organizational behavior, management, work psychology, or related academic manuscripts and drafting journal-calibrated comments to authors an...</td>
+    <td data-i18n="desc">Use when reviewing organizational behavior, management, work psychology, or related academic manuscripts and drafting journal-calibrated comments to authors an...</td>
     <td></td>
   </tr><tr>
     <td>pdf</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Use when tasks involve reading, creating, or reviewing PDF files where rendering and layout matter; prefer visual checks by rendering pages (Poppler) and use P...</td>
+    <td data-i18n="desc">Use when tasks involve reading, creating, or reviewing PDF files where rendering and layout matter; prefer visual checks by rendering pages (Poppler) and use P...</td>
     <td></td>
   </tr><tr>
     <td>playwright</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Use when the task requires automating a real browser from the terminal (navigation, form filling, snapshots, screenshots, data extraction, UI-flow debugging) v...</td>
+    <td data-i18n="desc">Use when the task requires automating a real browser from the terminal (navigation, form filling, snapshots, screenshots, data extraction, UI-flow debugging) v...</td>
     <td></td>
   </tr><tr>
     <td>pptx</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Presentation creation, editing, and analysis. When Claude needs to work with presentations (.pptx files) for: (1) Creating new presentations, (2) Modifying or ...</td>
+    <td data-i18n="desc">Presentation creation, editing, and analysis. When Claude needs to work with presentations (.pptx files) for: (1) Creating new presentations, (2) Modifying or ...</td>
     <td></td>
   </tr><tr>
     <td>screenshot</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use when the user explicitly asks for a desktop or system screenshot (full screen, specific app or window, or a pixel region), or when tool-specific capture ca...</td>
+    <td data-i18n="desc">Use when the user explicitly asks for a desktop or system screenshot (full screen, specific app or window, or a pixel region), or when tool-specific capture ca...</td>
     <td></td>
   </tr><tr>
     <td>ship-orchestrator</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Use when implementation is complete and the work needs final verification, release readiness checks, documentation sync, and deployment follow-through</td>
+    <td data-i18n="desc">Use when implementation is complete and the work needs final verification, release readiness checks, documentation sync, and deployment follow-through</td>
     <td></td>
   </tr><tr>
     <td>ui-ux-pro-max</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind...</td>
+    <td data-i18n="desc">UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind...</td>
     <td></td>
   </tr><tr>
     <td>vercel-deploy</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Deploy applications and websites to Vercel. Use when the user requests deployment actions like &quot;deploy my app&quot;, &quot;deploy and give me the link&quot;, &quot;push this live&quot;...</td>
+    <td data-i18n="desc">Deploy applications and websites to Vercel. Use when the user requests deployment actions like &quot;deploy my app&quot;, &quot;deploy and give me the link&quot;, &quot;push this live&quot;...</td>
     <td></td>
   </tr><tr>
     <td>webapp-testing</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing b...</td>
+    <td data-i18n="desc">Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing b...</td>
     <td></td>
   </tr><tr>
     <td>youtube-summarizer</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Extract transcripts from YouTube videos and generate comprehensive, detailed summaries using intelligent analysis frameworks</td>
+    <td data-i18n="desc">Extract transcripts from YouTube videos and generate comprehensive, detailed summaries using intelligent analysis frameworks</td>
     <td></td>
   </tr><tr>
     <td>youtube-transcript</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Use when the user wants to turn a YouTube video into transcript files, a readable interview-style transcript, or a Chinese summary from a YouTube URL.</td>
+    <td data-i18n="desc">Use when the user wants to turn a YouTube video into transcript files, a readable interview-style transcript, or a Chinese summary from a YouTube URL.</td>
     <td></td>
   </tr><tr>
     <td>yt-dlp-download</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use when a user asks to download video or audio from YouTube or other yt-dlp supported sites and wants fast defaults, browser cookies, PowerPoint-friendly MP4 ...</td>
+    <td data-i18n="desc">Use when a user asks to download video or audio from YouTube or other yt-dlp supported sites and wants fast defaults, browser cookies, PowerPoint-friendly MP4 ...</td>
     <td></td>
   </tr><tr>
     <td>frontend-design-refinement</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Use when an existing frontend already works but needs to look more polished, intentional, and less generic through critique, prioritization, and targeted visua...</td>
+    <td data-i18n="desc">Use when an existing frontend already works but needs to look more polished, intentional, and less generic through critique, prioritization, and targeted visua...</td>
     <td></td>
   </tr><tr>
     <td>algorithmic-art</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Creating algorithmic art using p5.js with seeded randomness and interactive parameter exploration. Use this when users request creating art using code, generat...</td>
+    <td data-i18n="desc">Creating algorithmic art using p5.js with seeded randomness and interactive parameter exploration. Use this when users request creating art using code, generat...</td>
     <td></td>
   </tr><tr>
     <td>brand-guidelines</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Applies Anthropic&#39;s official brand colors and typography to any sort of artifact that may benefit from having Anthropic&#39;s look-and-feel. Use it when brand colo...</td>
+    <td data-i18n="desc">Applies Anthropic&#39;s official brand colors and typography to any sort of artifact that may benefit from having Anthropic&#39;s look-and-feel. Use it when brand colo...</td>
     <td></td>
   </tr><tr>
     <td>canvas-design</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Create beautiful visual art in .png and .pdf documents using design philosophy. You should use this skill when the user asks to create a poster, piece of art, ...</td>
+    <td data-i18n="desc">Create beautiful visual art in .png and .pdf documents using design philosophy. You should use this skill when the user asks to create a poster, piece of art, ...</td>
     <td></td>
   </tr><tr>
     <td>claude-api</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Build, debug, and optimize Claude API / Anthropic SDK apps. Apps built with this skill should include prompt caching. Also handles migrating existing Claude AP...</td>
+    <td data-i18n="desc">Build, debug, and optimize Claude API / Anthropic SDK apps. Apps built with this skill should include prompt caching. Also handles migrating existing Claude AP...</td>
     <td></td>
   </tr><tr>
     <td>doc-coauthoring</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>Guide users through a structured workflow for co-authoring documentation. Use when user wants to write documentation, proposals, technical specs, decision docs...</td>
+    <td data-i18n="desc">Guide users through a structured workflow for co-authoring documentation. Use when user wants to write documentation, proposals, technical specs, decision docs...</td>
     <td></td>
   </tr><tr>
     <td>docx</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx files). Triggers include: any mention of &#39;Word doc&#39;, &#39;word do...</td>
+    <td data-i18n="desc">Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx files). Triggers include: any mention of &#39;Word doc&#39;, &#39;word do...</td>
     <td></td>
   </tr><tr>
     <td>frontend-design</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts,...</td>
+    <td data-i18n="desc">Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts,...</td>
     <td></td>
   </tr><tr>
     <td>internal-comms</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenever...</td>
+    <td data-i18n="desc">A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenever...</td>
     <td></td>
   </tr><tr>
     <td>mcp-builder</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when ...</td>
+    <td data-i18n="desc">Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when ...</td>
     <td></td>
   </tr><tr>
     <td>slack-gif-creator</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Knowledge and utilities for creating animated GIFs optimized for Slack. Provides constraints, validation tools, and animation concepts. Use when users request ...</td>
+    <td data-i18n="desc">Knowledge and utilities for creating animated GIFs optimized for Slack. Provides constraints, validation tools, and animation concepts. Use when users request ...</td>
     <td></td>
   </tr><tr>
     <td>theme-factory</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Toolkit for styling artifacts with a theme. These artifacts can be slides, docs, reportings, HTML landing pages, etc. There are 10 pre-set themes with colors/f...</td>
+    <td data-i18n="desc">Toolkit for styling artifacts with a theme. These artifacts can be slides, docs, reportings, HTML landing pages, etc. There are 10 pre-set themes with colors/f...</td>
     <td></td>
   </tr><tr>
     <td>web-artifacts-builder</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Suite of tools for creating elaborate, multi-component claude.ai HTML artifacts using modern frontend web technologies (React, Tailwind CSS, shadcn/ui). Use fo...</td>
+    <td data-i18n="desc">Suite of tools for creating elaborate, multi-component claude.ai HTML artifacts using modern frontend web technologies (React, Tailwind CSS, shadcn/ui). Use fo...</td>
     <td></td>
   </tr><tr>
     <td>xlsx</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use this skill any time a spreadsheet file is the primary input or output. This means any task where the user wants to: open, read, edit, or fix an existing .x...</td>
+    <td data-i18n="desc">Use this skill any time a spreadsheet file is the primary input or output. This means any task where the user wants to: open, read, edit, or fix an existing .x...</td>
     <td></td>
   </tr><tr>
     <td>template-skill</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Replace with description of the skill and when Claude should use it.</td>
+    <td data-i18n="desc">Replace with description of the skill and when Claude should use it.</td>
     <td></td>
   </tr><tr>
     <td>accessibility</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Design, implement, and audit inclusive digital products using WCAG 2.2 Level AA</td>
+    <td data-i18n="desc">Design, implement, and audit inclusive digital products using WCAG 2.2 Level AA</td>
     <td></td>
   </tr><tr>
     <td>agent-eval</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Head-to-head comparison of coding agents (Claude Code, Aider, Codex, etc.) on custom tasks with pass rate, cost, time, and consistency metrics</td>
+    <td data-i18n="desc">Head-to-head comparison of coding agents (Claude Code, Aider, Codex, etc.) on custom tasks with pass rate, cost, time, and consistency metrics</td>
     <td></td>
   </tr><tr>
     <td>agent-harness-construction</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Design and optimize AI agent action spaces, tool definitions, and observation formatting for higher completion rates.</td>
+    <td data-i18n="desc">Design and optimize AI agent action spaces, tool definitions, and observation formatting for higher completion rates.</td>
     <td></td>
   </tr><tr>
     <td>agent-introspection-debugging</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Structured self-debugging workflow for AI agent failures using capture, diagnosis, contained recovery, and introspection reports.</td>
+    <td data-i18n="desc">Structured self-debugging workflow for AI agent failures using capture, diagnosis, contained recovery, and introspection reports.</td>
     <td></td>
   </tr><tr>
     <td>agent-payment-x402</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Add x402 payment execution to AI agents — per-task budgets, spending controls, and non-custodial wallets via MCP tools. Use when agents need to pay for APIs, s...</td>
+    <td data-i18n="desc">Add x402 payment execution to AI agents — per-task budgets, spending controls, and non-custodial wallets via MCP tools. Use when agents need to pay for APIs, s...</td>
     <td></td>
   </tr><tr>
     <td>agent-sort</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Build an evidence-backed ECC install plan for a specific repo by sorting skills, commands, rules, hooks, and extras into DAILY vs LIBRARY buckets using paralle...</td>
+    <td data-i18n="desc">Build an evidence-backed ECC install plan for a specific repo by sorting skills, commands, rules, hooks, and extras into DAILY vs LIBRARY buckets using paralle...</td>
     <td></td>
   </tr><tr>
     <td>agentic-engineering</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Operate as an agentic engineer using eval-first execution, decomposition, and cost-aware model routing.</td>
+    <td data-i18n="desc">Operate as an agentic engineer using eval-first execution, decomposition, and cost-aware model routing.</td>
     <td></td>
   </tr><tr>
     <td>ai-first-engineering</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Engineering operating model for teams where AI agents generate a large share of implementation output.</td>
+    <td data-i18n="desc">Engineering operating model for teams where AI agents generate a large share of implementation output.</td>
     <td></td>
   </tr><tr>
     <td>ai-regression-testing</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Regression testing strategies for AI-assisted development. Sandbox-mode API testing without database dependencies, automated bug-check workflows, and patterns ...</td>
+    <td data-i18n="desc">Regression testing strategies for AI-assisted development. Sandbox-mode API testing without database dependencies, automated bug-check workflows, and patterns ...</td>
     <td></td>
   </tr><tr>
     <td>android-clean-architecture</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Clean Architecture patterns for Android and Kotlin Multiplatform projects — module structure, dependency rules, UseCases, Repositories, and data layer patterns.</td>
+    <td data-i18n="desc">Clean Architecture patterns for Android and Kotlin Multiplatform projects — module structure, dependency rules, UseCases, Repositories, and data layer patterns.</td>
     <td></td>
   </tr><tr>
     <td>api-connector-builder</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Build a new API connector or provider by matching the target repo&#39;s existing integration pattern exactly. Use when adding one more integration without inventin...</td>
+    <td data-i18n="desc">Build a new API connector or provider by matching the target repo&#39;s existing integration pattern exactly. Use when adding one more integration without inventin...</td>
     <td></td>
   </tr><tr>
     <td>api-design</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>REST API design patterns including resource naming, status codes, pagination, filtering, error responses, versioning, and rate limiting for production APIs.</td>
+    <td data-i18n="desc">REST API design patterns including resource naming, status codes, pagination, filtering, error responses, versioning, and rate limiting for production APIs.</td>
     <td></td>
   </tr><tr>
     <td>architecture-decision-records</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Capture architectural decisions made during Claude Code sessions as structured ADRs. Auto-detects decision moments, records context, alternatives considered, a...</td>
+    <td data-i18n="desc">Capture architectural decisions made during Claude Code sessions as structured ADRs. Auto-detects decision moments, records context, alternatives considered, a...</td>
     <td></td>
   </tr><tr>
     <td>article-writing</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>Write articles, guides, blog posts, tutorials, newsletter issues, and other long-form content in a distinctive voice derived from supplied examples or brand gu...</td>
+    <td data-i18n="desc">Write articles, guides, blog posts, tutorials, newsletter issues, and other long-form content in a distinctive voice derived from supplied examples or brand gu...</td>
     <td></td>
   </tr><tr>
     <td>automation-audit-ops</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Evidence-first automation inventory and overlap audit workflow for ECC. Use when the user wants to know which jobs, hooks, connectors, MCP servers, or wrappers...</td>
+    <td data-i18n="desc">Evidence-first automation inventory and overlap audit workflow for ECC. Use when the user wants to know which jobs, hooks, connectors, MCP servers, or wrappers...</td>
     <td></td>
   </tr><tr>
     <td>autonomous-agent-harness</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Transform Claude Code into a fully autonomous agent system with persistent memory, scheduled operations, computer use, and task queuing. Replaces standalone ag...</td>
+    <td data-i18n="desc">Transform Claude Code into a fully autonomous agent system with persistent memory, scheduled operations, computer use, and task queuing. Replaces standalone ag...</td>
     <td></td>
   </tr><tr>
     <td>autonomous-loops</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Patterns and architectures for autonomous Claude Code loops — from simple sequential pipelines to RFC-driven multi-agent DAG systems.</td>
+    <td data-i18n="desc">Patterns and architectures for autonomous Claude Code loops — from simple sequential pipelines to RFC-driven multi-agent DAG systems.</td>
     <td></td>
   </tr><tr>
     <td>backend-patterns</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Backend architecture patterns, API design, database optimization, and server-side best practices for Node.js, Express, and Next.js API routes.</td>
+    <td data-i18n="desc">Backend architecture patterns, API design, database optimization, and server-side best practices for Node.js, Express, and Next.js API routes.</td>
     <td></td>
   </tr><tr>
     <td>benchmark</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use this skill to measure performance baselines, detect regressions before/after PRs, and compare stack alternatives.</td>
+    <td data-i18n="desc">Use this skill to measure performance baselines, detect regressions before/after PRs, and compare stack alternatives.</td>
     <td></td>
   </tr><tr>
     <td>blueprint</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>&gt;-</td>
+    <td data-i18n="desc">&gt;-</td>
     <td></td>
   </tr><tr>
     <td>brand-voice</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Build a source-derived writing style profile from real posts, essays, launch notes, docs, or site copy, then reuse that profile across content, outreach, and s...</td>
+    <td data-i18n="desc">Build a source-derived writing style profile from real posts, essays, launch notes, docs, or site copy, then reuse that profile across content, outreach, and s...</td>
     <td></td>
   </tr><tr>
     <td>browser-qa</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Use this skill to automate visual testing and UI interaction verification using browser automation after deploying features.</td>
+    <td data-i18n="desc">Use this skill to automate visual testing and UI interaction verification using browser automation after deploying features.</td>
     <td></td>
   </tr><tr>
     <td>bun-runtime</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Bun as runtime, package manager, bundler, and test runner. When to choose Bun vs Node, migration notes, and Vercel support.</td>
+    <td data-i18n="desc">Bun as runtime, package manager, bundler, and test runner. When to choose Bun vs Node, migration notes, and Vercel support.</td>
     <td></td>
   </tr><tr>
     <td>canary-watch</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use this skill to monitor a deployed URL for regressions after deploys, merges, or dependency upgrades.</td>
+    <td data-i18n="desc">Use this skill to monitor a deployed URL for regressions after deploys, merges, or dependency upgrades.</td>
     <td></td>
   </tr><tr>
     <td>carrier-relationship-management</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Codified expertise for managing carrier portfolios, negotiating freight rates, tracking carrier performance, allocating freight, and maintaining strategic carr...</td>
+    <td data-i18n="desc">Codified expertise for managing carrier portfolios, negotiating freight rates, tracking carrier performance, allocating freight, and maintaining strategic carr...</td>
     <td></td>
   </tr><tr>
     <td>ck</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Persistent per-project memory for Claude Code. Auto-loads project context on session start, tracks sessions with git activity, and writes to native memory. Com...</td>
+    <td data-i18n="desc">Persistent per-project memory for Claude Code. Auto-loads project context on session start, tracks sessions with git activity, and writes to native memory. Com...</td>
     <td></td>
   </tr><tr>
     <td>claude-devfleet</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Orchestrate multi-agent coding tasks via Claude DevFleet — plan projects, dispatch parallel agents in isolated worktrees, monitor progress, and read structured...</td>
+    <td data-i18n="desc">Orchestrate multi-agent coding tasks via Claude DevFleet — plan projects, dispatch parallel agents in isolated worktrees, monitor progress, and read structured...</td>
     <td></td>
   </tr><tr>
     <td>click-path-audit</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Trace every user-facing button/touchpoint through its full state change sequence to find bugs where functions individually work but cancel each other out, prod...</td>
+    <td data-i18n="desc">Trace every user-facing button/touchpoint through its full state change sequence to find bugs where functions individually work but cancel each other out, prod...</td>
     <td></td>
   </tr><tr>
     <td>clickhouse-io</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>ClickHouse database patterns, query optimization, analytics, and data engineering best practices for high-performance analytical workloads.</td>
+    <td data-i18n="desc">ClickHouse database patterns, query optimization, analytics, and data engineering best practices for high-performance analytical workloads.</td>
     <td></td>
   </tr><tr>
     <td>code-tour</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Create CodeTour `.tour` files — persona-targeted, step-by-step walkthroughs with real file and line anchors. Use for onboarding tours, architecture walkthrough...</td>
+    <td data-i18n="desc">Create CodeTour `.tour` files — persona-targeted, step-by-step walkthroughs with real file and line anchors. Use for onboarding tours, architecture walkthrough...</td>
     <td></td>
   </tr><tr>
     <td>codebase-onboarding</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Analyze an unfamiliar codebase and generate a structured onboarding guide with architecture map, key entry points, conventions, and a starter CLAUDE.md. Use wh...</td>
+    <td data-i18n="desc">Analyze an unfamiliar codebase and generate a structured onboarding guide with architecture map, key entry points, conventions, and a starter CLAUDE.md. Use wh...</td>
     <td></td>
   </tr><tr>
     <td>coding-standards</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Baseline cross-project coding conventions for naming, readability, immutability, and code-quality review. Use detailed frontend or backend skills for framework...</td>
+    <td data-i18n="desc">Baseline cross-project coding conventions for naming, readability, immutability, and code-quality review. Use detailed frontend or backend skills for framework...</td>
     <td></td>
   </tr><tr>
     <td>compose-multiplatform-patterns</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Compose Multiplatform and Jetpack Compose patterns for KMP projects — state management, navigation, theming, performance, and platform-specific UI.</td>
+    <td data-i18n="desc">Compose Multiplatform and Jetpack Compose patterns for KMP projects — state management, navigation, theming, performance, and platform-specific UI.</td>
     <td></td>
   </tr><tr>
     <td>configure-ecc</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Interactive installer for Everything Claude Code — guides users through selecting and installing skills and rules to user-level or project-level directories, v...</td>
+    <td data-i18n="desc">Interactive installer for Everything Claude Code — guides users through selecting and installing skills and rules to user-level or project-level directories, v...</td>
     <td></td>
   </tr><tr>
     <td>connections-optimizer</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Reorganize the user&#39;s X and LinkedIn network with review-first pruning, add/follow recommendations, and channel-specific warm outreach drafted in the user&#39;s re...</td>
+    <td data-i18n="desc">Reorganize the user&#39;s X and LinkedIn network with review-first pruning, add/follow recommendations, and channel-specific warm outreach drafted in the user&#39;s re...</td>
     <td></td>
   </tr><tr>
     <td>content-engine</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Create platform-native content systems for X, LinkedIn, TikTok, YouTube, newsletters, and repurposed multi-platform campaigns. Use when the user wants social p...</td>
+    <td data-i18n="desc">Create platform-native content systems for X, LinkedIn, TikTok, YouTube, newsletters, and repurposed multi-platform campaigns. Use when the user wants social p...</td>
     <td></td>
   </tr><tr>
     <td>content-hash-cache-pattern</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Cache expensive file processing results using SHA-256 content hashes — path-independent, auto-invalidating, with service layer separation.</td>
+    <td data-i18n="desc">Cache expensive file processing results using SHA-256 content hashes — path-independent, auto-invalidating, with service layer separation.</td>
     <td></td>
   </tr><tr>
     <td>context-budget</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Audits Claude Code context window consumption across agents, skills, MCP servers, and rules. Identifies bloat, redundant components, and produces prioritized t...</td>
+    <td data-i18n="desc">Audits Claude Code context window consumption across agents, skills, MCP servers, and rules. Identifies bloat, redundant components, and produces prioritized t...</td>
     <td></td>
   </tr><tr>
     <td>continuous-agent-loop</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Patterns for continuous autonomous agent loops with quality gates, evals, and recovery controls.</td>
+    <td data-i18n="desc">Patterns for continuous autonomous agent loops with quality gates, evals, and recovery controls.</td>
     <td></td>
   </tr><tr>
     <td>continuous-learning</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Automatically extract reusable patterns from Claude Code sessions and save them as learned skills for future use.</td>
+    <td data-i18n="desc">Automatically extract reusable patterns from Claude Code sessions and save them as learned skills for future use.</td>
     <td></td>
   </tr><tr>
     <td>continuous-learning-v2</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Instinct-based learning system that observes sessions via hooks, creates atomic instincts with confidence scoring, and evolves them into skills/commands/agents...</td>
+    <td data-i18n="desc">Instinct-based learning system that observes sessions via hooks, creates atomic instincts with confidence scoring, and evolves them into skills/commands/agents...</td>
     <td></td>
   </tr><tr>
     <td>cost-aware-llm-pipeline</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Cost optimization patterns for LLM API usage — model routing by task complexity, budget tracking, retry logic, and prompt caching.</td>
+    <td data-i18n="desc">Cost optimization patterns for LLM API usage — model routing by task complexity, budget tracking, retry logic, and prompt caching.</td>
     <td></td>
   </tr><tr>
     <td>council</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Convene a four-voice council for ambiguous decisions, tradeoffs, and go/no-go calls. Use when multiple valid paths exist and you need structured disagreement b...</td>
+    <td data-i18n="desc">Convene a four-voice council for ambiguous decisions, tradeoffs, and go/no-go calls. Use when multiple valid paths exist and you need structured disagreement b...</td>
     <td></td>
   </tr><tr>
     <td>cpp-coding-standards</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>C++ coding standards based on the C++ Core Guidelines (isocpp.github.io). Use when writing, reviewing, or refactoring C++ code to enforce modern, safe, and idi...</td>
+    <td data-i18n="desc">C++ coding standards based on the C++ Core Guidelines (isocpp.github.io). Use when writing, reviewing, or refactoring C++ code to enforce modern, safe, and idi...</td>
     <td></td>
   </tr><tr>
     <td>cpp-testing</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>Use only when writing/updating/fixing C++ tests, configuring GoogleTest/CTest, diagnosing failing or flaky tests, or adding coverage/sanitizers.</td>
+    <td data-i18n="desc">Use only when writing/updating/fixing C++ tests, configuring GoogleTest/CTest, diagnosing failing or flaky tests, or adding coverage/sanitizers.</td>
     <td></td>
   </tr><tr>
     <td>crosspost</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Multi-platform content distribution across X, LinkedIn, Threads, and Bluesky. Adapts content per platform using content-engine patterns. Never posts identical ...</td>
+    <td data-i18n="desc">Multi-platform content distribution across X, LinkedIn, Threads, and Bluesky. Adapts content per platform using content-engine patterns. Never posts identical ...</td>
     <td></td>
   </tr><tr>
     <td>csharp-testing</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>C# and .NET testing patterns with xUnit, FluentAssertions, mocking, integration tests, and test organization best practices.</td>
+    <td data-i18n="desc">C# and .NET testing patterns with xUnit, FluentAssertions, mocking, integration tests, and test organization best practices.</td>
     <td></td>
   </tr><tr>
     <td>customer-billing-ops</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Operate customer billing workflows such as subscriptions, refunds, churn triage, billing-portal recovery, and plan analysis using connected billing tools like ...</td>
+    <td data-i18n="desc">Operate customer billing workflows such as subscriptions, refunds, churn triage, billing-portal recovery, and plan analysis using connected billing tools like ...</td>
     <td></td>
   </tr><tr>
     <td>customs-trade-compliance</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Codified expertise for customs documentation, tariff classification, duty optimization, restricted party screening, and regulatory compliance across multiple j...</td>
+    <td data-i18n="desc">Codified expertise for customs documentation, tariff classification, duty optimization, restricted party screening, and regulatory compliance across multiple j...</td>
     <td></td>
   </tr><tr>
     <td>dart-flutter-patterns</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Production-ready Dart and Flutter patterns covering null safety, immutable state, async composition, widget architecture, popular state management frameworks (...</td>
+    <td data-i18n="desc">Production-ready Dart and Flutter patterns covering null safety, immutable state, async composition, widget architecture, popular state management frameworks (...</td>
     <td></td>
   </tr><tr>
     <td>dashboard-builder</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Build monitoring dashboards that answer real operator questions for Grafana, SigNoz, and similar platforms. Use when turning metrics into a working dashboard i...</td>
+    <td data-i18n="desc">Build monitoring dashboards that answer real operator questions for Grafana, SigNoz, and similar platforms. Use when turning metrics into a working dashboard i...</td>
     <td></td>
   </tr><tr>
     <td>data-scraper-agent</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Build a fully automated AI-powered data collection agent for any public source — job boards, prices, news, GitHub, sports, anything. Scrapes on a schedule, enr...</td>
+    <td data-i18n="desc">Build a fully automated AI-powered data collection agent for any public source — job boards, prices, news, GitHub, sports, anything. Scrapes on a schedule, enr...</td>
     <td></td>
   </tr><tr>
     <td>database-migrations</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Database migration best practices for schema changes, data migrations, rollbacks, and zero-downtime deployments across PostgreSQL, MySQL, and common ORMs (Pris...</td>
+    <td data-i18n="desc">Database migration best practices for schema changes, data migrations, rollbacks, and zero-downtime deployments across PostgreSQL, MySQL, and common ORMs (Pris...</td>
     <td></td>
   </tr><tr>
     <td>deep-research</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Multi-source deep research using firecrawl and exa MCPs. Searches the web, synthesizes findings, and delivers cited reports with source attribution. Use when t...</td>
+    <td data-i18n="desc">Multi-source deep research using firecrawl and exa MCPs. Searches the web, synthesizes findings, and delivers cited reports with source attribution. Use when t...</td>
     <td></td>
   </tr><tr>
     <td>defi-amm-security</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Security checklist for Solidity AMM contracts, liquidity pools, and swap flows. Covers reentrancy, CEI ordering, donation or inflation attacks, oracle manipula...</td>
+    <td data-i18n="desc">Security checklist for Solidity AMM contracts, liquidity pools, and swap flows. Covers reentrancy, CEI ordering, donation or inflation attacks, oracle manipula...</td>
     <td></td>
   </tr><tr>
     <td>deployment-patterns</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Deployment workflows, CI/CD pipeline patterns, Docker containerization, health checks, rollback strategies, and production readiness checklists for web applica...</td>
+    <td data-i18n="desc">Deployment workflows, CI/CD pipeline patterns, Docker containerization, health checks, rollback strategies, and production readiness checklists for web applica...</td>
     <td></td>
   </tr><tr>
     <td>design-system</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Use this skill to generate or audit design systems, check visual consistency, and review PRs that touch styling.</td>
+    <td data-i18n="desc">Use this skill to generate or audit design systems, check visual consistency, and review PRs that touch styling.</td>
     <td></td>
   </tr><tr>
     <td>django-patterns</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Django architecture patterns, REST API design with DRF, ORM best practices, caching, signals, middleware, and production-grade Django apps.</td>
+    <td data-i18n="desc">Django architecture patterns, REST API design with DRF, ORM best practices, caching, signals, middleware, and production-grade Django apps.</td>
     <td></td>
   </tr><tr>
     <td>django-security</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Django security best practices, authentication, authorization, CSRF protection, SQL injection prevention, XSS prevention, and secure deployment configurations.</td>
+    <td data-i18n="desc">Django security best practices, authentication, authorization, CSRF protection, SQL injection prevention, XSS prevention, and secure deployment configurations.</td>
     <td></td>
   </tr><tr>
     <td>django-tdd</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Django testing strategies with pytest-django, TDD methodology, factory_boy, mocking, coverage, and testing Django REST Framework APIs.</td>
+    <td data-i18n="desc">Django testing strategies with pytest-django, TDD methodology, factory_boy, mocking, coverage, and testing Django REST Framework APIs.</td>
     <td></td>
   </tr><tr>
     <td>django-verification</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Verification loop for Django projects: migrations, linting, tests with coverage, security scans, and deployment readiness checks before release or PR.</td>
+    <td data-i18n="desc">Verification loop for Django projects: migrations, linting, tests with coverage, security scans, and deployment readiness checks before release or PR.</td>
     <td></td>
   </tr><tr>
     <td>dmux-workflows</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Multi-agent orchestration using dmux (tmux pane manager for AI agents). Patterns for parallel agent workflows across Claude Code, Codex, OpenCode, and other ha...</td>
+    <td data-i18n="desc">Multi-agent orchestration using dmux (tmux pane manager for AI agents). Patterns for parallel agent workflows across Claude Code, Codex, OpenCode, and other ha...</td>
     <td></td>
   </tr><tr>
     <td>docker-patterns</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Docker and Docker Compose patterns for local development, container security, networking, volume strategies, and multi-service orchestration.</td>
+    <td data-i18n="desc">Docker and Docker Compose patterns for local development, container security, networking, volume strategies, and multi-service orchestration.</td>
     <td></td>
   </tr><tr>
     <td>documentation-lookup</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use up-to-date library and framework docs via Context7 MCP instead of training data. Activates for setup questions, API references, code examples, or when the ...</td>
+    <td data-i18n="desc">Use up-to-date library and framework docs via Context7 MCP instead of training data. Activates for setup questions, API references, code examples, or when the ...</td>
     <td></td>
   </tr><tr>
     <td>dotnet-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Idiomatic C# and .NET patterns, conventions, dependency injection, async/await, and best practices for building robust, maintainable .NET applications.</td>
+    <td data-i18n="desc">Idiomatic C# and .NET patterns, conventions, dependency injection, async/await, and best practices for building robust, maintainable .NET applications.</td>
     <td></td>
   </tr><tr>
     <td>e2e-testing</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Playwright E2E testing patterns, Page Object Model, configuration, CI/CD integration, artifact management, and flaky test strategies.</td>
+    <td data-i18n="desc">Playwright E2E testing patterns, Page Object Model, configuration, CI/CD integration, artifact management, and flaky test strategies.</td>
     <td></td>
   </tr><tr>
     <td>ecc-tools-cost-audit</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Evidence-first ECC Tools burn and billing audit workflow. Use when investigating runaway PR creation, quota bypass, premium-model leakage, duplicate jobs, or G...</td>
+    <td data-i18n="desc">Evidence-first ECC Tools burn and billing audit workflow. Use when investigating runaway PR creation, quota bypass, premium-model leakage, duplicate jobs, or G...</td>
     <td></td>
   </tr><tr>
     <td>email-ops</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Evidence-first mailbox triage, drafting, send verification, and sent-mail-safe follow-up workflow for ECC. Use when the user wants to organize email, draft or ...</td>
+    <td data-i18n="desc">Evidence-first mailbox triage, drafting, send verification, and sent-mail-safe follow-up workflow for ECC. Use when the user wants to organize email, draft or ...</td>
     <td></td>
   </tr><tr>
     <td>energy-procurement</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Codified expertise for electricity and gas procurement, tariff optimization, demand charge management, renewable PPA evaluation, and multi-facility energy cost...</td>
+    <td data-i18n="desc">Codified expertise for electricity and gas procurement, tariff optimization, demand charge management, renewable PPA evaluation, and multi-facility energy cost...</td>
     <td></td>
   </tr><tr>
     <td>enterprise-agent-ops</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Operate long-lived agent workloads with observability, security boundaries, and lifecycle management.</td>
+    <td data-i18n="desc">Operate long-lived agent workloads with observability, security boundaries, and lifecycle management.</td>
     <td></td>
   </tr><tr>
     <td>eval-harness</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Formal evaluation framework for Claude Code sessions implementing eval-driven development (EDD) principles</td>
+    <td data-i18n="desc">Formal evaluation framework for Claude Code sessions implementing eval-driven development (EDD) principles</td>
     <td></td>
   </tr><tr>
     <td>evm-token-decimals</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Prevent silent decimal mismatch bugs across EVM chains. Covers runtime decimal lookup, chain-aware caching, bridged-token precision drift, and safe normalizati...</td>
+    <td data-i18n="desc">Prevent silent decimal mismatch bugs across EVM chains. Covers runtime decimal lookup, chain-aware caching, bridged-token precision drift, and safe normalizati...</td>
     <td></td>
   </tr><tr>
     <td>exa-search</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Neural search via Exa MCP for web, code, and company research. Use when the user needs web search, code examples, company intel, people lookup, or AI-powered d...</td>
+    <td data-i18n="desc">Neural search via Exa MCP for web, code, and company research. Use when the user needs web search, code examples, company intel, people lookup, or AI-powered d...</td>
     <td></td>
   </tr><tr>
     <td>fal-ai-media</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Unified media generation via fal.ai MCP — image, video, and audio. Covers text-to-image (Nano Banana), text/image-to-video (Seedance, Kling, Veo 3), text-to-sp...</td>
+    <td data-i18n="desc">Unified media generation via fal.ai MCP — image, video, and audio. Covers text-to-image (Nano Banana), text/image-to-video (Seedance, Kling, Veo 3), text-to-sp...</td>
     <td></td>
   </tr><tr>
     <td>finance-billing-ops</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Evidence-first revenue, pricing, refunds, team-billing, and billing-model truth workflow for ECC. Use when the user wants a sales snapshot, pricing comparison,...</td>
+    <td data-i18n="desc">Evidence-first revenue, pricing, refunds, team-billing, and billing-model truth workflow for ECC. Use when the user wants a sales snapshot, pricing comparison,...</td>
     <td></td>
   </tr><tr>
     <td>flutter-dart-code-review</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Library-agnostic Flutter/Dart code review checklist covering widget best practices, state management patterns (BLoC, Riverpod, Provider, GetX, MobX, Signals), ...</td>
+    <td data-i18n="desc">Library-agnostic Flutter/Dart code review checklist covering widget best practices, state management patterns (BLoC, Riverpod, Provider, GetX, MobX, Signals), ...</td>
     <td></td>
   </tr><tr>
     <td>foundation-models-on-device</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Apple FoundationModels framework for on-device LLM — text generation, guided generation with @Generable, tool calling, and snapshot streaming in iOS 26+.</td>
+    <td data-i18n="desc">Apple FoundationModels framework for on-device LLM — text generation, guided generation with @Generable, tool calling, and snapshot streaming in iOS 26+.</td>
     <td></td>
   </tr><tr>
     <td>frontend-patterns</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Frontend development patterns for React, Next.js, state management, performance optimization, and UI best practices.</td>
+    <td data-i18n="desc">Frontend development patterns for React, Next.js, state management, performance optimization, and UI best practices.</td>
     <td></td>
   </tr><tr>
     <td>gan-style-harness</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>GAN-inspired Generator-Evaluator agent harness for building high-quality applications autonomously. Based on Anthropic&#39;s March 2026 harness design paper.</td>
+    <td data-i18n="desc">GAN-inspired Generator-Evaluator agent harness for building high-quality applications autonomously. Based on Anthropic&#39;s March 2026 harness design paper.</td>
     <td></td>
   </tr><tr>
     <td>gateguard</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Fact-forcing gate that blocks Edit/Write/Bash (including MultiEdit) and demands concrete investigation (importers, data schemas, user instruction) before allow...</td>
+    <td data-i18n="desc">Fact-forcing gate that blocks Edit/Write/Bash (including MultiEdit) and demands concrete investigation (importers, data schemas, user instruction) before allow...</td>
     <td></td>
   </tr><tr>
     <td>git-workflow</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Git workflow patterns including branching strategies, commit conventions, merge vs rebase, conflict resolution, and collaborative development best practices fo...</td>
+    <td data-i18n="desc">Git workflow patterns including branching strategies, commit conventions, merge vs rebase, conflict resolution, and collaborative development best practices fo...</td>
     <td></td>
   </tr><tr>
     <td>github-ops</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>GitHub repository operations, automation, and management. Issue triage, PR management, CI/CD operations, release management, and security monitoring using the ...</td>
+    <td data-i18n="desc">GitHub repository operations, automation, and management. Issue triage, PR management, CI/CD operations, release management, and security monitoring using the ...</td>
     <td></td>
   </tr><tr>
     <td>golang-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Idiomatic Go patterns, best practices, and conventions for building robust, efficient, and maintainable Go applications.</td>
+    <td data-i18n="desc">Idiomatic Go patterns, best practices, and conventions for building robust, efficient, and maintainable Go applications.</td>
     <td></td>
   </tr><tr>
     <td>golang-testing</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Go testing patterns including table-driven tests, subtests, benchmarks, fuzzing, and test coverage. Follows TDD methodology with idiomatic Go practices.</td>
+    <td data-i18n="desc">Go testing patterns including table-driven tests, subtests, benchmarks, fuzzing, and test coverage. Follows TDD methodology with idiomatic Go practices.</td>
     <td></td>
   </tr><tr>
     <td>google-workspace-ops</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Operate across Google Drive, Docs, Sheets, and Slides as one workflow surface for plans, trackers, decks, and shared documents. Use when the user needs to find...</td>
+    <td data-i18n="desc">Operate across Google Drive, Docs, Sheets, and Slides as one workflow surface for plans, trackers, decks, and shared documents. Use when the user needs to find...</td>
     <td></td>
   </tr><tr>
     <td>healthcare-cdss-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Clinical Decision Support System (CDSS) development patterns. Drug interaction checking, dose validation, clinical scoring (NEWS2, qSOFA), alert severity class...</td>
+    <td data-i18n="desc">Clinical Decision Support System (CDSS) development patterns. Drug interaction checking, dose validation, clinical scoring (NEWS2, qSOFA), alert severity class...</td>
     <td></td>
   </tr><tr>
     <td>healthcare-emr-patterns</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>EMR/EHR development patterns for healthcare applications. Clinical safety, encounter workflows, prescription generation, clinical decision support integration,...</td>
+    <td data-i18n="desc">EMR/EHR development patterns for healthcare applications. Clinical safety, encounter workflows, prescription generation, clinical decision support integration,...</td>
     <td></td>
   </tr><tr>
     <td>healthcare-eval-harness</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Patient safety evaluation harness for healthcare application deployments. Automated test suites for CDSS accuracy, PHI exposure, clinical workflow integrity, a...</td>
+    <td data-i18n="desc">Patient safety evaluation harness for healthcare application deployments. Automated test suites for CDSS accuracy, PHI exposure, clinical workflow integrity, a...</td>
     <td></td>
   </tr><tr>
     <td>healthcare-phi-compliance</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Protected Health Information (PHI) and Personally Identifiable Information (PII) compliance patterns for healthcare applications. Covers data classification, a...</td>
+    <td data-i18n="desc">Protected Health Information (PHI) and Personally Identifiable Information (PII) compliance patterns for healthcare applications. Covers data classification, a...</td>
     <td></td>
   </tr><tr>
     <td>hexagonal-architecture</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Design, implement, and refactor Ports &amp; Adapters systems with clear domain boundaries, dependency inversion, and testable use-case orchestration across TypeScr...</td>
+    <td data-i18n="desc">Design, implement, and refactor Ports &amp; Adapters systems with clear domain boundaries, dependency inversion, and testable use-case orchestration across TypeScr...</td>
     <td></td>
   </tr><tr>
     <td>hipaa-compliance</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>HIPAA-specific entrypoint for healthcare privacy and security work. Use when a task is explicitly framed around HIPAA, PHI handling, covered entities, BAAs, br...</td>
+    <td data-i18n="desc">HIPAA-specific entrypoint for healthcare privacy and security work. Use when a task is explicitly framed around HIPAA, PHI handling, covered entities, BAAs, br...</td>
     <td></td>
   </tr><tr>
     <td>hookify-rules</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>This skill should be used when the user asks to create a hookify rule, write a hook rule, configure hookify, add a hookify rule, or needs guidance on hookify r...</td>
+    <td data-i18n="desc">This skill should be used when the user asks to create a hookify rule, write a hook rule, configure hookify, add a hookify rule, or needs guidance on hookify r...</td>
     <td></td>
   </tr><tr>
     <td>inventory-demand-planning</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Codified expertise for demand forecasting, safety stock optimization, replenishment planning, and promotional lift estimation at multi-location retailers. Info...</td>
+    <td data-i18n="desc">Codified expertise for demand forecasting, safety stock optimization, replenishment planning, and promotional lift estimation at multi-location retailers. Info...</td>
     <td></td>
   </tr><tr>
     <td>investor-materials</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Create and update pitch decks, one-pagers, investor memos, accelerator applications, financial models, and fundraising materials. Use when the user needs inves...</td>
+    <td data-i18n="desc">Create and update pitch decks, one-pagers, investor memos, accelerator applications, financial models, and fundraising materials. Use when the user needs inves...</td>
     <td></td>
   </tr><tr>
     <td>investor-outreach</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Draft cold emails, warm intro blurbs, follow-ups, update emails, and investor communications for fundraising. Use when the user wants outreach to angels, VCs, ...</td>
+    <td data-i18n="desc">Draft cold emails, warm intro blurbs, follow-ups, update emails, and investor communications for fundraising. Use when the user wants outreach to angels, VCs, ...</td>
     <td></td>
   </tr><tr>
     <td>iterative-retrieval</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Pattern for progressively refining context retrieval to solve the subagent context problem</td>
+    <td data-i18n="desc">Pattern for progressively refining context retrieval to solve the subagent context problem</td>
     <td></td>
   </tr><tr>
     <td>java-coding-standards</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Java coding standards for Spring Boot services: naming, immutability, Optional usage, streams, exceptions, generics, and project layout.</td>
+    <td data-i18n="desc">Java coding standards for Spring Boot services: naming, immutability, Optional usage, streams, exceptions, generics, and project layout.</td>
     <td></td>
   </tr><tr>
     <td>jira-integration</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use this skill when retrieving Jira tickets, analyzing requirements, updating ticket status, adding comments, or transitioning issues. Provides Jira API patter...</td>
+    <td data-i18n="desc">Use this skill when retrieving Jira tickets, analyzing requirements, updating ticket status, adding comments, or transitioning issues. Provides Jira API patter...</td>
     <td></td>
   </tr><tr>
     <td>jpa-patterns</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>JPA/Hibernate patterns for entity design, relationships, query optimization, transactions, auditing, indexing, pagination, and pooling in Spring Boot.</td>
+    <td data-i18n="desc">JPA/Hibernate patterns for entity design, relationships, query optimization, transactions, auditing, indexing, pagination, and pooling in Spring Boot.</td>
     <td></td>
   </tr><tr>
     <td>knowledge-ops</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Knowledge base management, ingestion, sync, and retrieval across multiple storage layers (local files, MCP memory, vector stores, Git repos). Use when the user...</td>
+    <td data-i18n="desc">Knowledge base management, ingestion, sync, and retrieval across multiple storage layers (local files, MCP memory, vector stores, Git repos). Use when the user...</td>
     <td></td>
   </tr><tr>
     <td>kotlin-coroutines-flows</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Kotlin Coroutines and Flow patterns for Android and KMP — structured concurrency, Flow operators, StateFlow, error handling, and testing.</td>
+    <td data-i18n="desc">Kotlin Coroutines and Flow patterns for Android and KMP — structured concurrency, Flow operators, StateFlow, error handling, and testing.</td>
     <td></td>
   </tr><tr>
     <td>kotlin-exposed-patterns</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>JetBrains Exposed ORM patterns including DSL queries, DAO pattern, transactions, HikariCP connection pooling, Flyway migrations, and repository pattern.</td>
+    <td data-i18n="desc">JetBrains Exposed ORM patterns including DSL queries, DAO pattern, transactions, HikariCP connection pooling, Flyway migrations, and repository pattern.</td>
     <td></td>
   </tr><tr>
     <td>kotlin-ktor-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Ktor server patterns including routing DSL, plugins, authentication, Koin DI, kotlinx.serialization, WebSockets, and testApplication testing.</td>
+    <td data-i18n="desc">Ktor server patterns including routing DSL, plugins, authentication, Koin DI, kotlinx.serialization, WebSockets, and testApplication testing.</td>
     <td></td>
   </tr><tr>
     <td>kotlin-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Idiomatic Kotlin patterns, best practices, and conventions for building robust, efficient, and maintainable Kotlin applications with coroutines, null safety, a...</td>
+    <td data-i18n="desc">Idiomatic Kotlin patterns, best practices, and conventions for building robust, efficient, and maintainable Kotlin applications with coroutines, null safety, a...</td>
     <td></td>
   </tr><tr>
     <td>kotlin-testing</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Kotlin testing patterns with Kotest, MockK, coroutine testing, property-based testing, and Kover coverage. Follows TDD methodology with idiomatic Kotlin practi...</td>
+    <td data-i18n="desc">Kotlin testing patterns with Kotest, MockK, coroutine testing, property-based testing, and Kover coverage. Follows TDD methodology with idiomatic Kotlin practi...</td>
     <td></td>
   </tr><tr>
     <td>laravel-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Laravel architecture patterns, routing/controllers, Eloquent ORM, service layers, queues, events, caching, and API resources for production apps.</td>
+    <td data-i18n="desc">Laravel architecture patterns, routing/controllers, Eloquent ORM, service layers, queues, events, caching, and API resources for production apps.</td>
     <td></td>
   </tr><tr>
     <td>laravel-plugin-discovery</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Discover and evaluate Laravel packages via LaraPlugins.io MCP. Use when the user wants to find plugins, check package health, or assess Laravel/PHP compatibili...</td>
+    <td data-i18n="desc">Discover and evaluate Laravel packages via LaraPlugins.io MCP. Use when the user wants to find plugins, check package health, or assess Laravel/PHP compatibili...</td>
     <td></td>
   </tr><tr>
     <td>laravel-security</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Laravel security best practices for authn/authz, validation, CSRF, mass assignment, file uploads, secrets, rate limiting, and secure deployment.</td>
+    <td data-i18n="desc">Laravel security best practices for authn/authz, validation, CSRF, mass assignment, file uploads, secrets, rate limiting, and secure deployment.</td>
     <td></td>
   </tr><tr>
     <td>laravel-tdd</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Test-driven development for Laravel with PHPUnit and Pest, factories, database testing, fakes, and coverage targets.</td>
+    <td data-i18n="desc">Test-driven development for Laravel with PHPUnit and Pest, factories, database testing, fakes, and coverage targets.</td>
     <td></td>
   </tr><tr>
     <td>laravel-verification</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Verification loop for Laravel projects: env checks, linting, static analysis, tests with coverage, security scans, and deployment readiness.</td>
+    <td data-i18n="desc">Verification loop for Laravel projects: env checks, linting, static analysis, tests with coverage, security scans, and deployment readiness.</td>
     <td></td>
   </tr><tr>
     <td>lead-intelligence</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>AI-native lead intelligence and outreach pipeline. Replaces Apollo, Clay, and ZoomInfo with agent-powered signal scoring, mutual ranking, warm path discovery, ...</td>
+    <td data-i18n="desc">AI-native lead intelligence and outreach pipeline. Replaces Apollo, Clay, and ZoomInfo with agent-powered signal scoring, mutual ranking, warm path discovery, ...</td>
     <td></td>
   </tr><tr>
     <td>liquid-glass-design</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>iOS 26 Liquid Glass design system — dynamic glass material with blur, reflection, and interactive morphing for SwiftUI, UIKit, and WidgetKit.</td>
+    <td data-i18n="desc">iOS 26 Liquid Glass design system — dynamic glass material with blur, reflection, and interactive morphing for SwiftUI, UIKit, and WidgetKit.</td>
     <td></td>
   </tr><tr>
     <td>llm-trading-agent-security</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Security patterns for autonomous trading agents with wallet or transaction authority. Covers prompt injection, spend limits, pre-send simulation, circuit break...</td>
+    <td data-i18n="desc">Security patterns for autonomous trading agents with wallet or transaction authority. Covers prompt injection, spend limits, pre-send simulation, circuit break...</td>
     <td></td>
   </tr><tr>
     <td>logistics-exception-management</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Codified expertise for handling freight exceptions, shipment delays, damages, losses, and carrier disputes. Informed by logistics professionals with 15+ years ...</td>
+    <td data-i18n="desc">Codified expertise for handling freight exceptions, shipment delays, damages, losses, and carrier disputes. Informed by logistics professionals with 15+ years ...</td>
     <td></td>
   </tr><tr>
     <td>manim-video</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Build reusable Manim explainers for technical concepts, graphs, system diagrams, and product walkthroughs, then hand off to the wider ECC video stack if needed...</td>
+    <td data-i18n="desc">Build reusable Manim explainers for technical concepts, graphs, system diagrams, and product walkthroughs, then hand off to the wider ECC video stack if needed...</td>
     <td></td>
   </tr><tr>
     <td>market-research</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Conduct market research, competitive analysis, investor due diligence, and industry intelligence with source attribution and decision-oriented summaries. Use w...</td>
+    <td data-i18n="desc">Conduct market research, competitive analysis, investor due diligence, and industry intelligence with source attribution and decision-oriented summaries. Use w...</td>
     <td></td>
   </tr><tr>
     <td>mcp-server-patterns</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Build MCP servers with Node/TypeScript SDK — tools, resources, prompts, Zod validation, stdio vs Streamable HTTP. Use Context7 or official MCP docs for latest ...</td>
+    <td data-i18n="desc">Build MCP servers with Node/TypeScript SDK — tools, resources, prompts, Zod validation, stdio vs Streamable HTTP. Use Context7 or official MCP docs for latest ...</td>
     <td></td>
   </tr><tr>
     <td>messages-ops</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Evidence-first live messaging workflow for ECC. Use when the user wants to read texts or DMs, recover a recent one-time code, inspect a thread before replying,...</td>
+    <td data-i18n="desc">Evidence-first live messaging workflow for ECC. Use when the user wants to read texts or DMs, recover a recent one-time code, inspect a thread before replying,...</td>
     <td></td>
   </tr><tr>
     <td>nanoclaw-repl</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Operate and extend NanoClaw v2, ECC&#39;s zero-dependency session-aware REPL built on claude -p.</td>
+    <td data-i18n="desc">Operate and extend NanoClaw v2, ECC&#39;s zero-dependency session-aware REPL built on claude -p.</td>
     <td></td>
   </tr><tr>
     <td>nestjs-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>NestJS architecture patterns for modules, controllers, providers, DTO validation, guards, interceptors, config, and production-grade TypeScript backends.</td>
+    <td data-i18n="desc">NestJS architecture patterns for modules, controllers, providers, DTO validation, guards, interceptors, config, and production-grade TypeScript backends.</td>
     <td></td>
   </tr><tr>
     <td>nextjs-turbopack</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Next.js 16+ and Turbopack — incremental bundling, FS caching, dev speed, and when to use Turbopack vs webpack.</td>
+    <td data-i18n="desc">Next.js 16+ and Turbopack — incremental bundling, FS caching, dev speed, and when to use Turbopack vs webpack.</td>
     <td></td>
   </tr><tr>
     <td>nodejs-keccak256</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Prevent Ethereum hashing bugs in JavaScript and TypeScript. Node&#39;s sha3-256 is NIST SHA3, not Ethereum Keccak-256, and silently breaks selectors, signatures, s...</td>
+    <td data-i18n="desc">Prevent Ethereum hashing bugs in JavaScript and TypeScript. Node&#39;s sha3-256 is NIST SHA3, not Ethereum Keccak-256, and silently breaks selectors, signatures, s...</td>
     <td></td>
   </tr><tr>
     <td>nutrient-document-processing</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Process, convert, OCR, extract, redact, sign, and fill documents using the Nutrient DWS API. Works with PDFs, DOCX, XLSX, PPTX, HTML, and images.</td>
+    <td data-i18n="desc">Process, convert, OCR, extract, redact, sign, and fill documents using the Nutrient DWS API. Works with PDFs, DOCX, XLSX, PPTX, HTML, and images.</td>
     <td></td>
   </tr><tr>
     <td>nuxt4-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Nuxt 4 app patterns for hydration safety, performance, route rules, lazy loading, and SSR-safe data fetching with useFetch and useAsyncData.</td>
+    <td data-i18n="desc">Nuxt 4 app patterns for hydration safety, performance, route rules, lazy loading, and SSR-safe data fetching with useFetch and useAsyncData.</td>
     <td></td>
   </tr><tr>
     <td>openclaw-persona-forge</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>|-</td>
+    <td data-i18n="desc">|-</td>
     <td></td>
   </tr><tr>
     <td>opensource-pipeline</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Open-source pipeline: fork, sanitize, and package private projects for safe public release. Chains 3 agents (forker, sanitizer, packager). Triggers: &#39;/opensour...</td>
+    <td data-i18n="desc">Open-source pipeline: fork, sanitize, and package private projects for safe public release. Chains 3 agents (forker, sanitizer, packager). Triggers: &#39;/opensour...</td>
     <td></td>
   </tr><tr>
     <td>perl-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Modern Perl 5.36+ idioms, best practices, and conventions for building robust, maintainable Perl applications.</td>
+    <td data-i18n="desc">Modern Perl 5.36+ idioms, best practices, and conventions for building robust, maintainable Perl applications.</td>
     <td></td>
   </tr><tr>
     <td>perl-security</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Comprehensive Perl security covering taint mode, input validation, safe process execution, DBI parameterized queries, web security (XSS/SQLi/CSRF), and perlcri...</td>
+    <td data-i18n="desc">Comprehensive Perl security covering taint mode, input validation, safe process execution, DBI parameterized queries, web security (XSS/SQLi/CSRF), and perlcri...</td>
     <td></td>
   </tr><tr>
     <td>perl-testing</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Perl testing patterns using Test2::V0, Test::More, prove runner, mocking, coverage with Devel::Cover, and TDD methodology.</td>
+    <td data-i18n="desc">Perl testing patterns using Test2::V0, Test::More, prove runner, mocking, coverage with Devel::Cover, and TDD methodology.</td>
     <td></td>
   </tr><tr>
     <td>plankton-code-quality</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Write-time code quality enforcement using Plankton — auto-formatting, linting, and Claude-powered fixes on every file edit via hooks.</td>
+    <td data-i18n="desc">Write-time code quality enforcement using Plankton — auto-formatting, linting, and Claude-powered fixes on every file edit via hooks.</td>
     <td></td>
   </tr><tr>
     <td>postgres-patterns</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>PostgreSQL database patterns for query optimization, schema design, indexing, and security. Based on Supabase best practices.</td>
+    <td data-i18n="desc">PostgreSQL database patterns for query optimization, schema design, indexing, and security. Based on Supabase best practices.</td>
     <td></td>
   </tr><tr>
     <td>product-capability</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Translate PRD intent, roadmap asks, or product discussions into an implementation-ready capability plan that exposes constraints, invariants, interfaces, and u...</td>
+    <td data-i18n="desc">Translate PRD intent, roadmap asks, or product discussions into an implementation-ready capability plan that exposes constraints, invariants, interfaces, and u...</td>
     <td></td>
   </tr><tr>
     <td>product-lens</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Use this skill to validate the &quot;why&quot; before building, run product diagnostics, and pressure-test product direction before the request becomes an implementation...</td>
+    <td data-i18n="desc">Use this skill to validate the &quot;why&quot; before building, run product diagnostics, and pressure-test product direction before the request becomes an implementation...</td>
     <td></td>
   </tr><tr>
     <td>production-scheduling</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Codified expertise for production scheduling, job sequencing, line balancing, changeover optimization, and bottleneck resolution in discrete and batch manufact...</td>
+    <td data-i18n="desc">Codified expertise for production scheduling, job sequencing, line balancing, changeover optimization, and bottleneck resolution in discrete and batch manufact...</td>
     <td></td>
   </tr><tr>
     <td>project-flow-ops</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Operate execution flow across GitHub and Linear by triaging issues and pull requests, linking active work, and keeping GitHub public-facing while Linear remain...</td>
+    <td data-i18n="desc">Operate execution flow across GitHub and Linear by triaging issues and pull requests, linking active work, and keeping GitHub public-facing while Linear remain...</td>
     <td></td>
   </tr><tr>
     <td>prompt-optimizer</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>&gt;-</td>
+    <td data-i18n="desc">&gt;-</td>
     <td></td>
   </tr><tr>
     <td>python-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Pythonic idioms, PEP 8 standards, type hints, and best practices for building robust, efficient, and maintainable Python applications.</td>
+    <td data-i18n="desc">Pythonic idioms, PEP 8 standards, type hints, and best practices for building robust, efficient, and maintainable Python applications.</td>
     <td></td>
   </tr><tr>
     <td>python-testing</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Python testing strategies using pytest, TDD methodology, fixtures, mocking, parametrization, and coverage requirements.</td>
+    <td data-i18n="desc">Python testing strategies using pytest, TDD methodology, fixtures, mocking, parametrization, and coverage requirements.</td>
     <td></td>
   </tr><tr>
     <td>pytorch-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>PyTorch deep learning patterns and best practices for building robust, efficient, and reproducible training pipelines, model architectures, and data loading.</td>
+    <td data-i18n="desc">PyTorch deep learning patterns and best practices for building robust, efficient, and reproducible training pipelines, model architectures, and data loading.</td>
     <td></td>
   </tr><tr>
     <td>quality-nonconformance</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Codified expertise for quality control, non-conformance investigation, root cause analysis, corrective action, and supplier quality management in regulated man...</td>
+    <td data-i18n="desc">Codified expertise for quality control, non-conformance investigation, root cause analysis, corrective action, and supplier quality management in regulated man...</td>
     <td></td>
   </tr><tr>
     <td>ralphinho-rfc-pipeline</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>RFC-driven multi-agent DAG execution pattern with quality gates, merge queues, and work unit orchestration.</td>
+    <td data-i18n="desc">RFC-driven multi-agent DAG execution pattern with quality gates, merge queues, and work unit orchestration.</td>
     <td></td>
   </tr><tr>
     <td>regex-vs-llm-structured-text</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Decision framework for choosing between regex and LLM when parsing structured text — start with regex, add LLM only for low-confidence edge cases.</td>
+    <td data-i18n="desc">Decision framework for choosing between regex and LLM when parsing structured text — start with regex, add LLM only for low-confidence edge cases.</td>
     <td></td>
   </tr><tr>
     <td>remotion-video-creation</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Best practices for Remotion - Video creation in React. 29 domain-specific rules covering 3D, animations, audio, captions, charts, transitions, and more.</td>
+    <td data-i18n="desc">Best practices for Remotion - Video creation in React. 29 domain-specific rules covering 3D, animations, audio, captions, charts, transitions, and more.</td>
     <td></td>
   </tr><tr>
     <td>repo-scan</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Cross-stack source code asset audit — classifies every file, detects embedded third-party libraries, and delivers actionable four-level verdicts per module wit...</td>
+    <td data-i18n="desc">Cross-stack source code asset audit — classifies every file, detects embedded third-party libraries, and delivers actionable four-level verdicts per module wit...</td>
     <td></td>
   </tr><tr>
     <td>research-ops</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Evidence-first current-state research workflow for ECC. Use when the user wants fresh facts, comparisons, enrichment, or a recommendation built from current pu...</td>
+    <td data-i18n="desc">Evidence-first current-state research workflow for ECC. Use when the user wants fresh facts, comparisons, enrichment, or a recommendation built from current pu...</td>
     <td></td>
   </tr><tr>
     <td>returns-reverse-logistics</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Codified expertise for returns authorization, receipt and inspection, disposition decisions, refund processing, fraud detection, and warranty claims management...</td>
+    <td data-i18n="desc">Codified expertise for returns authorization, receipt and inspection, disposition decisions, refund processing, fraud detection, and warranty claims management...</td>
     <td></td>
   </tr><tr>
     <td>rules-distill</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Scan skills to extract cross-cutting principles and distill them into rules — append, revise, or create new rule files</td>
+    <td data-i18n="desc">Scan skills to extract cross-cutting principles and distill them into rules — append, revise, or create new rule files</td>
     <td></td>
   </tr><tr>
     <td>rust-patterns</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Idiomatic Rust patterns, ownership, error handling, traits, concurrency, and best practices for building safe, performant applications.</td>
+    <td data-i18n="desc">Idiomatic Rust patterns, ownership, error handling, traits, concurrency, and best practices for building safe, performant applications.</td>
     <td></td>
   </tr><tr>
     <td>rust-testing</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Rust testing patterns including unit tests, integration tests, async testing, property-based testing, mocking, and coverage. Follows TDD methodology.</td>
+    <td data-i18n="desc">Rust testing patterns including unit tests, integration tests, async testing, property-based testing, mocking, and coverage. Follows TDD methodology.</td>
     <td></td>
   </tr><tr>
     <td>safety-guard</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use this skill to prevent destructive operations when working on production systems or running agents autonomously.</td>
+    <td data-i18n="desc">Use this skill to prevent destructive operations when working on production systems or running agents autonomously.</td>
     <td></td>
   </tr><tr>
     <td>santa-method</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Multi-agent adversarial verification with convergence loop. Two independent review agents must both pass before output ships.</td>
+    <td data-i18n="desc">Multi-agent adversarial verification with convergence loop. Two independent review agents must both pass before output ships.</td>
     <td></td>
   </tr><tr>
     <td>search-first</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>Research-before-coding workflow. Search for existing tools, libraries, and patterns before writing custom code. Invokes the researcher agent.</td>
+    <td data-i18n="desc">Research-before-coding workflow. Search for existing tools, libraries, and patterns before writing custom code. Invokes the researcher agent.</td>
     <td></td>
   </tr><tr>
     <td>security-bounty-hunter</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Hunt for exploitable, bounty-worthy security issues in repositories. Focuses on remotely reachable vulnerabilities that qualify for real reports instead of noi...</td>
+    <td data-i18n="desc">Hunt for exploitable, bounty-worthy security issues in repositories. Focuses on remotely reachable vulnerabilities that qualify for real reports instead of noi...</td>
     <td></td>
   </tr><tr>
     <td>security-review</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Use this skill when adding authentication, handling user input, working with secrets, creating API endpoints, or implementing payment/sensitive features. Provi...</td>
+    <td data-i18n="desc">Use this skill when adding authentication, handling user input, working with secrets, creating API endpoints, or implementing payment/sensitive features. Provi...</td>
     <td></td>
   </tr><tr>
     <td>security-scan</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Scan your Claude Code configuration (.claude/ directory) for security vulnerabilities, misconfigurations, and injection risks using AgentShield. Checks CLAUDE....</td>
+    <td data-i18n="desc">Scan your Claude Code configuration (.claude/ directory) for security vulnerabilities, misconfigurations, and injection risks using AgentShield. Checks CLAUDE....</td>
     <td></td>
   </tr><tr>
     <td>seo</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Audit, plan, and implement SEO improvements across technical SEO, on-page optimization, structured data, Core Web Vitals, and content strategy. Use when the us...</td>
+    <td data-i18n="desc">Audit, plan, and implement SEO improvements across technical SEO, on-page optimization, structured data, Core Web Vitals, and content strategy. Use when the us...</td>
     <td></td>
   </tr><tr>
     <td>skill-comply</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Visualize whether skills, rules, and agent definitions are actually followed — auto-generates scenarios at 3 prompt strictness levels, runs agents, classifies ...</td>
+    <td data-i18n="desc">Visualize whether skills, rules, and agent definitions are actually followed — auto-generates scenarios at 3 prompt strictness levels, runs agents, classifies ...</td>
     <td></td>
   </tr><tr>
     <td>skill-stocktake</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Use when auditing Claude skills and commands for quality. Supports Quick Scan (changed skills only) and Full Stocktake modes with sequential subagent batch eva...</td>
+    <td data-i18n="desc">Use when auditing Claude skills and commands for quality. Supports Quick Scan (changed skills only) and Full Stocktake modes with sequential subagent batch eva...</td>
     <td></td>
   </tr><tr>
     <td>social-graph-ranker</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Weighted social-graph ranking for warm intro discovery, bridge scoring, and network gap analysis across X and LinkedIn. Use when the user wants the reusable gr...</td>
+    <td data-i18n="desc">Weighted social-graph ranking for warm intro discovery, bridge scoring, and network gap analysis across X and LinkedIn. Use when the user wants the reusable gr...</td>
     <td></td>
   </tr><tr>
     <td>springboot-patterns</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Spring Boot architecture patterns, REST API design, layered services, data access, caching, async processing, and logging. Use for Java Spring Boot backend wor...</td>
+    <td data-i18n="desc">Spring Boot architecture patterns, REST API design, layered services, data access, caching, async processing, and logging. Use for Java Spring Boot backend wor...</td>
     <td></td>
   </tr><tr>
     <td>springboot-security</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Spring Security best practices for authn/authz, validation, CSRF, secrets, headers, rate limiting, and dependency security in Java Spring Boot services.</td>
+    <td data-i18n="desc">Spring Security best practices for authn/authz, validation, CSRF, secrets, headers, rate limiting, and dependency security in Java Spring Boot services.</td>
     <td></td>
   </tr><tr>
     <td>springboot-tdd</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Test-driven development for Spring Boot using JUnit 5, Mockito, MockMvc, Testcontainers, and JaCoCo. Use when adding features, fixing bugs, or refactoring.</td>
+    <td data-i18n="desc">Test-driven development for Spring Boot using JUnit 5, Mockito, MockMvc, Testcontainers, and JaCoCo. Use when adding features, fixing bugs, or refactoring.</td>
     <td></td>
   </tr><tr>
     <td>springboot-verification</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Verification loop for Spring Boot projects: build, static analysis, tests with coverage, security scans, and diff review before release or PR.</td>
+    <td data-i18n="desc">Verification loop for Spring Boot projects: build, static analysis, tests with coverage, security scans, and diff review before release or PR.</td>
     <td></td>
   </tr><tr>
     <td>strategic-compact</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Suggests manual context compaction at logical intervals to preserve context through task phases rather than arbitrary auto-compaction.</td>
+    <td data-i18n="desc">Suggests manual context compaction at logical intervals to preserve context through task phases rather than arbitrary auto-compaction.</td>
     <td></td>
   </tr><tr>
     <td>swift-actor-persistence</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Thread-safe data persistence in Swift using actors — in-memory cache with file-backed storage, eliminating data races by design.</td>
+    <td data-i18n="desc">Thread-safe data persistence in Swift using actors — in-memory cache with file-backed storage, eliminating data races by design.</td>
     <td></td>
   </tr><tr>
     <td>swift-concurrency-6-2</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Swift 6.2 Approachable Concurrency — single-threaded by default, @concurrent for explicit background offloading, isolated conformances for main actor types.</td>
+    <td data-i18n="desc">Swift 6.2 Approachable Concurrency — single-threaded by default, @concurrent for explicit background offloading, isolated conformances for main actor types.</td>
     <td></td>
   </tr><tr>
     <td>swift-protocol-di-testing</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Protocol-based dependency injection for testable Swift code — mock file system, network, and external APIs using focused protocols and Swift Testing.</td>
+    <td data-i18n="desc">Protocol-based dependency injection for testable Swift code — mock file system, network, and external APIs using focused protocols and Swift Testing.</td>
     <td></td>
   </tr><tr>
     <td>swiftui-patterns</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>SwiftUI architecture patterns, state management with @Observable, view composition, navigation, performance optimization, and modern iOS/macOS UI best practice...</td>
+    <td data-i18n="desc">SwiftUI architecture patterns, state management with @Observable, view composition, navigation, performance optimization, and modern iOS/macOS UI best practice...</td>
     <td></td>
   </tr><tr>
     <td>tdd-workflow</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with 80%+ coverage including unit, integration, an...</td>
+    <td data-i18n="desc">Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with 80%+ coverage including unit, integration, an...</td>
     <td></td>
   </tr><tr>
     <td>team-builder</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Interactive agent picker for composing and dispatching parallel teams</td>
+    <td data-i18n="desc">Interactive agent picker for composing and dispatching parallel teams</td>
     <td></td>
   </tr><tr>
     <td>terminal-ops</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Evidence-first repo execution workflow for ECC. Use when the user wants a command run, a repo checked, a CI failure debugged, or a narrow fix pushed with exact...</td>
+    <td data-i18n="desc">Evidence-first repo execution workflow for ECC. Use when the user wants a command run, a repo checked, a CI failure debugged, or a narrow fix pushed with exact...</td>
     <td></td>
   </tr><tr>
     <td>token-budget-advisor</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>&gt;-</td>
+    <td data-i18n="desc">&gt;-</td>
     <td></td>
   </tr><tr>
     <td>ui-demo</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Record polished UI demo videos using Playwright. Use when the user asks to create a demo, walkthrough, screen recording, or tutorial video of a web application...</td>
+    <td data-i18n="desc">Record polished UI demo videos using Playwright. Use when the user asks to create a demo, walkthrough, screen recording, or tutorial video of a web application...</td>
     <td></td>
   </tr><tr>
     <td>unified-notifications-ops</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Operate notifications as one ECC-native workflow across GitHub, Linear, desktop alerts, hooks, and connected communication surfaces. Use when the real problem ...</td>
+    <td data-i18n="desc">Operate notifications as one ECC-native workflow across GitHub, Linear, desktop alerts, hooks, and connected communication surfaces. Use when the real problem ...</td>
     <td></td>
   </tr><tr>
     <td>verification-loop</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>A comprehensive verification system for Claude Code sessions.</td>
+    <td data-i18n="desc">A comprehensive verification system for Claude Code sessions.</td>
     <td></td>
   </tr><tr>
     <td>video-editing</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>AI-assisted video editing workflows for cutting, structuring, and augmenting real footage. Covers the full pipeline from raw capture through FFmpeg, Remotion, ...</td>
+    <td data-i18n="desc">AI-assisted video editing workflows for cutting, structuring, and augmenting real footage. Covers the full pipeline from raw capture through FFmpeg, Remotion, ...</td>
     <td></td>
   </tr><tr>
     <td>videodb</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>See, Understand, Act on video and audio. See- ingest from local files, URLs, RTSP/live feeds, or live record desktop; return realtime context and playable stre...</td>
+    <td data-i18n="desc">See, Understand, Act on video and audio. See- ingest from local files, URLs, RTSP/live feeds, or live record desktop; return realtime context and playable stre...</td>
     <td></td>
   </tr><tr>
     <td>visa-doc-translate</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>Translate visa application documents (images) to English and create a bilingual PDF with original and translation</td>
+    <td data-i18n="desc">Translate visa application documents (images) to English and create a bilingual PDF with original and translation</td>
     <td></td>
   </tr><tr>
     <td>workspace-surface-audit</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Audit the active repo, MCP servers, plugins, connectors, env surfaces, and harness setup, then recommend the highest-value ECC-native skills, hooks, agents, an...</td>
+    <td data-i18n="desc">Audit the active repo, MCP servers, plugins, connectors, env surfaces, and harness setup, then recommend the highest-value ECC-native skills, hooks, agents, an...</td>
     <td></td>
   </tr><tr>
     <td>x-api</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>X/Twitter API integration for posting tweets, threads, reading timelines, search, and analytics. Covers OAuth auth patterns, rate limits, and platform-native c...</td>
+    <td data-i18n="desc">X/Twitter API integration for posting tweets, threads, reading timelines, search, and analytics. Covers OAuth auth patterns, rate limits, and platform-native c...</td>
     <td></td>
   </tr><tr>
     <td>last30days</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, Git...</td>
+    <td data-i18n="desc">Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, Git...</td>
     <td></td>
   </tr><tr>
     <td>planning-with-files</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Implements Manus-style file-based planning to organize and track progress on complex tasks. Creates task_plan.md, findings.md, and progress.md. Use when asked ...</td>
+    <td data-i18n="desc">Implements Manus-style file-based planning to organize and track progress on complex tasks. Creates task_plan.md, findings.md, and progress.md. Use when asked ...</td>
     <td></td>
   </tr><tr>
     <td>planning-with-files-ar</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>نظام تخطيط الملفات بنمط Manus لتنظيم وتتبع تقدم المهام المعقدة. ينشئ ملفات task_plan.md و findings.md و progress.md. يُستخدم عند طلب التخطيط أو تحليل المهام أو...</td>
+    <td data-i18n="desc">نظام تخطيط الملفات بنمط Manus لتنظيم وتتبع تقدم المهام المعقدة. ينشئ ملفات task_plan.md و findings.md و progress.md. يُستخدم عند طلب التخطيط أو تحليل المهام أو...</td>
     <td></td>
   </tr><tr>
     <td>planning-with-files-de</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Manus-artiges Dateiplanungssystem zur Organisation und Verfolgung des Fortschritts komplexer Aufgaben. Erstellt task_plan.md, findings.md und progress.md. Wird...</td>
+    <td data-i18n="desc">Manus-artiges Dateiplanungssystem zur Organisation und Verfolgung des Fortschritts komplexer Aufgaben. Erstellt task_plan.md, findings.md und progress.md. Wird...</td>
     <td></td>
   </tr><tr>
     <td>planning-with-files-es</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Sistema de planificación basado en archivos estilo Manus para organizar y rastrear el progreso de tareas complejas. Crea task_plan.md, findings.md y progress.m...</td>
+    <td data-i18n="desc">Sistema de planificación basado en archivos estilo Manus para organizar y rastrear el progreso de tareas complejas. Crea task_plan.md, findings.md y progress.m...</td>
     <td></td>
   </tr><tr>
     <td>planning-with-files-zh</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>基于 Manus 风格的文件规划系统，用于组织和跟踪复杂任务的进度。创建 task_plan.md、findings.md 和 progress.md 三个文件。当用户要求规划、拆解或组织多步骤项目、研究任务或需要超过5次工具调用的工作时使用。支持 /clear 后的自动会话恢复。触发词：任务规划、项目计划、制定计划...</td>
+    <td data-i18n="desc">基于 Manus 风格的文件规划系统，用于组织和跟踪复杂任务的进度。创建 task_plan.md、findings.md 和 progress.md 三个文件。当用户要求规划、拆解或组织多步骤项目、研究任务或需要超过5次工具调用的工作时使用。支持 /clear 后的自动会话恢复。触发词：任务规划、项目计划、制定计划...</td>
     <td></td>
   </tr><tr>
     <td>planning-with-files-zht</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>基於 Manus 風格的檔案規劃系統，用於組織和追蹤複雜任務的進度。建立 task_plan.md、findings.md 和 progress.md 三個檔案。當使用者要求規劃、拆解或組織多步驟專案、研究任務或需要超過5次工具呼叫的工作時使用。支援 /clear 後的自動會話恢復。觸發詞：任務規劃、專案計畫、制定計...</td>
+    <td data-i18n="desc">基於 Manus 風格的檔案規劃系統，用於組織和追蹤複雜任務的進度。建立 task_plan.md、findings.md 和 progress.md 三個檔案。當使用者要求規劃、拆解或組織多步驟專案、研究任務或需要超過5次工具呼叫的工作時使用。支援 /clear 後的自動會話恢復。觸發詞：任務規劃、專案計畫、制定計...</td>
     <td></td>
   </tr><tr>
     <td>browser</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Browser automation for the Codex in-app browser. Use to open, navigate, inspect, test, click, type, screenshot, or verify local targets such as localhost, 127....</td>
+    <td data-i18n="desc">Browser automation for the Codex in-app browser. Use to open, navigate, inspect, test, click, type, screenshot, or verify local targets such as localhost, 127....</td>
     <td></td>
   </tr><tr>
     <td>Chrome</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Browser automation for the user&#39;s Chrome browser. Use for browser tasks that require the user&#39;s cookies, logged-in sessions, existing tabs, extensions, or remo...</td>
+    <td data-i18n="desc">Browser automation for the user&#39;s Chrome browser. Use for browser tasks that require the user&#39;s cookies, logged-in sessions, existing tabs, extensions, or remo...</td>
     <td></td>
   </tr><tr>
     <td>computer-use</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Control local Mac apps through Computer Use. Use for tasks that require reading or operating app UI by clicking, typing, scrolling, dragging, pressing keys, or...</td>
+    <td data-i18n="desc">Control local Mac apps through Computer Use. Use for tasks that require reading or operating app UI by clicking, typing, scrolling, dragging, pressing keys, or...</td>
     <td></td>
   </tr><tr>
     <td>code-review</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Reviews code changes using CodeRabbit AI. Use when user asks for code review, PR feedback, code quality checks, security issues, or requests fix-review cycles.</td>
+    <td data-i18n="desc">Reviews code changes using CodeRabbit AI. Use when user asks for code review, PR feedback, code quality checks, security issues, or requests fix-review cycles.</td>
     <td></td>
   </tr><tr>
     <td>gh-address-comments</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Address actionable GitHub pull request review feedback. Use when the user wants to inspect unresolved review threads, requested changes, or inline review comme...</td>
+    <td data-i18n="desc">Address actionable GitHub pull request review feedback. Use when the user wants to inspect unresolved review threads, requested changes, or inline review comme...</td>
     <td></td>
   </tr><tr>
     <td>github</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Triage and orient GitHub repository, pull request, and issue work through the connected GitHub app. Use when the user asks for general GitHub help, wants PR or...</td>
+    <td data-i18n="desc">Triage and orient GitHub repository, pull request, and issue work through the connected GitHub app. Use when the user asks for general GitHub help, wants PR or...</td>
     <td></td>
   </tr><tr>
     <td>yeet</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Publish local changes to GitHub by confirming scope, committing intentionally, pushing the branch, and opening a draft PR through the GitHub app from this plug...</td>
+    <td data-i18n="desc">Publish local changes to GitHub by confirming scope, committing intentionally, pushing the branch, and opening a draft PR through the GitHub app from this plug...</td>
     <td></td>
   </tr><tr>
     <td>gmail</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Manage Gmail inbox triage, mailbox search, thread summaries, action extraction, reply drafting, and email forwarding through connected Gmail data. Use when the...</td>
+    <td data-i18n="desc">Manage Gmail inbox triage, mailbox search, thread summaries, action extraction, reply drafting, and email forwarding through connected Gmail data. Use when the...</td>
     <td></td>
   </tr><tr>
     <td>gmail-inbox-triage</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Triage a Gmail inbox into actionable buckets such as urgent, needs reply soon, waiting, and FYI using connected Gmail data. Use when the user asks to triage th...</td>
+    <td data-i18n="desc">Triage a Gmail inbox into actionable buckets such as urgent, needs reply soon, waiting, and FYI using connected Gmail data. Use when the user asks to triage th...</td>
     <td></td>
   </tr><tr>
     <td>brainstorming</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, require...</td>
+    <td data-i18n="desc">You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, require...</td>
     <td></td>
   </tr><tr>
     <td>dispatching-parallel-agents</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies</td>
+    <td data-i18n="desc">Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies</td>
     <td></td>
   </tr><tr>
     <td>executing-plans</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Use when you have a written implementation plan to execute in a separate session with review checkpoints</td>
+    <td data-i18n="desc">Use when you have a written implementation plan to execute in a separate session with review checkpoints</td>
     <td></td>
   </tr><tr>
     <td>finishing-a-development-branch</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use when implementation is complete, all tests pass, and you need to decide how to integrate the work - guides completion of development work by presenting str...</td>
+    <td data-i18n="desc">Use when implementation is complete, all tests pass, and you need to decide how to integrate the work - guides completion of development work by presenting str...</td>
     <td></td>
   </tr><tr>
     <td>receiving-code-review</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical...</td>
+    <td data-i18n="desc">Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical...</td>
     <td></td>
   </tr><tr>
     <td>requesting-code-review</td>
     <td><span class="badge badge-code-quality">code-quality</span></td>
-    <td>Use when completing tasks, implementing major features, or before merging to verify work meets requirements</td>
+    <td data-i18n="desc">Use when completing tasks, implementing major features, or before merging to verify work meets requirements</td>
     <td></td>
   </tr><tr>
     <td>subagent-driven-development</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use when executing implementation plans with independent tasks in the current session</td>
+    <td data-i18n="desc">Use when executing implementation plans with independent tasks in the current session</td>
     <td></td>
   </tr><tr>
     <td>systematic-debugging</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes</td>
+    <td data-i18n="desc">Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes</td>
     <td></td>
   </tr><tr>
     <td>test-driven-development</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Use when implementing any feature or bugfix, before writing implementation code</td>
+    <td data-i18n="desc">Use when implementing any feature or bugfix, before writing implementation code</td>
     <td></td>
   </tr><tr>
     <td>using-git-worktrees</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Use when starting feature work that needs isolation from current workspace or before executing implementation plans - ensures an isolated workspace exists via ...</td>
+    <td data-i18n="desc">Use when starting feature work that needs isolation from current workspace or before executing implementation plans - ensures an isolated workspace exists via ...</td>
     <td></td>
   </tr><tr>
     <td>using-superpowers</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use when starting any conversation - establishes how to find and use skills, requiring Skill tool invocation before ANY response including clarifying questions</td>
+    <td data-i18n="desc">Use when starting any conversation - establishes how to find and use skills, requiring Skill tool invocation before ANY response including clarifying questions</td>
     <td></td>
   </tr><tr>
     <td>verification-before-completion</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirming output b...</td>
+    <td data-i18n="desc">Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirming output b...</td>
     <td></td>
   </tr><tr>
     <td>writing-plans</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Use when you have a spec or requirements for a multi-step task, before touching code</td>
+    <td data-i18n="desc">Use when you have a spec or requirements for a multi-step task, before touching code</td>
     <td></td>
   </tr><tr>
     <td>writing-skills</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>Use when creating new skills, editing existing skills, or verifying skills work before deployment</td>
+    <td data-i18n="desc">Use when creating new skills, editing existing skills, or verifying skills work before deployment</td>
     <td></td>
   </tr><tr>
     <td>agent-browser</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Browser automation CLI for AI agents. Use when the user needs to interact with websites, verify dev server output, test web apps, navigate pages, fill forms, c...</td>
+    <td data-i18n="desc">Browser automation CLI for AI agents. Use when the user needs to interact with websites, verify dev server output, test web apps, navigate pages, fill forms, c...</td>
     <td></td>
   </tr><tr>
     <td>agent-browser-verify</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Automated browser verification for dev servers. Triggers when a dev server starts to run a visual gut-check with agent-browser — verifies the page loads, check...</td>
+    <td data-i18n="desc">Automated browser verification for dev servers. Triggers when a dev server starts to run a visual gut-check with agent-browser — verifies the page loads, check...</td>
     <td></td>
   </tr><tr>
     <td>ai-elements</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>AI Elements component library guidance — pre-built React components for AI interfaces built on shadcn/ui. Use when building chat UIs, message displays, tool ca...</td>
+    <td data-i18n="desc">AI Elements component library guidance — pre-built React components for AI interfaces built on shadcn/ui. Use when building chat UIs, message displays, tool ca...</td>
     <td></td>
   </tr><tr>
     <td>ai-gateway</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel AI Gateway expert guidance. Use when configuring model routing, provider failover, cost tracking, or managing multiple AI providers through a unified AP...</td>
+    <td data-i18n="desc">Vercel AI Gateway expert guidance. Use when configuring model routing, provider failover, cost tracking, or managing multiple AI providers through a unified AP...</td>
     <td></td>
   </tr><tr>
     <td>ai-generation-persistence</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>AI generation persistence patterns — unique IDs, addressable URLs, database storage, and cost tracking for every LLM generation</td>
+    <td data-i18n="desc">AI generation persistence patterns — unique IDs, addressable URLs, database storage, and cost tracking for every LLM generation</td>
     <td></td>
   </tr><tr>
     <td>ai-sdk</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel AI SDK expert guidance. Use when building AI-powered features — chat interfaces, text generation, structured output, tool calling, agents, MCP integrati...</td>
+    <td data-i18n="desc">Vercel AI SDK expert guidance. Use when building AI-powered features — chat interfaces, text generation, structured output, tool calling, agents, MCP integrati...</td>
     <td></td>
   </tr><tr>
     <td>auth</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Authentication integration guidance — Clerk (native Vercel Marketplace), Descope, and Auth0 setup for Next.js applications. Covers middleware auth patterns, si...</td>
+    <td data-i18n="desc">Authentication integration guidance — Clerk (native Vercel Marketplace), Descope, and Auth0 setup for Next.js applications. Covers middleware auth patterns, si...</td>
     <td></td>
   </tr><tr>
     <td>bootstrap</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Project bootstrapping orchestrator for repos that depend on Vercel-linked resources (databases, auth, and managed integrations). Use when setting up or repairi...</td>
+    <td data-i18n="desc">Project bootstrapping orchestrator for repos that depend on Vercel-linked resources (databases, auth, and managed integrations). Use when setting up or repairi...</td>
     <td></td>
   </tr><tr>
     <td>chat-sdk</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel Chat SDK expert guidance. Use when building multi-platform chat bots — Slack, Telegram, Microsoft Teams, Discord, Google Chat, GitHub, Linear — with a s...</td>
+    <td data-i18n="desc">Vercel Chat SDK expert guidance. Use when building multi-platform chat bots — Slack, Telegram, Microsoft Teams, Discord, Google Chat, GitHub, Linear — with a s...</td>
     <td></td>
   </tr><tr>
     <td>cms</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Headless CMS integration guidance — Sanity (native Vercel Marketplace), Contentful, DatoCMS, Storyblok, and Builder.io. Covers studio setup, content modeling, ...</td>
+    <td data-i18n="desc">Headless CMS integration guidance — Sanity (native Vercel Marketplace), Contentful, DatoCMS, Storyblok, and Builder.io. Covers studio setup, content modeling, ...</td>
     <td></td>
   </tr><tr>
     <td>cron-jobs</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Vercel Cron Jobs configuration and best practices. Use when adding, editing, or debugging scheduled tasks in vercel.json.</td>
+    <td data-i18n="desc">Vercel Cron Jobs configuration and best practices. Use when adding, editing, or debugging scheduled tasks in vercel.json.</td>
     <td></td>
   </tr><tr>
     <td>deployments-cicd</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Vercel deployment and CI/CD expert guidance. Use when deploying, promoting, rolling back, inspecting deployments, building with --prebuilt, or configuring CI w...</td>
+    <td data-i18n="desc">Vercel deployment and CI/CD expert guidance. Use when deploying, promoting, rolling back, inspecting deployments, building with --prebuilt, or configuring CI w...</td>
     <td></td>
   </tr><tr>
     <td>email</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Email sending integration guidance — Resend (native Vercel Marketplace) with React Email templates. Covers API setup, transactional emails, domain verification...</td>
+    <td data-i18n="desc">Email sending integration guidance — Resend (native Vercel Marketplace) with React Email templates. Covers API setup, transactional emails, domain verification...</td>
     <td></td>
   </tr><tr>
     <td>env-vars</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel environment variable expert guidance. Use when working with .env files, vercel env commands, OIDC tokens, or managing environment-specific configuration.</td>
+    <td data-i18n="desc">Vercel environment variable expert guidance. Use when working with .env files, vercel env commands, OIDC tokens, or managing environment-specific configuration.</td>
     <td></td>
   </tr><tr>
     <td>geist</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Expert guidance for Geist, Vercel&#39;s default typography system and font family for precise Next.js interfaces. Use when configuring Geist Sans, Geist Mono, or G...</td>
+    <td data-i18n="desc">Expert guidance for Geist, Vercel&#39;s default typography system and font family for precise Next.js interfaces. Use when configuring Geist Sans, Geist Mono, or G...</td>
     <td></td>
   </tr><tr>
     <td>geistdocs</td>
     <td><span class="badge badge-documentation">documentation</span></td>
-    <td>Expert guidance for Geistdocs, Vercel&#39;s documentation template built with Next.js and Fumadocs — MDX authoring, configuration, AI chat, i18n, feedback, deploym...</td>
+    <td data-i18n="desc">Expert guidance for Geistdocs, Vercel&#39;s documentation template built with Next.js and Fumadocs — MDX authoring, configuration, AI chat, i18n, feedback, deploym...</td>
     <td></td>
   </tr><tr>
     <td>investigation-mode</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Orchestrated debugging coordinator. Triggers on frustration signals (stuck, hung, broken, waiting) and systematically triages: runtime logs → workflow status →...</td>
+    <td data-i18n="desc">Orchestrated debugging coordinator. Triggers on frustration signals (stuck, hung, broken, waiting) and systematically triages: runtime logs → workflow status →...</td>
     <td></td>
   </tr><tr>
     <td>json-render</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>AI chat response rendering guidance — handling UIMessage parts, tool call displays, streaming states, and structured data presentation. Use when building custo...</td>
+    <td data-i18n="desc">AI chat response rendering guidance — handling UIMessage parts, tool call displays, streaming states, and structured data presentation. Use when building custo...</td>
     <td></td>
   </tr><tr>
     <td>marketplace</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel Marketplace expert guidance — discovering, installing, and building integrations, auto-provisioned environment variables, unified billing, and the verce...</td>
+    <td data-i18n="desc">Vercel Marketplace expert guidance — discovering, installing, and building integrations, auto-provisioned environment variables, unified billing, and the verce...</td>
     <td></td>
   </tr><tr>
     <td>micro</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Expert guidance for micro — asynchronous HTTP microservices framework by Vercel. Use when building lightweight HTTP servers, API endpoints, or microservices us...</td>
+    <td data-i18n="desc">Expert guidance for micro — asynchronous HTTP microservices framework by Vercel. Use when building lightweight HTTP servers, API endpoints, or microservices us...</td>
     <td></td>
   </tr><tr>
     <td>ncc</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Expert guidance for @vercel/ncc — a simple CLI for compiling Node.js modules into a single file with all dependencies included. Use when bundling serverless fu...</td>
+    <td data-i18n="desc">Expert guidance for @vercel/ncc — a simple CLI for compiling Node.js modules into a single file with all dependencies included. Use when bundling serverless fu...</td>
     <td></td>
   </tr><tr>
     <td>next-forge</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>next-forge expert guidance — production-grade Turborepo monorepo SaaS starter by Vercel. Use when working in a next-forge project, scaffolding with `npx next-f...</td>
+    <td data-i18n="desc">next-forge expert guidance — production-grade Turborepo monorepo SaaS starter by Vercel. Use when working in a next-forge project, scaffolding with `npx next-f...</td>
     <td></td>
   </tr><tr>
     <td>nextjs</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Next.js App Router expert guidance. Use when building, debugging, or architecting Next.js applications — routing, Server Components, Server Actions, Cache Comp...</td>
+    <td data-i18n="desc">Next.js App Router expert guidance. Use when building, debugging, or architecting Next.js applications — routing, Server Components, Server Actions, Cache Comp...</td>
     <td></td>
   </tr><tr>
     <td>observability</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel Observability expert guidance — Drains (logs, traces, speed insights, web analytics), Web Analytics, Speed Insights, runtime logs, custom events, OpenTe...</td>
+    <td data-i18n="desc">Vercel Observability expert guidance — Drains (logs, traces, speed insights, web analytics), Web Analytics, Speed Insights, runtime logs, custom events, OpenTe...</td>
     <td></td>
   </tr><tr>
     <td>payments</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Stripe payments integration guidance — native Vercel Marketplace setup, checkout sessions, webhook handling, subscription billing, and the Stripe SDK. Use when...</td>
+    <td data-i18n="desc">Stripe payments integration guidance — native Vercel Marketplace setup, checkout sessions, webhook handling, subscription billing, and the Stripe SDK. Use when...</td>
     <td></td>
   </tr><tr>
     <td>react-best-practices</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>React best-practices reviewer for TSX files. Triggers after editing multiple TSX components to run a condensed quality checklist covering component structure, ...</td>
+    <td data-i18n="desc">React best-practices reviewer for TSX files. Triggers after editing multiple TSX components to run a condensed quality checklist covering component structure, ...</td>
     <td></td>
   </tr><tr>
     <td>routing-middleware</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel Routing Middleware guidance — request interception before cache, rewrites, redirects, personalization. Works with any framework. Supports Edge, Node.js,...</td>
+    <td data-i18n="desc">Vercel Routing Middleware guidance — request interception before cache, rewrites, redirects, personalization. Works with any framework. Supports Edge, Node.js,...</td>
     <td></td>
   </tr><tr>
     <td>runtime-cache</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel Runtime Cache API guidance — ephemeral per-region key-value cache with tag-based invalidation. Shared across Functions, Routing Middleware, and Builds. ...</td>
+    <td data-i18n="desc">Vercel Runtime Cache API guidance — ephemeral per-region key-value cache with tag-based invalidation. Shared across Functions, Routing Middleware, and Builds. ...</td>
     <td></td>
   </tr><tr>
     <td>satori</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>Expert guidance for Satori — Vercel&#39;s library that converts HTML and CSS to SVG, commonly used to generate dynamic OG images for Next.js and other frameworks.</td>
+    <td data-i18n="desc">Expert guidance for Satori — Vercel&#39;s library that converts HTML and CSS to SVG, commonly used to generate dynamic OG images for Next.js and other frameworks.</td>
     <td></td>
   </tr><tr>
     <td>shadcn</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>shadcn/ui expert guidance — CLI, component installation, composition patterns, custom registries, theming, Tailwind CSS integration, and high-quality interface...</td>
+    <td data-i18n="desc">shadcn/ui expert guidance — CLI, component installation, composition patterns, custom registries, theming, Tailwind CSS integration, and high-quality interface...</td>
     <td></td>
   </tr><tr>
     <td>sign-in-with-vercel</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Sign in with Vercel guidance — OAuth 2.0/OIDC identity provider for user authentication via Vercel accounts. Use when implementing user login with Vercel as th...</td>
+    <td data-i18n="desc">Sign in with Vercel guidance — OAuth 2.0/OIDC identity provider for user authentication via Vercel accounts. Use when implementing user login with Vercel as th...</td>
     <td></td>
   </tr><tr>
     <td>swr</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>SWR data-fetching expert guidance. Use when building React apps with client-side data fetching, caching, revalidation, mutations, optimistic UI, pagination, or...</td>
+    <td data-i18n="desc">SWR data-fetching expert guidance. Use when building React apps with client-side data fetching, caching, revalidation, mutations, optimistic UI, pagination, or...</td>
     <td></td>
   </tr><tr>
     <td>turbopack</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Turbopack expert guidance. Use when configuring the Next.js bundler, optimizing HMR, debugging build issues, or understanding the Turbopack vs Webpack differen...</td>
+    <td data-i18n="desc">Turbopack expert guidance. Use when configuring the Next.js bundler, optimizing HMR, debugging build issues, or understanding the Turbopack vs Webpack differen...</td>
     <td></td>
   </tr><tr>
     <td>turborepo</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Turborepo expert guidance. Use when setting up or optimizing monorepo builds, configuring task caching, remote caching, parallel execution, or the --affected f...</td>
+    <td data-i18n="desc">Turborepo expert guidance. Use when setting up or optimizing monorepo builds, configuring task caching, remote caching, parallel execution, or the --affected f...</td>
     <td></td>
   </tr><tr>
     <td>v0-dev</td>
     <td><span class="badge badge-design">design</span></td>
-    <td>v0 by Vercel expert guidance. Use when discussing AI code generation, generating UI components from prompts, v0 CLI usage, v0 SDK/API integration, or integrati...</td>
+    <td data-i18n="desc">v0 by Vercel expert guidance. Use when discussing AI code generation, generating UI components from prompts, v0 CLI usage, v0 SDK/API integration, or integrati...</td>
     <td></td>
   </tr><tr>
     <td>vercel-agent</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel Agent guidance — AI-powered code review, incident investigation, and SDK installation. Automates PR analysis and anomaly debugging. Use when configuring...</td>
+    <td data-i18n="desc">Vercel Agent guidance — AI-powered code review, incident investigation, and SDK installation. Automates PR analysis and anomaly debugging. Use when configuring...</td>
     <td></td>
   </tr><tr>
     <td>vercel-api</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel app and REST API expert guidance. Use when the agent needs live access to Vercel projects, deployments, environment variables, domains, logs, or documen...</td>
+    <td data-i18n="desc">Vercel app and REST API expert guidance. Use when the agent needs live access to Vercel projects, deployments, environment variables, domains, logs, or documen...</td>
     <td></td>
   </tr><tr>
     <td>vercel-cli</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel CLI expert guidance. Use when deploying, managing environment variables, linking projects, viewing logs, managing domains, or interacting with the Verce...</td>
+    <td data-i18n="desc">Vercel CLI expert guidance. Use when deploying, managing environment variables, linking projects, viewing logs, managing domains, or interacting with the Verce...</td>
     <td></td>
   </tr><tr>
     <td>vercel-firewall</td>
     <td><span class="badge badge-security">security</span></td>
-    <td>Vercel Firewall and security expert guidance. Use when configuring DDoS protection, WAF rules, rate limiting, bot filtering, IP allow/block lists, OWASP rulese...</td>
+    <td data-i18n="desc">Vercel Firewall and security expert guidance. Use when configuring DDoS protection, WAF rules, rate limiting, bot filtering, IP allow/block lists, OWASP rulese...</td>
     <td></td>
   </tr><tr>
     <td>vercel-flags</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel Flags guidance — feature flags platform with unified dashboard, Flags Explorer, gradual rollouts, A/B testing, and provider adapters. Use when implement...</td>
+    <td data-i18n="desc">Vercel Flags guidance — feature flags platform with unified dashboard, Flags Explorer, gradual rollouts, A/B testing, and provider adapters. Use when implement...</td>
     <td></td>
   </tr><tr>
     <td>vercel-functions</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Vercel Functions expert guidance — Serverless Functions, Edge Functions, Fluid Compute, streaming, Cron Jobs, and runtime configuration. Use when configuring, ...</td>
+    <td data-i18n="desc">Vercel Functions expert guidance — Serverless Functions, Edge Functions, Fluid Compute, streaming, Cron Jobs, and runtime configuration. Use when configuring, ...</td>
     <td></td>
   </tr><tr>
     <td>vercel-queues</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Vercel Queues guidance (public beta) — durable event streaming with topics, consumer groups, retries, and delayed delivery. $0.60/1M ops. Powers Workflow DevKi...</td>
+    <td data-i18n="desc">Vercel Queues guidance (public beta) — durable event streaming with topics, consumer groups, retries, and delayed delivery. $0.60/1M ops. Powers Workflow DevKi...</td>
     <td></td>
   </tr><tr>
     <td>vercel-sandbox</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel Sandbox guidance — ephemeral Firecracker microVMs for running untrusted code safely. Supports AI agents, code generation, and experimentation. Use when ...</td>
+    <td data-i18n="desc">Vercel Sandbox guidance — ephemeral Firecracker microVMs for running untrusted code safely. Supports AI agents, code generation, and experimentation. Use when ...</td>
     <td></td>
   </tr><tr>
     <td>vercel-services</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel Services — deploy multiple services within a single Vercel project. Use for monorepo layouts or when combining a backend (Python, Go) with a frontend (N...</td>
+    <td data-i18n="desc">Vercel Services — deploy multiple services within a single Vercel project. Use for monorepo layouts or when combining a backend (Python, Go) with a frontend (N...</td>
     <td></td>
   </tr><tr>
     <td>vercel-storage</td>
     <td><span class="badge badge-deployment">deployment</span></td>
-    <td>Vercel storage expert guidance — Blob, Edge Config, and Marketplace storage (Neon Postgres, Upstash Redis). Use when choosing, configuring, or using data stora...</td>
+    <td data-i18n="desc">Vercel storage expert guidance — Blob, Edge Config, and Marketplace storage (Neon Postgres, Upstash Redis). Use when choosing, configuring, or using data stora...</td>
     <td></td>
   </tr><tr>
     <td>verification</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Full-story verification — infers what the user is building, then verifies the complete flow end-to-end: browser → API → data → response. Triggers on dev server...</td>
+    <td data-i18n="desc">Full-story verification — infers what the user is building, then verifies the complete flow end-to-end: browser → API → data → response. Triggers on dev server...</td>
     <td></td>
   </tr><tr>
     <td>workflow</td>
     <td><span class="badge badge-automation">automation</span></td>
-    <td>Vercel Workflow DevKit (WDK) expert guidance. Use when building durable workflows, long-running tasks, API routes or agents that need pause/resume, retries, st...</td>
+    <td data-i18n="desc">Vercel Workflow DevKit (WDK) expert guidance. Use when building durable workflows, long-running tasks, API routes or agents that need pause/resume, retries, st...</td>
     <td></td>
   </tr><tr>
     <td>documents</td>
     <td><span class="badge badge-testing">testing</span></td>
-    <td>Create, edit, redline, and comment on `.docx` files inside the container, with a strict render-and-verify workflow. Use `render_docx.py` to generate page PNGs ...</td>
+    <td data-i18n="desc">Create, edit, redline, and comment on `.docx`, Word, and Google Docs-targeted document artifacts inside the container, with a strict render-and-verify workflow...</td>
     <td></td>
   </tr><tr>
     <td>Presentations</td>
     <td><span class="badge badge-development">development</span></td>
-    <td>Build premium editorial analytics PPTX decks with artifact-tool presentation JSX, using ruthless narrative editing, chart-first storytelling, rendered critique...</td>
+    <td data-i18n="desc">Build premium editorial analytics presentation decks for PowerPoint and Google Slides with artifact-tool presentation JSX, using ruthless narrative editing, ch...</td>
     <td></td>
   </tr><tr>
     <td>Spreadsheets</td>
     <td><span class="badge badge-other">other</span></td>
-    <td>Use this skill when a user requests to create, modify, analyze, visualize, or work with spreadsheet files (`.xlsx`, `.xls`, `.csv`, `.tsv`) with formulas, form...</td>
+    <td data-i18n="desc">Use this skill when a user requests to create, modify, analyze, visualize, or work with spreadsheet files (`.xlsx`, `.xls`, `.csv`, `.tsv`) or Google Sheets-ta...</td>
     <td></td>
   </tr></tbody>
       </table></div>
     </div>
   </section>
+</main>
+<nav class="progress" aria-label="Slide navigation"></nav>
+<div class="shortcut" aria-hidden="true">↓ ↑ Space</div>
 <script>
-const seen=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('v')}),{threshold:.15});
+const seen=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('v')}),{threshold:.12});
 document.querySelectorAll('.rv').forEach(el=>seen.observe(el));
 const slides=[...document.querySelectorAll('.slide')];
+const nav=document.querySelector('nav.progress');
+slides.forEach((_,i)=>{const b=document.createElement('button');b.setAttribute('aria-label','Slide '+(i+1));b.addEventListener('click',()=>slides[i]?.scrollIntoView());nav.appendChild(b)});
+function updateNav(){const i=slides.findIndex(s=>{const r=s.getBoundingClientRect();return r.top>-10&&r.top<innerHeight/2});nav.querySelectorAll('button').forEach((b,j)=>b.classList.toggle('active',j===i))}
+document.addEventListener('scroll',updateNav,{passive:true});updateNav();
 document.addEventListener('keydown',e=>{const i=slides.findIndex(s=>{const r=s.getBoundingClientRect();return r.top>-10&&r.top<innerHeight/2});if(['ArrowDown','ArrowRight',' '].includes(e.key)){e.preventDefault();slides[Math.min(i+1,slides.length-1)]?.scrollIntoView()}if(['ArrowUp','ArrowLeft'].includes(e.key)){e.preventDefault();slides[Math.max(i-1,0)]?.scrollIntoView()}});
 </script>
 </body>

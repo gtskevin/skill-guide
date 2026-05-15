@@ -352,7 +352,21 @@ function scannerArgsFor(mode) {
 }
 
 function runScanner(mode) {
-  const output = execFileSync(process.execPath, [SCANNER, ...scannerArgsFor(mode)], {
+  const args = scannerArgsFor(mode);
+  if (mode.mode === 'full') {
+    const result = spawnSync(process.execPath, [SCANNER, ...args], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      maxBuffer: 50 * 1024 * 1024,
+    });
+    if (result.status !== 0) {
+      process.stderr.write(result.stderr || '');
+      process.exit(result.status || 1);
+    }
+    return JSON.parse(result.stdout);
+  }
+  const output = execFileSync(process.execPath, [SCANNER, ...args], {
     cwd: process.cwd(),
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],

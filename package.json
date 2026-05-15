@@ -1,7 +1,7 @@
 {
   "name": "skill-guide",
   "version": "0.2.0",
-  "description": "Discover, understand, and choose from installed Agent Skills across Claude Code and Codex.",
+  "description": "Scan 6+ skill directories across Claude Code, Codex, and cc-switch, then generate beautiful HTML slide presentations.",
   "license": "MIT",
   "type": "commonjs",
   "bin": {
@@ -42,8 +42,15 @@
     "agent-skills",
     "skills",
     "skill",
+    "skill-discovery",
+    "skill-scanner",
+    "skill-browser",
+    "claude-code-skills",
+    "codex-skills",
     "html-slides",
-    "developer-tools"
+    "developer-tools",
+    "agent-tools",
+    "cli"
   ],
   "repository": {
     "type": "git",
@@ -52,5 +59,5 @@
   "bugs": {
     "url": "https://github.com/gtskevin/skill-guide/issues"
   },
-  "homepage": "https://github.com/gtskevin/skill-guide#readme"
+  "homepage": "https://gtskevin.github.io/skill-guide/"
 }
