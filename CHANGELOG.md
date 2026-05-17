@@ -5,6 +5,13 @@ All notable changes to skill-guide will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-05-17
+
+### Fixed
+- `--skill <name>` now resolves shorthand skill names such as `tdd` to the best matching installed skill, preferring name prefixes like `tdd-workflow`.
+- Missing skill lookups in HTML mode now print a terminal error and exit without generating an empty HTML guide.
+- Missing skill JSON output now preserves scan counts, source counts, and close-match suggestions.
+
 ## [0.2.0] - 2026-05-15
 
 ### Added

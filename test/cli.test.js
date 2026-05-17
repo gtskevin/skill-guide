@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -75,4 +75,44 @@ test('prints scanner JSON when requested', () => {
 
   assert.equal(parsed.totalCount, 1);
   assert.equal(parsed.skills[0].name, 'codex-demo');
+});
+
+test('generates a shorthand skill deep dive without an empty cover', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-shorthand-html-'));
+  const output = path.join(home, 'guide.html');
+  writeSkill(home, '.claude/skills/django-tdd', 'django-tdd', 'Django TDD skill');
+  writeSkill(home, '.claude/skills/tdd-workflow', 'tdd-workflow', 'General TDD workflow skill');
+
+  runCli(home, ['--refresh', '--skill', 'tdd', '--output', output, '--no-open']);
+  const html = fs.readFileSync(output, 'utf8');
+
+  assert.match(html, /2 skills scanned/);
+  assert.match(html, /tdd-workflow/);
+  assert.doesNotMatch(html, /0 skills scanned/);
+  assert.doesNotMatch(html, /No skill sources found/);
+});
+
+test('prints a terminal error instead of generating HTML when a skill is not found', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-missing-html-'));
+  const output = path.join(home, 'missing.html');
+  writeSkill(home, '.claude/skills/tdd-workflow', 'tdd-workflow', 'General TDD workflow skill');
+
+  const result = spawnSync(process.execPath, [
+    cli,
+    '--refresh',
+    '--skill',
+    'definitely-missing',
+    '--output',
+    output,
+    '--no-open',
+  ], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex') },
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Skill "definitely-missing" not found/);
+  assert.match(result.stderr, /Scanned 1 skills/);
+  assert.equal(fs.existsSync(output), false);
 });

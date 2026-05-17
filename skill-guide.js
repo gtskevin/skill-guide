@@ -738,6 +738,23 @@ function printDoctor(data) {
   return lines.join('\n');
 }
 
+function formatScannerError(data) {
+  const lines = [
+    data.error || 'Skill not found',
+    `Scanned ${data.totalCount || 0} skills.`,
+  ];
+  if ((data.suggestions || []).length > 0) {
+    lines.push('Possible matches:');
+    for (const skill of data.suggestions) {
+      const sources = (skill.sources || []).join(', ');
+      lines.push(`  - ${skill.name}${sources ? ` (${sources})` : ''}`);
+    }
+  } else {
+    lines.push('No close matches found. Try --search <query> to search descriptions and triggers.');
+  }
+  return lines.join('\n');
+}
+
 function main() {
   const mode = parseMode();
   if (mode.mode === 'help') {
@@ -769,6 +786,11 @@ function main() {
       process.stdout.write(`${serialized}\n`);
     }
     return;
+  }
+
+  if (data.error) {
+    process.stderr.write(`${formatScannerError(data)}\n`);
+    process.exit(1);
   }
 
   const output = path.resolve(getArgValue('--output') || defaultOutputPath(mode));

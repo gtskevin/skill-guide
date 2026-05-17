@@ -492,6 +492,47 @@ function cleanSkill(skill, includeFull) {
   return base;
 }
 
+function normalizeSkillName(name) {
+  return String(name || '').replace(/^[^:]+:/, '').toLowerCase();
+}
+
+function findSkill(skills, requestedName) {
+  const requested = String(requestedName || '').toLowerCase();
+  const bareRequested = normalizeSkillName(requestedName);
+
+  const exact = skills.find((skill) => {
+    const name = skill.name.toLowerCase();
+    const bareName = normalizeSkillName(skill.name);
+    return name === requested || bareName === bareRequested;
+  });
+  if (exact) return exact;
+
+  const prefixMatches = skills
+    .filter((skill) => normalizeSkillName(skill.name).startsWith(bareRequested))
+    .sort((a, b) => normalizeSkillName(a.name).length - normalizeSkillName(b.name).length
+      || a.name.localeCompare(b.name));
+  if (prefixMatches.length > 0) return prefixMatches[0];
+
+  const containsMatches = skills
+    .filter((skill) => normalizeSkillName(skill.name).includes(bareRequested))
+    .sort((a, b) => normalizeSkillName(a.name).length - normalizeSkillName(b.name).length
+      || a.name.localeCompare(b.name));
+  return containsMatches[0] || null;
+}
+
+function suggestSkills(skills, requestedName) {
+  const requested = normalizeSkillName(requestedName);
+  return skills
+    .filter((skill) => {
+      const name = normalizeSkillName(skill.name);
+      const description = String(skill.description || '').toLowerCase();
+      const triggers = (skill.triggers || []).join(' ').toLowerCase();
+      return name.includes(requested) || description.includes(requested) || triggers.includes(requested);
+    })
+    .slice(0, 8)
+    .map((skill) => cleanSkill(skill, false));
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -536,12 +577,16 @@ function main() {
       skills: skills.map(s => cleanSkill(s, false)),
     };
   } else if (mode === 'skill') {
-    // Strip plugin prefix (e.g. "everything-claude-code:tdd-workflow" → "tdd-workflow")
-    const bareName = skillName.replace(/^[^:]+:/, '');
-    const found = skills.find(s => s.name.toLowerCase() === bareName.toLowerCase()
-      || s.name.toLowerCase() === skillName.toLowerCase());
+    const found = findSkill(skills, skillName);
     if (!found) {
-      output = { error: `Skill "${skillName}" not found`, skills: [] };
+      output = {
+        error: `Skill "${skillName}" not found`,
+        scanDate: scanResult.scanDate,
+        totalCount: skills.length,
+        sources: sourceCounts,
+        skills: [],
+        suggestions: suggestSkills(skills, skillName),
+      };
     } else {
       output = {
         scanDate: scanResult.scanDate,

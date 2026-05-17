@@ -21,7 +21,8 @@ function writeSkill(home, relativeDir, name, description, extraFrontmatter = '')
 }
 
 function runScanner(home, options = {}) {
-  const args = options.refresh === false ? [scanner, '--list'] : [scanner, '--refresh', '--list'];
+  const modeArgs = options.args || ['--list'];
+  const args = options.refresh === false ? [scanner, ...modeArgs] : [scanner, '--refresh', ...modeArgs];
   const output = execFileSync(process.execPath, args, {
     cwd: root,
     env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex') },
@@ -110,4 +111,23 @@ test('labels hidden Codex system skills separately from user skills', () => {
   assert.deepEqual(byName.get('user-demo').sources, ['codex-user']);
   assert.equal(result.sources['openai-system'], 1);
   assert.equal(result.sources['codex-user'], 1);
+});
+
+test('resolves shorthand skill names to the best matching skill', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-shorthand-'));
+  writeSkill(home, '.claude/skills/django-tdd', 'django-tdd', 'Django TDD skill');
+  writeSkill(home, '.claude/skills/tdd-workflow', 'tdd-workflow', 'General TDD workflow skill');
+
+  const result = runScanner(home, { args: ['--skill', 'tdd'] });
+
+  assert.equal(result.totalCount, 2);
+  assert.equal(result.skills[0].name, 'tdd-workflow');
+  assert.deepEqual(result.sources, {
+    'claude-user': 2,
+    'openai-system': 0,
+    'codex-user': 0,
+    'cc-switch': 0,
+    'claude-plugin': 0,
+    'codex-plugin': 0,
+  });
 });
