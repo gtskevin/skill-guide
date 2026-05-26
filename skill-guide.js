@@ -852,6 +852,15 @@ function renderRecommendHTML(data, recommendations, user) {
   const popular = recommendations.filter((r) => r.type === 'popular');
   const overlaps = recommendations.filter((r) => r.type === 'overlap');
 
+  const categoryBreakdown = Object.entries(
+    data.skills.reduce((acc, s) => { const c = s.category || 'other'; acc[c] = (acc[c] || 0) + 1; return acc; }, {})
+  ).sort((a, b) => b[1] - a[1]);
+
+  const breakdownColors = {
+    testing: '#10b981', design: '#f59e0b', security: '#ef4444', documentation: '#8b5cf6',
+    automation: '#06b6d4', deployment: '#ec4899', 'code-quality': '#14b8a6', development: '#f97316', other: '#6b7280',
+  };
+
   const gapCards = gaps.map((gap) => `
     <article class="card gap-card">
       <h3>${escapeHtml(gap.category)}</h3>
@@ -925,6 +934,11 @@ function renderRecommendHTML(data, recommendations, user) {
   .cta-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(124,58,237,0.3)}
   .cta-btn.primary{background:linear-gradient(135deg,#7c3aed,#06b6d4);color:#fff}
   .user-tag{color:var(--muted);font-size:0.9rem;margin-bottom:1rem}
+  .breakdown-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:1rem 0 0.5rem}
+  .breakdown-segment{min-width:2px;transition:width 0.3s}
+  .breakdown-legend{display:flex;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.5rem}
+  .legend-item{display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--muted)}
+  .legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
 </style>
 </head>
 <body>
@@ -935,6 +949,14 @@ function renderRecommendHTML(data, recommendations, user) {
     <div class="stat"><b>${data.totalCount}</b><span>${t('skillsScanned')}</span></div>
     <div class="stat"><b>${totalCategories}/9</b><span>${t('categoriesCovered')}</span></div>
   </div>
+  <div class="breakdown-bar">${categoryBreakdown.map(([cat, count]) => {
+    const pct = Math.round((count / data.totalCount) * 100);
+    const color = breakdownColors[cat] || '#6b7280';
+    return `<div class="breakdown-segment" style="width:${pct}%;background:${color}" title="${cat}: ${count} (${pct}%)"></div>`;
+  }).join('')}</div>
+  <div class="breakdown-legend">${categoryBreakdown.map(([cat, count]) =>
+    `<span class="legend-item"><span class="legend-dot" style="background:${breakdownColors[cat] || '#6b7280'}"></span>${escapeHtml(cat)} (${count})</span>`
+  ).join('')}</div>
 
   ${gaps.length > 0 ? `<h2>⚠️ ${escapeHtml(t('gapAnalysis'))}</h2><div class="grid">${gapCards}</div>` : ''}
   ${popular.length > 0 ? `<h2>🔥 ${escapeHtml(t('popularYoureMissing'))}</h2><div class="grid">${popularItems}</div>` : ''}
