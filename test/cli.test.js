@@ -263,8 +263,8 @@ test('share page has pain-point hero and capability map', () => {
 
   const html = fs.readFileSync(output, 'utf8');
 
-  // Pain-point headline
-  assert.ok(html.includes('but no idea'), 'should have pain-point headline');
+  // Pain-point headline (dynamic: "Scattered skills, no idea what you have?" for <100 skills)
+  assert.ok(html.includes('no idea'), 'should have pain-point headline');
   // Capability map section
   assert.ok(html.includes('Capability Map'), 'should have capability map section');
   // OG tags with persona
@@ -325,8 +325,8 @@ test('full pipeline: share page has all redesigned sections', () => {
 
   const html = fs.readFileSync(output, 'utf8');
 
-  // Pain-point headline
-  assert.ok(html.includes('but no idea'), 'pain-point headline');
+  // Pain-point headline (dynamic: "Scattered skills, no idea what you have?" for <100 skills)
+  assert.ok(html.includes('no idea'), 'pain-point headline');
   // Capability map
   assert.ok(html.includes('Capability Map'), 'capability map section');
   // Stack insights

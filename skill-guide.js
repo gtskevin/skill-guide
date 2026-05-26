@@ -8,6 +8,7 @@ const path = require('path');
 
 const ROOT = __dirname;
 const SCANNER = path.join(ROOT, 'scan-skills.js');
+const registryModule = require('./skill-registry');
 const args = process.argv.slice(2);
 
 function hasFlag(flag) {
@@ -88,6 +89,17 @@ const LABELS = {
     ctaHeadline: 'Stop guessing. Start using.',
     ctaSubtext: 'Join developers who discovered skills they never knew they had',
     ctaGithub: 'Star on GitHub',
+    strongest: 'Strongest',
+    weakest: 'Weakest',
+    cleanupOpportunities: 'Cleanup Opportunities',
+    significantOverlap: 'significant overlap',
+    mostDocumented: 'Most documented:',
+    basedOnCompleteness: 'Based on documentation completeness',
+    stackInsights: 'Stack Insights',
+    capabilityMap: 'Capability Map',
+    gapHint: '{action}',
+    scatteredSkills: 'Scattered skills, no idea what you have?',
+    manySkillsPain: '{count}+ skills but no idea what you have?',
   },
   zh: {
     yourAgentSkills: '你的 Agent Skills 技能库',
@@ -133,18 +145,18 @@ const LABELS = {
     ctaHeadline: '别再猜了，开始用吧',
     ctaSubtext: '加入已发现隐藏技能的开发者行列',
     ctaGithub: '在 GitHub 上 Star',
+    strongest: '最强',
+    weakest: '最弱',
+    cleanupOpportunities: '清理机会',
+    significantOverlap: '显著重叠',
+    mostDocumented: '文档最完善:',
+    basedOnCompleteness: '基于文档完整度',
+    stackInsights: '技能栈洞察',
+    capabilityMap: '能力图谱',
+    gapHint: '{action}',
+    scatteredSkills: '技能散落，不知道自己有什么？',
+    manySkillsPain: '{count}+ 个技能但不知道自己有什么？',
   },
-};
-
-const GAP_ACTIONS_SHARE = {
-  testing: 'Add a TDD skill to catch bugs before they ship',
-  design: 'Add a UI/UX skill to improve your frontend output',
-  security: 'Add a security audit skill to catch vulnerabilities',
-  documentation: 'Add a docs skill to keep your project well-documented',
-  automation: 'Add an automation skill to eliminate repetitive tasks',
-  deployment: 'Add a deploy skill to streamline your CI/CD pipeline',
-  'code-quality': 'Add a code review skill to maintain standards',
-  development: 'Add a dev workflow skill to boost productivity',
 };
 
 function lang() {
@@ -829,10 +841,10 @@ function renderRecommendTerminal(data, recommendations) {
   lines.push('│                                              │');
 
   if (strongest) {
-    lines.push(`│  💪 Strongest: ${strongest.cat} (${strongest.count})`);
+    lines.push(`│  💪 ${t('strongest')}: ${strongest.cat} (${strongest.count})`);
   }
   if (weakest && weakest !== strongest) {
-    lines.push(`│  ⚠️  Weakest: ${weakest.cat} (${weakest.count})`);
+    lines.push(`│  ⚠️  ${t('weakest')}: ${weakest.cat} (${weakest.count})`);
   }
   lines.push('│');
 
@@ -849,9 +861,9 @@ function renderRecommendTerminal(data, recommendations) {
   const overlaps = recommendations.filter((r) => r.type === 'overlap');
   const topOverlaps = [...overlaps].sort((a, b) => b.count - a.count).slice(0, 3);
   if (topOverlaps.length > 0) {
-    lines.push('│  📋 Cleanup opportunities:');
+    lines.push(`│  📋 ${t('cleanupOpportunities')}:`);
     for (const overlap of topOverlaps) {
-      lines.push(`│    • ${overlap.category} (${overlap.count} skills) — significant overlap`);
+      lines.push(`│    • ${overlap.category} (${overlap.count} skills) — ${t('significantOverlap')}`);
       const top3 = overlap.skills.slice(0, 3);
       if (overlap.completeness) {
         top3.forEach((name, i) => {
@@ -859,7 +871,7 @@ function renderRecommendTerminal(data, recommendations) {
           lines.push(`│      ${i + 1}. ${name} (${score}/100)`);
         });
       }
-      lines.push('│      Based on documentation completeness');
+      lines.push(`│      ${t('basedOnCompleteness')}`);
     }
     lines.push('│');
   }
@@ -929,12 +941,12 @@ function renderRecommendHTML(data, recommendations, user) {
     return `
     <article class="card overlap-card">
       <h3>${escapeHtml(overlap.category)} <span class="count">${overlap.count}</span></h3>
-      <p>significant overlap</p>
-      <p class="meta">Most documented:</p>
+      <p>${escapeHtml(t('significantOverlap'))}</p>
+      <p class="meta">${escapeHtml(t('mostDocumented'))}</p>
       <div class="skill-scores">${skillsWithScores.filter((s) => s.score !== null).map((s) =>
         `<div class="score-row"><span class="score-name">${escapeHtml(s.name)}</span><span class="score-value">${s.score}/100</span></div>`
       ).join('')}</div>
-      <p class="meta score-label">Based on documentation completeness</p>
+      <p class="meta score-label">${escapeHtml(t('basedOnCompleteness'))}</p>
       <div class="chips">${overlap.skills.map((s) => `<span>${escapeHtml(s)}</span>`).join('')}${
         overlap.hasMore ? `<span class="chip-more">${escapeHtml(t('nMore').replace('{count}', overlap.remainingCount))}</span>` : ''
       }</div>
@@ -1018,11 +1030,11 @@ function renderRecommendHTML(data, recommendations, user) {
   ).join('')}</div>
 
   <div class="overview">
-    ${strongest ? `<p>💪 <strong>Strongest:</strong> ${escapeHtml(strongest[0])} (${strongest[1]} skills)</p>` : ''}
-    ${weakest ? `<p>⚠️ <strong>Weakest:</strong> ${escapeHtml(weakest[0])} (${weakest[1]} skills)</p>` : ''}
+    ${strongest ? `<p>💪 <strong>${escapeHtml(t('strongest'))}:</strong> ${escapeHtml(strongest[0])} (${strongest[1]} skills)</p>` : ''}
+    ${weakest ? `<p>⚠️ <strong>${escapeHtml(t('weakest'))}:</strong> ${escapeHtml(weakest[0])} (${weakest[1]} skills)</p>` : ''}
   </div>
 
-  ${topOverlaps.length > 0 ? `<h2>Cleanup Opportunities</h2><div class="grid">${overlapItems}</div>` : ''}
+  ${topOverlaps.length > 0 ? `<h2>${escapeHtml(t('cleanupOpportunities'))}</h2><div class="grid">${overlapItems}</div>` : ''}
   ${popular.length > 0 ? `<h2>🔥 ${escapeHtml(t('popularYoureMissing'))}</h2><div class="grid">${popularItems}</div>` : ''}
   ${gaps.length > 0 ? `<h2>Gap Analysis</h2><div class="grid">${gapCards}</div>` : ''}
 
@@ -1171,10 +1183,10 @@ function renderShareHTML(data, user) {
   const gapCategory = missingCats[0] || (weakest && weakest.count <= 2 ? weakest.cat : null);
 
   const insightsSection = `
-    <h2>Stack Insights</h2>
+    <h2>${escapeHtml(t('stackInsights'))}</h2>
     <div class="insights">
-      ${strongest ? `<p class="insight-strong">💪 Strongest: ${escapeHtml(strongest.cat)} (${strongest.count} skills)</p>` : ''}
-      ${gapCategory ? `<p class="insight-gap">⚠️ Gap: ${escapeHtml(gapCategory)} (${groups[gapCategory]?.length || 0} skills)<br><span class="gap-hint">${escapeHtml(GAP_ACTIONS_SHARE[gapCategory] || '')}</span></p>` : ''}
+      ${strongest ? `<p class="insight-strong">💪 ${escapeHtml(t('strongest'))}: ${escapeHtml(strongest.cat)} (${strongest.count} skills)</p>` : ''}
+      ${gapCategory ? `<p class="insight-gap">⚠️ Gap: ${escapeHtml(gapCategory)} (${groups[gapCategory]?.length || 0} skills)<br><span class="gap-hint">${escapeHtml(t('gapHint').replace('{action}', registryModule.GAP_ACTIONS[gapCategory] || ''))}</span></p>` : ''}
       <p class="insight-cta">Run <code>--recommend</code> for full analysis</p>
     </div>
   `;
@@ -1247,7 +1259,7 @@ function renderShareHTML(data, user) {
 <div class="container">
   <div class="hero">
     ${user ? `<p class="user-tag">${escapeHtml(t('sharedBy').replace('{user}', user))}</p>` : ''}
-    <p class="pain">200+ skills but no idea what you have?</p>
+    <p class="pain">${escapeHtml(data.totalCount >= 100 ? t('manySkillsPain').replace('{count}', data.totalCount) : t('scatteredSkills'))}</p>
     <h1>${escapeHtml(t('myAiSkillStack'))}</h1>
     <p class="persona">${escapeHtml(persona)}</p>
     <p class="subtitle">${data.totalCount} ${t('skillsScanned')} · ${totalCategories} ${t('categoriesCovered')}</p>
@@ -1258,7 +1270,7 @@ function renderShareHTML(data, user) {
     </div>
   </div>
 
-  <h2>Capability Map</h2>
+  <h2>${escapeHtml(t('capabilityMap'))}</h2>
   <div class="grid">${capabilityCards}</div>
 
   ${insightsSection}
@@ -1291,11 +1303,10 @@ function main() {
   }
 
   if (mode.mode === 'recommend') {
-    const registry = require('./skill-registry');
     const installed = data.skills;
     const refresh = hasFlag('--refresh');
-    const onlineEntries = registry.fetchRegistry({ refresh });
-    const recommendations = registry.recommend(installed, onlineEntries);
+    const onlineEntries = registryModule.fetchRegistry({ refresh });
+    const recommendations = registryModule.recommend(installed, onlineEntries);
 
     const format = getArgValue('--format') || 'html';
     if (format === 'json') {

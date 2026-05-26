@@ -278,6 +278,7 @@ function recommend(installed, onlineEntries) {
 // ---------------------------------------------------------------------------
 module.exports = {
   ALL_CATEGORIES: ALL_CATEGORIES,
+  GAP_ACTIONS: GAP_ACTIONS,
   _cacheKey: cacheKey,
   _readCache: readCache,
   _writeCache: writeCache,

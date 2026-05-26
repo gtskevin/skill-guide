@@ -530,7 +530,7 @@ function computeCompleteness(skill, full) {
 
   // howItWorks: 10 points — no YAML metadata
   if (full && full.howItWorks && full.howItWorks.length > 20 &&
-      !full.howItWorks.includes('category:') && !full.howItWorks.includes('tags:')) {
+      !/^---/.test(full.howItWorks) && !/^category:/.test(full.howItWorks) && !/^tags:/.test(full.howItWorks)) {
     score += 10;
   }
 
