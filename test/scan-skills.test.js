@@ -154,6 +154,23 @@ test('parses YAML multiline indicators (>- |+ |- >+)', () => {
   assert.doesNotMatch(skill.description, /^>-/);
 });
 
+test('quoted multiline indicator characters are not treated as multiline', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-quoted-ml-'));
+  const dir = path.join(home, '.claude/skills/quoted-ml');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'SKILL.md'),
+    `---\nname: quoted-ml\ndescription: ">"\n---\n\n# Quoted\n`,
+    'utf8'
+  );
+
+  const result = runScanner(home);
+  const skill = result.skills[0];
+
+  assert.equal(skill.name, 'quoted-ml');
+  assert.equal(skill.description, '>');
+});
+
 test('resolves shorthand skill names to the best matching skill', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-shorthand-'));
   writeSkill(home, '.claude/skills/django-tdd', 'django-tdd', 'Django TDD skill');

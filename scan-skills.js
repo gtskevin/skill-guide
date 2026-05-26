@@ -137,8 +137,9 @@ function parseFrontmatter(content) {
       currentKey = kvMatch[1];
       let val = kvMatch[2].trim();
 
-      // Multi-line indicators
-      if (/^[>|](-|\+)?$/.test(val)) {
+      // Multi-line indicators — skip if value is quoted
+      const isQuoted = (val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"));
+      if (!isQuoted && /^[>|](-|\+)?$/.test(val)) {
         inMultiline = true;
         multilineType = val;
         multilineValue = '';
