@@ -168,6 +168,17 @@ function categorizeOnlineSkill(entry) {
   return 'other';
 }
 
+const GAP_ACTIONS = {
+  testing: 'Add a TDD skill to catch bugs before they ship',
+  design: 'Add a UI/UX skill to improve your frontend output',
+  security: 'Add a security audit skill to catch vulnerabilities',
+  documentation: 'Add a docs skill to keep your project well-documented',
+  automation: 'Add an automation skill to eliminate repetitive tasks',
+  deployment: 'Add a deploy skill to streamline your CI/CD pipeline',
+  'code-quality': 'Add a code review skill to maintain standards',
+  development: 'Add a dev workflow skill to boost productivity',
+};
+
 function recommend(installed, onlineEntries) {
   const results = [];
 
@@ -191,6 +202,7 @@ function recommend(installed, onlineEntries) {
         type: 'gap',
         category: cat,
         message: `You have no ${cat} skills installed`,
+        action: GAP_ACTIONS[cat] || `Explore ${cat} skills to fill this gap`,
         skills: catSkills.map((s) => ({ name: s.name, description: s.description, url: s.url })),
       });
     }
@@ -199,12 +211,17 @@ function recommend(installed, onlineEntries) {
   // 2. Overlap detection — categories with 3+ skills
   for (const [cat, skills] of Object.entries(installedByCategory)) {
     if (skills.length >= 3) {
+      const MAX_OVERLAP_SHOWN = 8;
+      const shown = skills.slice(0, MAX_OVERLAP_SHOWN);
+      const remaining = skills.length - shown.length;
       results.push({
         type: 'overlap',
         category: cat,
         count: skills.length,
         message: `You have ${skills.length} skills in "${cat}" category`,
-        skills: skills.map((s) => s.name),
+        skills: shown.map((s) => s.name),
+        hasMore: remaining > 0,
+        remainingCount: remaining,
       });
     }
   }

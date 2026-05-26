@@ -159,6 +159,36 @@ test('recommend detects popular skills not installed', () => {
   assert.equal(popular[0].name, 'tdd');
 });
 
+test('recommend caps overlap skills at 8 with "+ N more" indicator', () => {
+  const registry = require(path.join(root, 'skill-registry'));
+  const installed = Array.from({ length: 15 }, (_, i) => ({
+    name: `skill-${i}`,
+    description: `Skill ${i}`,
+    category: 'testing',
+    source: 'test',
+  }));
+  const result = registry.recommend(installed, []);
+  const overlap = result.find((r) => r.type === 'overlap');
+  assert.ok(overlap, 'should have overlap result');
+  assert.ok(overlap.skills.length <= 8, 'should cap at 8 skills');
+  assert.ok(overlap.hasMore === true, 'should indicate more exist');
+  assert.strictEqual(overlap.remainingCount, 7, 'should report remaining count');
+});
+
+test('recommend includes action hints for gap categories', () => {
+  const registry = require(path.join(root, 'skill-registry'));
+  const installed = [];
+  const online = [
+    { name: 'tdd', url: 'https://github.com/example/tdd', description: 'TDD workflow', source: 'test' },
+    { name: 'debug', url: 'https://github.com/example/debug', description: 'Debugging', source: 'test' },
+  ];
+  const result = registry.recommend(installed, online);
+  const gap = result.find((r) => r.type === 'gap');
+  assert.ok(gap, 'should have gap result');
+  assert.ok(gap.action, 'should include action hint');
+  assert.ok(gap.action.length > 0, 'action hint should not be empty');
+});
+
 test('recommend returns empty for perfect stack', () => {
   const registry = require(path.join(root, 'skill-registry'));
   const installed = [

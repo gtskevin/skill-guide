@@ -27,12 +27,15 @@ function usage() {
     '  skill-guide --search <query> [--open] [--output <file>] [--format html|json] [--lang en|zh]',
     '  skill-guide --skill <name> [--open] [--output <file>] [--format html|json] [--lang en|zh]',
     '  skill-guide --full [--open] [--output <file>] [--format html|json] [--lang en|zh]',
+    '  skill-guide --recommend [--open] [--output <file>] [--format html|json] [--lang en|zh] [--refresh]',
+    '  skill-guide --share [--open] [--output <file>] [--lang en|zh] [--user <name>]',
     '  skill-guide --doctor [--refresh]',
     '',
     'Examples:',
     '  npx skill-guide --open',
     '  npx skill-guide --search security --open',
     '  npx skill-guide --skill tdd --lang zh --open',
+    '  npx skill-guide --recommend --open',
     '  npx skill-guide --doctor',
   ].join('\n');
 }
@@ -66,6 +69,21 @@ const LABELS = {
     category: 'Category',
     description: 'Description',
     triggers: 'Triggers',
+    skillRecommendations: 'Skill Recommendations',
+    yourSkillStack: 'Your skill stack',
+    gapAnalysis: 'Gap Analysis',
+    noSkillsInCategory: 'You have no {category} skills installed',
+    tryThese: 'Try these',
+    overlapAlert: 'Overlap Alert',
+    skillsInCategory: 'You have {count} skills in "{category}" category',
+    considerKeeping: 'Consider keeping only the most-used one',
+    popularYoureMissing: 'Popular Skills You\'re Missing',
+    categoriesCovered: 'categories covered',
+    myAiSkillStack: 'My AI Skill Stack',
+    sharedBy: 'Shared by {user}',
+    poweredBy: 'Powered by skill-guide',
+    installSkillGuide: 'Install skill-guide to discover your skills',
+    topPicks: 'Top Picks',
   },
   zh: {
     yourAgentSkills: '你的 Agent Skills 技能库',
@@ -92,6 +110,21 @@ const LABELS = {
     category: '分类',
     description: '描述',
     triggers: '触发词',
+    skillRecommendations: '技能推荐',
+    yourSkillStack: '你的技能栈',
+    gapAnalysis: '空白分析',
+    noSkillsInCategory: '你没有安装 {category} 类技能',
+    tryThese: '试试这些',
+    overlapAlert: '重叠检测',
+    skillsInCategory: '你在 "{category}" 分类下有 {count} 个技能',
+    considerKeeping: '建议只保留最常用的',
+    popularYoureMissing: '你还没装的热门技能',
+    categoriesCovered: '个分类已覆盖',
+    myAiSkillStack: '我的 AI 技能栈',
+    sharedBy: '由 {user} 分享',
+    poweredBy: '由 skill-guide 驱动',
+    installSkillGuide: '安装 skill-guide 来发现你的技能',
+    topPicks: '精选推荐',
   },
 };
 
@@ -319,6 +352,8 @@ function te(text) {
 function parseMode() {
   if (hasFlag('--help') || hasFlag('-h')) return { mode: 'help' };
   if (hasFlag('--doctor')) return { mode: 'doctor' };
+  if (hasFlag('--recommend')) return { mode: 'recommend' };
+  if (hasFlag('--share')) return { mode: 'share' };
   if (hasFlag('--full') || args[0] === 'all') return { mode: 'full' };
 
   const skill = getArgValue('--skill');
@@ -344,7 +379,7 @@ function scannerArgsFor(mode) {
     scannerArgs.push('--skill', mode.value);
   } else if (mode.mode === 'search') {
     scannerArgs.push('--search', mode.value);
-  } else if (mode.mode === 'full') {
+  } else if (mode.mode === 'full' || mode.mode === 'recommend' || mode.mode === 'share') {
     scannerArgs.push('--full');
   }
 
@@ -353,7 +388,7 @@ function scannerArgsFor(mode) {
 
 function runScanner(mode) {
   const args = scannerArgsFor(mode);
-  if (mode.mode === 'full') {
+  if (mode.mode === 'full' || mode.mode === 'recommend' || mode.mode === 'share') {
     const result = spawnSync(process.execPath, [SCANNER, ...args], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -755,6 +790,256 @@ function formatScannerError(data) {
   return lines.join('\n');
 }
 
+function renderRecommendTerminal(data, recommendations) {
+  const lines = [];
+  const totalCategories = new Set(data.skills.map((s) => s.category)).size;
+
+  lines.push('');
+  lines.push('┌─ skill-guide recommend ─────────────────────┐');
+  lines.push('│                                              │');
+  lines.push(`│  ${t('yourSkillStack')}: ${data.totalCount} skills, ${totalCategories}/9 ${t('categoriesCovered')}`);
+  lines.push('│                                              │');
+
+  const gaps = recommendations.filter((r) => r.type === 'gap');
+  if (gaps.length > 0) {
+    lines.push(`│  ⚠️  ${t('gapAnalysis')} (${gaps.length}):`);
+    for (const gap of gaps) {
+      lines.push(`│    • ${gap.category} — 0 skills`);
+      if (gap.skills.length > 0) {
+        lines.push(`│      → ${t('tryThese')}: ${gap.skills.map((s) => s.name).join(', ')}`);
+      }
+    }
+    lines.push('│');
+  }
+
+  const popular = recommendations.filter((r) => r.type === 'popular');
+  if (popular.length > 0) {
+    lines.push(`│  🔥 ${t('popularYoureMissing')}:`);
+    for (const skill of popular.slice(0, 5)) {
+      lines.push(`│    • ${skill.name} (${skill.message})`);
+    }
+    lines.push('│');
+  }
+
+  const overlaps = recommendations.filter((r) => r.type === 'overlap');
+  if (overlaps.length > 0) {
+    lines.push(`│  📋 ${t('overlapAlert')}:`);
+    for (const overlap of overlaps) {
+      lines.push(`│    • ${t('skillsInCategory').replace('{count}', overlap.count).replace('{category}', overlap.category)}`);
+      lines.push(`│      ${t('considerKeeping')}`);
+    }
+    lines.push('│');
+  }
+
+  lines.push('└──────────────────────────────────────────────┘');
+  lines.push('');
+  return lines.join('\n');
+}
+
+function renderRecommendHTML(data, recommendations, user) {
+  const totalCategories = new Set(data.skills.map((s) => s.category)).size;
+  const gaps = recommendations.filter((r) => r.type === 'gap');
+  const popular = recommendations.filter((r) => r.type === 'popular');
+  const overlaps = recommendations.filter((r) => r.type === 'overlap');
+
+  const gapCards = gaps.map((gap) => `
+    <article class="card gap-card">
+      <h3>${escapeHtml(gap.category)}</h3>
+      <p>${escapeHtml(t('noSkillsInCategory').replace('{category}', gap.category))}</p>
+      ${gap.action ? `<p class="meta">${escapeHtml(gap.action)}</p>` : ''}
+      ${gap.skills.length > 0 ? `<div class="chips">${gap.skills.map((s) =>
+        `<a href="${escapeHtml(s.url || '#')}" class="chip" title="${escapeHtml(s.description)}">${escapeHtml(s.name)}</a>`
+      ).join('')}</div>` : ''}
+    </article>
+  `).join('');
+
+  const popularItems = popular.slice(0, 10).map((skill) => `
+    <article class="card popular-card">
+      <h3>${escapeHtml(skill.name)}</h3>
+      <p>${escapeHtml(skill.description || '')}</p>
+      <p class="meta">${escapeHtml(skill.message)}</p>
+      ${skill.url ? `<a href="${escapeHtml(skill.url)}" class="link">GitHub →</a>` : ''}
+    </article>
+  `).join('');
+
+  const overlapItems = overlaps.map((overlap) => `
+    <article class="card overlap-card">
+      <h3>${escapeHtml(overlap.category)}</h3>
+      <p>${escapeHtml(t('skillsInCategory').replace('{count}', overlap.count).replace('{category}', overlap.category))}</p>
+      <p class="meta">${t('considerKeeping')}</p>
+      <div class="chips">${overlap.skills.map((s) => `<span>${escapeHtml(s)}</span>`).join('')}${
+        overlap.hasMore ? `<span class="chip-more">+ ${overlap.remainingCount} more</span>` : ''
+      }</div>
+    </article>
+  `).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(t('skillRecommendations'))}</title>
+<meta property="og:title" content="${escapeHtml(t('skillRecommendations'))} — skill-guide">
+<meta property="og:description" content="${escapeHtml(t('yourSkillStack'))}: ${data.totalCount} skills, ${totalCategories}/9 ${t('categoriesCovered')}">
+<style>
+  :root{--bg:#0f0f23;--card:#1a1a2e;--text:#e0e0e0;--muted:#888;--accent:#7c3aed;--accent2:#06b6d4;--gap:#f59e0b;--overlap:#ef4444;--popular:#10b981}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;padding:2rem}
+  .container{max-width:960px;margin:0 auto}
+  h1{font-size:2.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.5rem}
+  h2{font-size:1.5rem;margin:2rem 0 1rem;color:var(--accent2)}
+  .stats{display:flex;gap:1rem;margin:1rem 0;flex-wrap:wrap}
+  .stat{background:var(--card);padding:1rem 1.5rem;border-radius:12px;text-align:center}
+  .stat b{font-size:2rem;display:block}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+  .card{background:var(--card);padding:1.5rem;border-radius:12px;border:1px solid rgba(255,255,255,0.05)}
+  .card h3{margin-bottom:0.5rem;font-size:1.1rem}
+  .card p{color:var(--muted);font-size:0.9rem}
+  .card .meta{font-size:0.8rem;margin-top:0.5rem}
+  .gap-card{border-left:3px solid var(--gap)}
+  .overlap-card{border-left:3px solid var(--overlap)}
+  .popular-card{border-left:3px solid var(--popular)}
+  .chips{display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.75rem}
+  .chip{background:rgba(124,58,237,0.2);padding:0.25rem 0.75rem;border-radius:999px;font-size:0.85rem;text-decoration:none;color:var(--accent);transition:background 0.2s}
+  .chip:hover{background:rgba(124,58,237,0.4)}
+  .chip-more{background:rgba(255,255,255,0.05);padding:0.25rem 0.75rem;border-radius:999px;font-size:0.85rem;color:var(--muted)}
+  .link{color:var(--accent2);text-decoration:none;font-size:0.85rem}
+  .link:hover{text-decoration:underline}
+  .cta{text-align:center;margin:3rem 0;padding:2rem;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(6,182,212,0.1));border-radius:16px}
+  .cta h2{margin:0 0 0.5rem}
+  .cta code{background:var(--card);padding:0.5rem 1rem;border-radius:8px;font-size:1.1rem;display:inline-block;margin:0.5rem 0}
+  .cta a{color:var(--accent);text-decoration:none}
+  .user-tag{color:var(--muted);font-size:0.9rem;margin-bottom:1rem}
+</style>
+</head>
+<body>
+<div class="container">
+  ${user ? `<p class="user-tag">${escapeHtml(t('sharedBy').replace('{user}', user))}</p>` : ''}
+  <h1>${escapeHtml(t('skillRecommendations'))}</h1>
+  <div class="stats">
+    <div class="stat"><b>${data.totalCount}</b><span>${t('skillsScanned')}</span></div>
+    <div class="stat"><b>${totalCategories}/9</b><span>${t('categoriesCovered')}</span></div>
+  </div>
+
+  ${gaps.length > 0 ? `<h2>⚠️ ${escapeHtml(t('gapAnalysis'))}</h2><div class="grid">${gapCards}</div>` : ''}
+  ${popular.length > 0 ? `<h2>🔥 ${escapeHtml(t('popularYoureMissing'))}</h2><div class="grid">${popularItems}</div>` : ''}
+  ${overlaps.length > 0 ? `<h2>📋 ${escapeHtml(t('overlapAlert'))}</h2><div class="grid">${overlapItems}</div>` : ''}
+
+  <div class="cta">
+    <h2>${escapeHtml(t('poweredBy'))}</h2>
+    <p>${escapeHtml(t('installSkillGuide'))}</p>
+    <code>npx skill-guide --open</code>
+    <p><a href="https://github.com/gtskevin/skill-guide">github.com/gtskevin/skill-guide</a></p>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+function renderShareHTML(data, user) {
+  const groups = groupBy(data.skills, 'category');
+  const totalCategories = Object.keys(groups).length;
+
+  const topPicks = data.skills
+    .filter((s) => s.whenToUse || s.howItWorks || (s.sections && s.sections.length > 0))
+    .slice(0, 5);
+
+  const categoryCards = Object.entries(groups)
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([category, items]) => `
+      <article class="card">
+        <h3>${escapeHtml(category)} <span class="count">${items.length}</span></h3>
+        <div class="skill-list">${items.map((s) => `
+          <div class="skill-item">
+            <span class="skill-name">${escapeHtml(s.name)}</span>
+            <span class="skill-desc">${escapeHtml(truncate(s.description || '', 80))}</span>
+          </div>
+        `).join('')}</div>
+      </article>
+    `).join('');
+
+  const topPicksSection = topPicks.length > 0 ? `
+    <h2>${escapeHtml(t('topPicks'))}</h2>
+    <div class="grid picks">${topPicks.map((s) => `
+      <article class="card pick-card">
+        <h3>${escapeHtml(s.name)}</h3>
+        <p>${escapeHtml(truncate(s.description || '', 120))}</p>
+      </article>
+    `).join('')}</div>
+  ` : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(t('myAiSkillStack'))} — skill-guide</title>
+<meta property="og:title" content="${escapeHtml(t('myAiSkillStack'))}">
+<meta property="og:description" content="${data.totalCount} skills across ${totalCategories} categories — powered by skill-guide">
+<meta property="og:type" content="website">
+<style>
+  :root{--bg:#0f0f23;--card:#1a1a2e;--text:#e0e0e0;--muted:#888;--accent:#7c3aed;--accent2:#06b6d4;--pick:#10b981}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;padding:2rem}
+  .container{max-width:960px;margin:0 auto}
+  .hero{text-align:center;padding:3rem 0}
+  h1{font-size:3rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.5rem}
+  h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:var(--accent2)}
+  .subtitle{color:var(--muted);font-size:1.1rem}
+  .user-tag{color:var(--muted);font-size:0.9rem;margin-bottom:0.5rem}
+  .stats{display:flex;gap:1.5rem;justify-content:center;margin:1.5rem 0}
+  .stat{background:var(--card);padding:1rem 2rem;border-radius:12px;text-align:center;min-width:120px}
+  .stat b{font-size:2.5rem;display:block;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .stat span{color:var(--muted);font-size:0.85rem}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+  .picks{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+  .card{background:var(--card);padding:1.5rem;border-radius:12px;border:1px solid rgba(255,255,255,0.05)}
+  .card h3{margin-bottom:0.75rem;font-size:1.1rem;display:flex;align-items:center;gap:0.5rem}
+  .card .count{background:rgba(124,58,237,0.2);padding:0.15rem 0.5rem;border-radius:999px;font-size:0.8rem;color:var(--accent)}
+  .pick-card{border-left:3px solid var(--pick)}
+  .pick-card p{color:var(--muted);font-size:0.9rem}
+  .skill-list{display:flex;flex-direction:column;gap:0.4rem}
+  .skill-item{display:flex;gap:0.5rem;align-items:baseline}
+  .skill-name{font-weight:600;font-size:0.95rem;white-space:nowrap}
+  .skill-desc{color:var(--muted);font-size:0.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cta{text-align:center;margin:3rem 0;padding:2.5rem;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(6,182,212,0.1));border-radius:16px}
+  .cta h2{margin:0 0 0.5rem}
+  .cta p{color:var(--muted);margin:0.5rem 0}
+  .cta code{background:var(--card);padding:0.5rem 1.5rem;border-radius:8px;font-size:1.2rem;display:inline-block;margin:0.75rem 0;color:var(--accent2)}
+  .cta a{color:var(--accent);text-decoration:none;font-weight:600}
+  .cta a:hover{text-decoration:underline}
+  footer{text-align:center;padding:2rem 0;color:var(--muted);font-size:0.8rem}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    ${user ? `<p class="user-tag">${escapeHtml(t('sharedBy').replace('{user}', user))}</p>` : ''}
+    <h1>${escapeHtml(t('myAiSkillStack'))}</h1>
+    <p class="subtitle">${data.totalCount} ${t('skillsScanned')} · ${totalCategories} ${t('categoriesCovered')}</p>
+    <div class="stats">
+      <div class="stat"><b>${data.totalCount}</b><span>${t('skillsScanned')}</span></div>
+      <div class="stat"><b>${totalCategories}</b><span>${t('categoriesCovered')}</span></div>
+    </div>
+  </div>
+
+  ${topPicksSection}
+
+  <h2>${escapeHtml(t('categoryMap'))}</h2>
+  <div class="grid">${categoryCards}</div>
+
+  <div class="cta">
+    <h2>${escapeHtml(t('poweredBy'))}</h2>
+    <p>${escapeHtml(t('installSkillGuide'))}</p>
+    <code>npx skill-guide --open</code>
+    <p><a href="https://github.com/gtskevin/skill-guide">github.com/gtskevin/skill-guide</a></p>
+  </div>
+</div>
+<footer>Generated by skill-guide</footer>
+</body>
+</html>`;
+}
+
 function main() {
   const mode = parseMode();
   if (mode.mode === 'help') {
@@ -766,6 +1051,58 @@ function main() {
   if (mode.mode === 'doctor') {
     process.stdout.write(`${printDoctor(data)}\n`);
     return;
+  }
+
+  if (mode.mode === 'recommend') {
+    const registry = require('./skill-registry');
+    const installed = data.skills;
+    const refresh = hasFlag('--refresh');
+    const onlineEntries = registry.fetchRegistry({ refresh });
+    const recommendations = registry.recommend(installed, onlineEntries);
+
+    const format = getArgValue('--format') || 'html';
+    if (format === 'json') {
+      process.stdout.write(JSON.stringify({ installed, recommendations }, null, 2) + '\n');
+      process.exit(0);
+    }
+
+    const terminalOutput = renderRecommendTerminal(data, recommendations);
+    process.stdout.write(terminalOutput);
+
+    const shouldOpen = hasFlag('--open') && !hasFlag('--no-open');
+    const outputFile = getArgValue('--output');
+    if (shouldOpen || outputFile) {
+      const html = renderRecommendHTML(data, recommendations, getArgValue('--user'));
+      const defaultFile = path.join(os.tmpdir(), 'skill-guide-recommend.html');
+      const targetFile = outputFile ? path.resolve(outputFile) : defaultFile;
+      fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+      fs.writeFileSync(targetFile, html, 'utf8');
+      if (shouldOpen) openFile(targetFile);
+      process.stdout.write(`Generated: ${targetFile}\n`);
+    }
+
+    process.exit(0);
+  }
+
+  if (mode.mode === 'share') {
+    const user = getArgValue('--user');
+    const format = getArgValue('--format') || 'html';
+
+    if (format === 'json') {
+      process.stdout.write(JSON.stringify({ skills: data.skills, totalCount: data.totalCount }, null, 2) + '\n');
+      process.exit(0);
+    }
+
+    const shouldOpen = hasFlag('--open') && !hasFlag('--no-open');
+    const outputFile = getArgValue('--output');
+    const html = renderShareHTML(data, user);
+    const defaultFile = path.join(os.tmpdir(), 'skill-guide-share.html');
+    const targetFile = outputFile ? path.resolve(outputFile) : defaultFile;
+    fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+    fs.writeFileSync(targetFile, html, 'utf8');
+    if (shouldOpen) openFile(targetFile);
+    process.stdout.write(`Generated: ${targetFile}\n`);
+    process.exit(0);
   }
 
   const format = getArgValue('--format') || 'html';
