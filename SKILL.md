@@ -37,12 +37,16 @@ Determine the mode from user input:
 | `/skill-guide <name>` or "tell me about <name>" | deep-dive | `--skill <name>` |
 | Task description or "which skill for X" | tool-selection | `--search <query>` |
 | `/skill-guide all` | full-manual | `--full` |
+| "share my skills" or "show my skill stack" | share | `--share` |
+| "recommend skills" or "what should I install" | recommend | `--recommend` |
 
 **Resolution rules (apply in order):**
-1. If argument is "all" (case-insensitive) -> full-manual mode
-2. If argument exactly matches a known skill name -> deep-dive mode
-3. If argument contains verbs (e.g., "review", "build", "test") or question words ("which", "what", "how") -> tool-selection mode
-4. If bare `/skill-guide` with no argument -> discovery mode
+1. If user says "share" or "show my skill stack" or "生成我的技能栈" -> share mode
+2. If user says "recommend" or "what should I install" or "推荐技能" -> recommend mode
+3. If argument is "all" (case-insensitive) -> full-manual mode
+4. If argument exactly matches a known skill name -> deep-dive mode
+5. If argument contains verbs (e.g., "review", "build", "test") or question words ("which", "what", "how") -> tool-selection mode
+6. If bare `/skill-guide` with no argument -> discovery mode
 
 ## 3. Workflow
 
@@ -64,6 +68,8 @@ Follow these steps exactly:
    - Tool-selection: `node <skill-dir>/skill-guide.js --search "<query>"`
    - Full manual: `node <skill-dir>/skill-guide.js --full`
    - Diagnostics: `node <skill-dir>/skill-guide.js --doctor`
+   - Share: `node <skill-dir>/skill-guide.js --share [--user <name>]`
+   - Recommend: `node <skill-dir>/skill-guide.js --recommend`
    Append `--lang <lang>` to any command when a non-English language is detected.
 5. If `skill-guide.js` is unavailable, fall back to running `scan-skills.js` and generating HTML using the rules below.
 6. **Post-translate for non-English languages** (when lang is NOT `en`):

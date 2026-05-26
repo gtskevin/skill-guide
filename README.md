@@ -123,6 +123,8 @@ ln -s "$(pwd)/skill-guide" "${CODEX_HOME:-$HOME/.codex}/skills/skill-guide"
 npx skill-guide --open
 npx skill-guide --search security --open
 npx skill-guide --skill test-driven-development --open
+npx skill-guide --share --open                    # Share your skill stack
+npx skill-guide --recommend --open                # Get recommendations
 npx skill-guide --format json
 npx skill-guide --doctor
 ```
@@ -152,16 +154,30 @@ Or: "帮我推荐一个做测试的技能"
 /skill-guide all
 ```
 
+### Share your skill stack
+```bash
+npx skill-guide --share --open                    # Generate portfolio page
+npx skill-guide --share --user @gtskevin --open   # With personalized tag
+```
+
+### Get recommendations
+```bash
+npx skill-guide --recommend --open                # HTML report
+npx skill-guide --recommend                       # Terminal output
+npx skill-guide --recommend --format json         # JSON for agents
+```
+
 ## How it works
 
 ```
 skill-guide/
-├── SKILL.md             # Skill definition + HTML generation rules
-├── agents/openai.yaml   # Codex/OpenAI skill UI metadata
+├── SKILL.md              # Skill definition + HTML generation rules
+├── agents/openai.yaml    # Codex/OpenAI skill UI metadata
 ├── skill-guide.js        # Deterministic CLI + HTML generator
-├── scan-skills.js       # Zero-dependency Node.js scanner
-├── demo.html            # Demo presentation (this is what you see above)
-└── LICENSE              # MIT
+├── scan-skills.js        # Zero-dependency Node.js scanner
+├── skill-registry.js     # Online directory fetching + recommendation engine
+├── demo.html             # Demo presentation (this is what you see above)
+└── LICENSE               # MIT
 ```
 
 1. `scan-skills.js` scans Claude Code, Codex, cc-switch, and plugin skill directories; parses YAML frontmatter; extracts sections and key paragraphs
@@ -189,6 +205,9 @@ skill-guide/
 | `--search <query>` | Generate recommendations for a task |
 | `--skill <name>` | Generate a deep-dive for one skill |
 | `--full` | Generate a complete manual |
+| `--share` | Generate a shareable portfolio HTML |
+| `--user <name>` | Add personalized tag to share page |
+| `--recommend` | Show skill recommendations from online directories |
 | `--lang <code>` | UI language (en, zh, or any — auto-translated) |
 | `--doctor` | Check paths, sources, and scan counts |
 
