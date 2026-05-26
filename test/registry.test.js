@@ -110,3 +110,67 @@ test('fetchRegistry returns entries from cached data', () => {
   assert.equal(result[0].name, 'tdd');
   assert.equal(result[1].name, 'debug');
 });
+
+test('recommend detects gap categories', () => {
+  const registry = require(path.join(root, 'skill-registry'));
+  const installed = [
+    { name: 'tdd', description: 'Test-Driven Development', category: 'testing' },
+    { name: 'debug', description: 'Systematic debugging', category: 'development' },
+  ];
+  const online = [
+    { name: 'security-audit', description: 'OWASP scanning', url: 'https://github.com/example/sec', source: 'test' },
+    { name: 'vercel-deploy', description: 'Deploy to Vercel', url: 'https://github.com/example/vercel', source: 'test' },
+  ];
+  const result = registry.recommend(installed, online);
+  const gaps = result.filter((r) => r.type === 'gap');
+  assert.ok(gaps.length > 0);
+  assert.ok(gaps.some((g) => g.category === 'security'));
+});
+
+test('recommend detects overlap', () => {
+  const registry = require(path.join(root, 'skill-registry'));
+  const installed = [
+    { name: 'tdd', description: 'TDD workflow', category: 'testing' },
+    { name: 'vitest', description: 'Vitest testing', category: 'testing' },
+    { name: 'playwright', description: 'E2E testing', category: 'testing' },
+    { name: 'jest', description: 'Jest testing', category: 'testing' },
+  ];
+  const result = registry.recommend(installed, []);
+  const overlaps = result.filter((r) => r.type === 'overlap');
+  assert.equal(overlaps.length, 1);
+  assert.equal(overlaps[0].category, 'testing');
+  assert.ok(overlaps[0].count >= 4);
+});
+
+test('recommend detects popular skills not installed', () => {
+  const registry = require(path.join(root, 'skill-registry'));
+  const installed = [
+    { name: 'debug', description: 'Debugging', category: 'development' },
+  ];
+  const online = [
+    { name: 'tdd', description: 'TDD workflow', url: 'https://github.com/example/tdd', source: 's1' },
+    { name: 'tdd', description: 'TDD workflow', url: 'https://github.com/example/tdd', source: 's2' },
+    { name: 'tdd', description: 'TDD workflow', url: 'https://github.com/example/tdd', source: 's3' },
+    { name: 'security-audit', description: 'Security', url: 'https://github.com/example/sec', source: 's1' },
+  ];
+  const result = registry.recommend(installed, online);
+  const popular = result.filter((r) => r.type === 'popular');
+  assert.ok(popular.length > 0);
+  assert.equal(popular[0].name, 'tdd');
+});
+
+test('recommend returns empty for perfect stack', () => {
+  const registry = require(path.join(root, 'skill-registry'));
+  const installed = [
+    { name: 'tdd', category: 'testing' },
+    { name: 'figma', category: 'design' },
+    { name: 'security-audit', category: 'security' },
+    { name: 'docs', category: 'documentation' },
+    { name: 'cron', category: 'automation' },
+    { name: 'vercel', category: 'deployment' },
+    { name: 'lint', category: 'code-quality' },
+    { name: 'debug', category: 'development' },
+  ];
+  const result = registry.recommend(installed, []);
+  assert.equal(result.length, 0);
+});
