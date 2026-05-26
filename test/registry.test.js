@@ -104,6 +104,9 @@ test('fetchRegistry returns entries from cached data', () => {
     { name: 'debug', url: 'https://github.com/example/debug', description: 'Debugging', source: 'test' },
   ];
   registry._writeCache({ entries: testEntries }, registry.REGISTRY_URLS);
-  const result = registry.fetchRegistry({ refresh: true });
+  const result = registry.fetchRegistry();
   assert.ok(Array.isArray(result));
+  assert.equal(result.length, 2);
+  assert.equal(result[0].name, 'tdd');
+  assert.equal(result[1].name, 'debug');
 });
