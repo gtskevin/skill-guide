@@ -222,3 +222,47 @@ test('--share works without --user flag', () => {
   assert.match(html, /My AI Skill Stack/);
   assert.doesNotMatch(html, /Shared by/);
 });
+
+test('share HTML contains all enhanced sections', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-share-final-'));
+  const output = path.join(home, 'share.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/debug', 'debug', 'Systematic debugging');
+  writeSkill(home, '.claude/skills/security-audit', 'security-audit', 'OWASP security scanning');
+
+  execFileSync(process.execPath, [cli, '--share', '--output', output, '--no-open', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex') },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+  // Core structure
+  assert.ok(html.includes('<!DOCTYPE html>'), 'valid HTML');
+  assert.ok(html.includes('og:title'), 'has OG tags');
+  // Enhanced features
+  assert.ok(html.includes('persona'), 'has persona section');
+  assert.ok(html.includes('<svg'), 'has radar chart');
+  assert.ok(html.includes('polygon'), 'has radar chart polygons');
+  assert.ok(html.includes('Stop guessing'), 'has enhanced CTA');
+  assert.ok(html.includes('cta-btn'), 'has gradient CTA button');
+});
+
+test('recommend HTML contains all enhanced sections', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-recommend-final-'));
+  const output = path.join(home, 'recommend.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+
+  execFileSync(process.execPath, [cli, '--recommend', '--output', output, '--no-open', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex'), SKILL_REGISTRY_OFFLINE: '1' },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+  assert.ok(html.includes('<!DOCTYPE html>'), 'valid HTML');
+  assert.ok(html.includes('og:title'), 'has OG tags');
+  assert.ok(html.includes('Stop guessing'), 'has enhanced CTA');
+  assert.ok(html.includes('breakdown-bar'), 'has category breakdown bar');
+  assert.ok(html.includes('breakdown-legend'), 'has breakdown legend');
+});
