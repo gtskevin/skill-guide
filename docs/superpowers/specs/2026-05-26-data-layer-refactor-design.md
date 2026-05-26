@@ -1,11 +1,14 @@
 # Data Layer Refactor Design
 
-> **状态：** 设计中
+> **状态：** 待评审
 > **日期：** 2026-05-26
 
 ## Goal
 
-Refactor the skill data layer to fix parsing bugs, improve data quality, and provide richer structured data that makes share/recommend outputs genuinely useful and trustworthy.
+Refactor the skill data layer to fix parsing bugs, improve data quality, and redesign share/recommend output so that:
+1. Share page makes anyone seeing it want to run `npx skill-guide --open`
+2. Recommend page gives genuinely useful, personalized insights
+3. No output is misleading or inaccurate
 
 ## Constraints
 
@@ -59,13 +62,16 @@ const bodyContent = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
 
 ### 2.3 `completeness` — quality score (0-100)
 
-**Purpose:** Measures how much useful data a skill provides. Used to rank top picks and recommend which skills to keep in overlap alerts.
+**Purpose:** Measures documentation quality (NOT skill quality). Used for:
+- Selecting which skills to showcase as examples
+- Ranking skills within overlap alerts
+- Accuracy safeguard: always label as "documentation completeness"
 
-**Scoring rules (conservative, verifiable):**
+**Scoring rules:**
 
 | Field | Points | Condition |
 |-------|--------|-----------|
-| description | 20 | Non-empty AND not a YAML artifact (`>`, `>-`, `\|-`, etc.) |
+| description | 20 | Non-empty AND not a YAML artifact |
 | summary | 20 | Non-empty |
 | whenToUse | 20 | Non-empty AND does not start with `---` |
 | howItWorks | 10 | Non-empty AND does not contain `category:` or `tags:` |
@@ -73,18 +79,13 @@ const bodyContent = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
 | triggers | 10 | Array with length > 0 |
 | limitations | 10 | Non-empty |
 
-**Important:** The score is deliberately conservative. A skill with only a description gets 20/100. This prevents misleading users into thinking a poorly-documented skill is "good."
-
-**Validation:** Each field check includes a "garbage detection" filter — if the content looks like YAML metadata, it gets 0 points for that field.
+Each field check includes garbage detection — YAML metadata patterns get 0 points.
 
 ---
 
 ## Section 3: Improved Categorization
 
 ### 3.1 Use tags for better category assignment
-
-**Current:** Pure keyword regex on name + description text.
-**Improved:** If `tags` are available, use them as primary signal. Fall back to text matching only when tags are empty.
 
 **Priority order:**
 1. `tags` array matches a category's keywords
@@ -94,106 +95,214 @@ const bodyContent = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
 
 ### 3.2 Reduce "other" bloat
 
-**Current:** 123/340 skills (36%) fall into "other".
-**Target:** <20% in "other" after using tags.
-
-**Why this matters:** The radar chart is dominated by "other", making it visually meaningless. Reducing "other" makes the chart actually useful.
+**Current:** 123/340 skills (36%) in "other".
+**Target:** <20% after using tags.
 
 ---
 
-## Section 4: Output Improvements (Share Page)
+## Section 4: Share Page Redesign
 
-### 4.1 Top picks selection
+### Design principles (from research)
 
-**Current:** First 5 skills that have `whenToUse` or `howItWorks` or `sections`.
-**Improved:** Sort by `completeness` descending, take top 5.
+1. **7-second rule** — first screen must sell the tool AND the user's stack
+2. **Pain-first** — lead with what the visitor doesn't know, not what the tool does
+3. **"Your turn" hook** — every section should make the visitor want to run the command
+4. **Page = demo** — the share page itself demonstrates the tool's capabilities
 
-**Rationale:** This ensures the showcase skills have the richest data. A skill with 95/100 completeness will have description, summary, whenToUse, tags — enough to create a compelling card.
+### 4.1 Page structure
 
-### 4.2 Top pick cards
+```
+┌─────────────────────────────────────────┐
+│ HERO (7-second sell)                     │
+│                                          │
+│ "200+ skills but no idea what you have?"│  ← pain point (universal)
+│                                          │
+│ skill-guide scans everything and shows   │  ← context for new visitors
+│ you.                                     │
+│                                          │
+│ @gtskevin's stack:                       │  ← personalization
+│ Security Champion · 340 skills           │  ← persona
+│ [雷达图]                                  │  ← visual proof
+├─────────────────────────────────────────┤
+│ CAPABILITY MAP (what can this agent do?) │
+│                                          │
+│ 🛡️ Security (33) — Deep coverage.       │
+│    Audit code, check OWASP, scan CVEs    │
+│    e.g. security-audit                   │
+│                                          │
+│ 🎨 Design (53) — Extensive coverage.     │
+│    Critique UI, generate themes, slides   │
+│    e.g. design-critique                  │
+│                                          │
+│ 🧪 Testing (28) — Solid coverage.        │
+│    Write TDD, run E2E, debug systems      │
+│    e.g. playwright                       │
+│                                          │
+│ ... (one entry per non-empty category)   │
+├─────────────────────────────────────────┤
+│ STACK INSIGHTS (personalized analysis)   │
+│                                          │
+│ 💪 Strongest: Security (33 skills)       │
+│ ⚠️ Gap: Documentation (0 skills)         │
+│    Add a docs skill to keep your project │
+│    well-documented.                      │
+│                                          │
+│ Run --recommend for full analysis        │
+├─────────────────────────────────────────┤
+│ CTA ("your turn" hook)                   │
+│                                          │
+│ What's YOUR stack?                       │  ← challenge
+│ npx skill-guide --open                   │
+│ [Star on GitHub]                         │
+└─────────────────────────────────────────┘
+```
 
-**Current:** Name + truncated description.
-**Improved:** Name + summary (or description fallback) + triggers (if any) + tags (if any).
+### 4.2 Dynamic capability descriptions
+
+Capability descriptions change based on skill count in that category:
+
+| Count | Description prefix | Example |
+|-------|-------------------|---------|
+| 20+ | "Extensive coverage." | "Extensive coverage. Audit code, check OWASP, scan CVEs" |
+| 10-19 | "Solid coverage." | "Solid coverage. Write TDD, run E2E, debug systems" |
+| 3-9 | "Some coverage." | "Some coverage. Critique UI, generate themes" |
+| 1-2 | "Getting started." | "Getting started. Basic code review" |
+
+**Why dynamic:** A user with 33 security skills should see different text than one with 3. This makes the capability narrative feel personalized, not templated.
+
+### 4.3 OG tags
+
+```html
+<meta property="og:title" content="{persona} · {count} AI Skills — skill-guide">
+<meta property="og:description" content="I can {top 3 capabilities}. Here's my full AI skill stack.">
+```
 
 **Example:**
 ```
-careful
-Safety guardrails for destructive commands. When active, warns
-before executing rm -rf, DROP TABLE, git push --force...
-
-Triggers: be careful, warn before destructive, safety mode
-Tags: safety, git, destructive
+og:title = "Security Champion · 340 AI Skills — skill-guide"
+og:description = "I can audit code, design UI, write tests. Here's my full AI skill stack."
 ```
 
-### 4.3 Category cards — "other" cap
+### 4.4 "Improve your stack" section
 
-**Current:** Shows all skills in every category (123 in "other").
-**Improved:** Show first 10 skills per category, then "+ N more" for overflow.
+Below the capability map, show the weakest 1-2 categories with actionable suggestions:
 
-### 4.4 Radar chart — more meaningful
+```
+⚠️ Your weakest area: Documentation (0 skills)
+   Try: doc-coauthoring — writes docs alongside your code
+```
 
-**Current:** "other" dominates at 36%.
-**Improved:** After better categorization, "other" should be <20%. The chart shows real skill distribution.
+This serves two purposes:
+1. Gives the user actionable value (not just a pretty page)
+2. Shows visitors that skill-guide provides real analysis (demo effect)
+
+### 4.5 Representative skill selection
+
+For each category in the capability map, select one example skill:
+- Primary: highest `completeness` in that category
+- Fallback: first skill with non-empty description
+- Label as "e.g." not "recommended" (accuracy safeguard)
 
 ---
 
-## Section 5: Output Improvements (Recommend Page)
+## Section 5: Recommend Page Redesign
 
-### 5.1 Overlap alert — "top 3" recommendation
+### 5.1 Page structure
 
-**Current:** "You have 33 skills in security. Consider keeping only the most-used one."
-**Improved:** "Your top 3 in security:" then list the 3 skills with highest `completeness`, with scores.
-
-**Example:**
 ```
-security (33 skills)
-Your top 3:
-  1. security-audit (95/100)
-  2. django-security (88/100)
-  3. laravel-security (82/100)
-
-Based on documentation completeness.
+┌─────────────────────────────────────────┐
+│ STACK OVERVIEW                           │
+│ [分类分布条]                              │
+│                                          │
+│ 💪 Strongest: Security (33)              │
+│ ⚠️ Gap: Documentation (0)                │
+├─────────────────────────────────────────┤
+│ CLEANUP OPPORTUNITIES (top 2-3 only)     │
+│                                          │
+│ design (53 skills) — significant overlap │
+│ Most documented:                         │
+│  1. design-critique (95/100)             │
+│  2. ui-ux-pro-max (88/100)              │
+│  3. liquid-glass-design (82/100)         │
+│ Based on documentation completeness.     │
+├─────────────────────────────────────────┤
+│ YOU MIGHT NOT KNOW (personalized)        │
+│                                          │
+│ Based on your security + testing skills: │
+│ • systematic-debugging                   │
+│   Structured root cause analysis         │
+│ • e2e-testing                            │
+│   Browser-based end-to-end testing       │
+├─────────────────────────────────────────┤
+│ GAP ANALYSIS                             │
+│                                          │
+│ ⚠️ Documentation (0 skills)              │
+│ Add a docs skill to keep your project    │
+│ well-documented.                         │
+│ Try: doc-coauthoring                     │
+├─────────────────────────────────────────┤
+│ CTA                                      │
+│ What's YOUR stack?                       │
+│ npx skill-guide --open                   │
+│ [Star on GitHub]                         │
+└─────────────────────────────────────────┘
 ```
 
-**Accuracy guarantee:** The completeness score is a measure of documentation quality, NOT skill quality. The recommendation text must clearly state this: "based on documentation completeness" not "best skills."
+### 5.2 Overlap alert — "top N by documentation completeness"
 
-### 5.2 Popular skills — real URLs
+Show only the top 2-3 most bloated categories (not all 9). For each:
+- List the 3 most documented skills with completeness scores
+- Label clearly: "Based on documentation completeness"
+- Never say "best skills" or "top skills"
 
-**Current:** Links to `example.com`.
-**Improved:** Use actual URLs from the awesome-list data. If URL is missing or invalid, don't show a link.
+### 5.3 "You might not know" — personalized recommendations
 
-### 5.3 Gap analysis — richer recommendations
+Based on the user's category combination, suggest skills from categories they already have but might not know about:
 
-**Current:** "Add a TDD skill to catch bugs before they ship" + generic online skill links.
-**Improved:** Same action hint, but recommended skills show their `summary` if available.
+```javascript
+const COMBO_RECOMMENDATIONS = {
+  'security+testing': ['systematic-debugging', 'e2e-testing', 'security-bounty-hunter'],
+  'automation+deployment': ['github-ops', 'vercel-deploy', 'ci-cd-optimizer'],
+  'design+development': ['frontend-patterns', 'component-library', 'design-system'],
+  'testing+code-quality': ['tdd-workflow', 'code-review', 'refactoring-patterns'],
+};
+```
+
+Only show if the recommended skill is NOT already installed.
+
+### 5.4 Popular skills — real URLs only
+
+Use actual URLs from the awesome-list data. If URL is missing, invalid, or `example.com`, don't show a link. Show description from the online entry if available.
 
 ---
 
 ## Section 6: Accuracy Safeguards
 
-### 6.1 Completeness score disclaimers
+### 6.1 Language rules
 
-The completeness score is about **documentation quality**, not **skill quality**. All user-facing text must reflect this:
-
-- ✅ "based on documentation completeness"
-- ✅ "most documented skills"
-- ❌ "best skills"
-- ❌ "top skills"
+| ✅ Say | ❌ Don't say |
+|--------|-------------|
+| "based on documentation completeness" | "best skills" |
+| "most documented" | "top skills" |
+| "e.g. security-audit" | "recommended: security-audit" |
+| "Extensive coverage" | "Expert level" |
+| "Your weakest area" | "You're bad at" |
 
 ### 6.2 No false confidence
 
-- If only 2 skills exist in a category, don't show "top 3" — show "top 2"
-- If a recommended skill has no summary, show description only (don't fabricate)
-- If online registry returns 0 results, don't show the popular section at all
+- If only 2 skills exist in a category, show "top 2" not "top 3"
+- If a field has no data, don't show it (don't fabricate)
+- If online registry returns 0 results, skip the section entirely
+- If a capability description would be generic ("Various skills"), skip that category
 
 ### 6.3 Garbage detection
 
-Before displaying any field, check for known garbage patterns:
-- Single character descriptions (`>`, `-`, `|`)
+Before displaying any field, check for:
+- Single character descriptions (`>`, `-`, `|`, `>-`, `|-`)
 - YAML frontmatter patterns (`--- name:`, `category:`, `tags:`)
 - Empty or whitespace-only strings
 
-If garbage is detected, treat the field as empty.
+If garbage detected, treat field as empty.
 
 ---
 
@@ -202,17 +311,18 @@ If garbage is detected, treat the field as empty.
 | File | Changes |
 |------|---------|
 | `scan-skills.js` | Fix YAML parser, strip frontmatter, add tags/summary/completeness, improve categorization |
-| `skill-guide.js` | Update top picks sorting, overlap "top 3", category card cap, garbage filtering |
-| `skill-registry.js` | Use completeness in recommend output |
-| `test/scan-skills.test.js` | Add tests for multiline YAML, frontmatter stripping, tags, summary, completeness |
-| `test/cli.test.js` | Update integration tests for new output format |
-| `test/registry.test.js` | Update recommend tests for completeness-based ranking |
+| `skill-guide.js` | Redesign share page (hero → capability map → insights → CTA), redesign recommend page, dynamic capability descriptions, OG tags, garbage filtering |
+| `skill-registry.js` | Use completeness in overlap ranking, fix popular URL filtering |
+| `test/scan-skills.test.js` | Tests for multiline YAML, frontmatter stripping, tags, summary, completeness |
+| `test/cli.test.js` | Tests for new share/recommend structure, OG tags, capability descriptions |
+| `test/registry.test.js` | Tests for completeness-based ranking, URL filtering |
 
 ---
 
 ## Spec Self-Review
 
 1. **Placeholder scan:** No TBD/TODO. All sections have concrete specifications.
-2. **Internal consistency:** The completeness score is defined once and used consistently in share top picks and recommend overlap.
-3. **Scope check:** This is focused on data layer + output improvements. No new CLI flags or modes.
-4. **Ambiguity check:** The scoring rules are explicit with point values. The accuracy safeguards section addresses the user's concern about misleading recommendations.
+2. **Internal consistency:** Completeness score defined once, used consistently. Capability descriptions defined once, used in both share and OG tags.
+3. **Scope check:** Data layer + output redesign. No new CLI flags.
+4. **Accuracy safeguards:** Explicit language rules, garbage detection, "no false confidence" rules. Address user's concern about misleading output.
+5. **Research-backed:** 7-second rule, pain-first headline, "your turn" hook, visual proof — all grounded in growth research.
