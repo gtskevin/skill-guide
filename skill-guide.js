@@ -1057,12 +1057,18 @@ function renderShareHTML(data, user) {
 
   const topPicksSection = topPicks.length > 0 ? `
     <h2>${escapeHtml(t('topPicks'))}</h2>
-    <div class="grid picks">${topPicks.map((s) => `
-      <article class="card pick-card">
-        <h3>${escapeHtml(s.name)}</h3>
-        <p>${escapeHtml(truncate(s.description || '', 120))}</p>
-      </article>
-    `).join('')}</div>
+    <div class="grid picks">${topPicks.map((s) => {
+      const trigger = s.triggers ? s.triggers.slice(0, 3).join(', ') : '';
+      const whenToUse = s.whenToUse ? truncate(s.whenToUse, 100) : '';
+      return `
+        <article class="card pick-card">
+          <h3>${escapeHtml(s.name)}</h3>
+          <p>${escapeHtml(truncate(s.description || '', 120))}</p>
+          ${trigger ? `<p class="pick-trigger">Triggers: ${escapeHtml(trigger)}</p>` : ''}
+          ${whenToUse ? `<p class="pick-when">${escapeHtml(whenToUse)}</p>` : ''}
+        </article>
+      `;
+    }).join('')}</div>
   ` : '';
 
   return `<!DOCTYPE html>
@@ -1096,6 +1102,8 @@ function renderShareHTML(data, user) {
   .card .count{background:rgba(124,58,237,0.2);padding:0.15rem 0.5rem;border-radius:999px;font-size:0.8rem;color:var(--accent)}
   .pick-card{border-left:3px solid var(--pick)}
   .pick-card p{color:var(--muted);font-size:0.9rem}
+  .pick-trigger{color:var(--accent);font-size:0.8rem;margin-top:0.5rem;font-style:italic}
+  .pick-when{color:var(--muted);font-size:0.8rem;margin-top:0.25rem}
   .skill-list{display:flex;flex-direction:column;gap:0.4rem}
   .skill-item{display:flex;gap:0.5rem;align-items:baseline}
   .skill-name{font-weight:600;font-size:0.95rem;white-space:nowrap}
