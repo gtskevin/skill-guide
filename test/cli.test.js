@@ -190,6 +190,23 @@ test('share HTML output contains persona section', () => {
   assert.ok(html.includes('Developer') || html.includes('Engineer') || html.includes('Builder') || html.includes('Explorer') || html.includes('Collector') || html.includes('Champion'), 'should contain a persona label');
 });
 
+test('share HTML contains SVG radar chart', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-radar-'));
+  const output = path.join(home, 'share.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/debug', 'debug', 'Systematic debugging');
+
+  execFileSync(process.execPath, [cli, '--share', '--output', output, '--no-open', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex') },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+  assert.ok(html.includes('<svg'), 'should contain SVG element');
+  assert.ok(html.includes('polygon'), 'should contain polygon elements for radar chart');
+});
+
 test('--share works without --user flag', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-share-nouser-'));
   const output = path.join(home, 'share.html');

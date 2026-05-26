@@ -940,6 +940,56 @@ function renderRecommendHTML(data, recommendations, user) {
 </html>`;
 }
 
+function renderRadarChart(skills) {
+  const CATEGORIES = ['testing', 'design', 'security', 'documentation', 'automation', 'deployment', 'code-quality', 'development'];
+  const LABELS_SHORT = ['Test', 'Design', 'Security', 'Docs', 'Auto', 'Deploy', 'Quality', 'Dev'];
+
+  const counts = {};
+  for (const cat of CATEGORIES) counts[cat] = 0;
+  for (const s of skills) {
+    const cat = s.category || 'other';
+    if (counts[cat] !== undefined) counts[cat]++;
+  }
+
+  const maxCount = Math.max(...Object.values(counts), 1);
+  const cx = 150, cy = 150, r = 120;
+  const angleStep = (2 * Math.PI) / CATEGORIES.length;
+
+  // Grid rings
+  const rings = [0.25, 0.5, 0.75, 1.0].map((scale) => {
+    const points = CATEGORIES.map((_, i) => {
+      const angle = i * angleStep - Math.PI / 2;
+      const x = cx + r * scale * Math.cos(angle);
+      const y = cy + r * scale * Math.sin(angle);
+      return `${x},${y}`;
+    }).join(' ');
+    return `<polygon points="${points}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+  }).join('\n    ');
+
+  // Data polygon
+  const dataPoints = CATEGORIES.map((cat, i) => {
+    const angle = i * angleStep - Math.PI / 2;
+    const value = counts[cat] / maxCount;
+    const x = cx + r * value * Math.cos(angle);
+    const y = cy + r * value * Math.sin(angle);
+    return `${x},${y}`;
+  }).join(' ');
+
+  // Labels
+  const labels = CATEGORIES.map((cat, i) => {
+    const angle = i * angleStep - Math.PI / 2;
+    const lx = cx + (r + 25) * Math.cos(angle);
+    const ly = cy + (r + 25) * Math.sin(angle);
+    return `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="11">${LABELS_SHORT[i]}</text>`;
+  }).join('\n    ');
+
+  return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" class="radar-chart">
+    ${rings}
+    <polygon points="${dataPoints}" fill="rgba(124,58,237,0.2)" stroke="#7c3aed" stroke-width="2"/>
+    ${labels}
+  </svg>`;
+}
+
 function generatePersona(skills) {
   const categories = {};
   for (const s of skills) {
@@ -971,6 +1021,8 @@ function renderShareHTML(data, user) {
   const groups = groupBy(data.skills, 'category');
   const totalCategories = Object.keys(groups).length;
   const persona = generatePersona(data.skills);
+
+  const radarChart = renderRadarChart(data.skills);
 
   const topPicks = data.skills
     .filter((s) => s.whenToUse || s.howItWorks || (s.sections && s.sections.length > 0))
@@ -1041,6 +1093,8 @@ function renderShareHTML(data, user) {
   .cta code{background:var(--card);padding:0.5rem 1.5rem;border-radius:8px;font-size:1.2rem;display:inline-block;margin:0.75rem 0;color:var(--accent2)}
   .cta a{color:var(--accent);text-decoration:none;font-weight:600}
   .cta a:hover{text-decoration:underline}
+  .radar-container{display:flex;justify-content:center;margin:2rem 0}
+  .radar-chart{width:300px;height:300px}
   footer{text-align:center;padding:2rem 0;color:var(--muted);font-size:0.8rem}
 </style>
 </head>
@@ -1051,6 +1105,7 @@ function renderShareHTML(data, user) {
     <h1>${escapeHtml(t('myAiSkillStack'))}</h1>
     <p class="subtitle">${data.totalCount} ${t('skillsScanned')} · ${totalCategories} ${t('categoriesCovered')}</p>
     <p class="persona">${escapeHtml(persona)}</p>
+    <div class="radar-container">${radarChart}</div>
     <div class="stats">
       <div class="stat"><b>${data.totalCount}</b><span>${t('skillsScanned')}</span></div>
       <div class="stat"><b>${totalCategories}</b><span>${t('categoriesCovered')}</span></div>
