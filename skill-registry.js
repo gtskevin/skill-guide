@@ -56,9 +56,12 @@ function parseMarkdownList(markdown, source) {
   const bulletRe = /^-\s+\[([^\]]+)\]\(([^)]+)\)\s*[-–—]\s*(.+)$/gm;
   let match;
   while ((match = bulletRe.exec(markdown)) !== null) {
+    const url = match[2].trim();
+    // Skip TOC anchor links
+    if (url.startsWith('#')) continue;
     entries.push({
       name: match[1].trim(),
-      url: match[2].trim(),
+      url,
       description: match[3].trim(),
       source,
     });
@@ -83,12 +86,12 @@ function parseMarkdownList(markdown, source) {
 // Registry URLs
 // ---------------------------------------------------------------------------
 const REGISTRY_URLS = [
-  'https://raw.githubusercontent.com/ComposioHQ/awesome-claude-skills/main/README.md',
+  'https://raw.githubusercontent.com/ComposioHQ/awesome-claude-skills/master/README.md',
   'https://raw.githubusercontent.com/ComposioHQ/awesome-codex-skills/main/README.md',
 ];
 
 const REGISTRY_SOURCES = {
-  'https://raw.githubusercontent.com/ComposioHQ/awesome-claude-skills/main/README.md': 'awesome-claude-skills',
+  'https://raw.githubusercontent.com/ComposioHQ/awesome-claude-skills/master/README.md': 'awesome-claude-skills',
   'https://raw.githubusercontent.com/ComposioHQ/awesome-codex-skills/main/README.md': 'awesome-codex-skills',
 };
 
@@ -109,13 +112,15 @@ function fetchRegistry(opts = {}) {
 
   for (const url of REGISTRY_URLS) {
     try {
-      const markdown = execFileSync(process.execPath, [
-        '-e',
-        `const https = require('https'); https.get(process.argv[1], {timeout: 10000}, (res) => { if (res.statusCode !== 200) { process.exit(0); } let d = ''; res.on('data', c => d += c); res.on('end', () => process.stdout.write(d)); }).on('error', () => {})`,
-        url,
-      ], { encoding: 'utf8', timeout: 15000 });
+      const { spawnSync } = require('child_process');
+      const result = spawnSync('curl', ['-sL', '--max-time', '10', url], {
+        encoding: 'utf8',
+        timeout: 15000,
+        shell: true,
+      });
+      const markdown = result.stdout || '';
 
-      if (markdown) {
+      if (markdown && !markdown.includes('404: Not Found')) {
         const source = REGISTRY_SOURCES[url] || 'unknown';
         const entries = parseMarkdownList(markdown, source);
         allEntries.push(...entries);
