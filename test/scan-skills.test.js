@@ -171,6 +171,38 @@ test('quoted multiline indicator characters are not treated as multiline', () =>
   assert.equal(skill.description, '>');
 });
 
+test('extracts tags from frontmatter', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-tags-'));
+  writeSkill(home, '.claude/skills/tagged-skill', 'tagged-skill', 'A skill with tags',
+    'tags:\n  - security\n  - audit\n  - owasp\n');
+
+  const result = runScanner(home);
+  const skill = result.skills[0];
+
+  assert.deepEqual(skill.tags, ['security', 'audit', 'owasp']);
+});
+
+test('extracts inline array tags from frontmatter', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-tags-inline-'));
+  writeSkill(home, '.claude/skills/inline-tags', 'inline-tags', 'Inline tags',
+    'tags: [testing, tdd, qa]\n');
+
+  const result = runScanner(home);
+  const skill = result.skills[0];
+
+  assert.deepEqual(skill.tags, ['testing', 'tdd', 'qa']);
+});
+
+test('tags defaults to empty array when missing', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-no-tags-'));
+  writeSkill(home, '.claude/skills/no-tags', 'no-tags', 'No tags skill');
+
+  const result = runScanner(home);
+  const skill = result.skills[0];
+
+  assert.deepEqual(skill.tags, []);
+});
+
 test('resolves shorthand skill names to the best matching skill', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-shorthand-'));
   writeSkill(home, '.claude/skills/django-tdd', 'django-tdd', 'Django TDD skill');

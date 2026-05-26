@@ -393,12 +393,16 @@ function loadSkill(dir, mdFile) {
   let allowedTools = fm['allowed-tools'] || fm.allowedTools || [];
   if (typeof allowedTools === 'string') allowedTools = [allowedTools];
 
+  let tags = fm.tags || [];
+  if (typeof tags === 'string') tags = [tags];
+
   return {
     name,
     description,
-    category: categorize(name, description, triggers),
+    category: categorize(name, description, triggers, tags),
     triggers,
     allowedTools,
+    tags,
     version: fm.version || '',
     dir,
     _mdFile: mdFile,
@@ -480,6 +484,7 @@ function cleanSkill(skill, includeFull) {
     category: skill.category,
     sources: skill.sources,
     triggers: skill.triggers,
+    tags: skill.tags,
     allowedTools: skill.allowedTools,
     version: skill.version,
     dir: skill.dir.replace(HOME, '~'),
