@@ -222,6 +222,26 @@ function smartTruncate(text, maxLen) {
 }
 
 // ---------------------------------------------------------------------------
+// Layer 1.5: Extract summary (first body paragraph before headings)
+// ---------------------------------------------------------------------------
+function extractSummary(bodyContent) {
+  const paragraphs = bodyContent.split(/\n\s*\n/);
+  for (const para of paragraphs) {
+    const trimmed = para.trim();
+    if (!trimmed) continue;
+    if (trimmed.startsWith('##')) break;
+    if (trimmed.startsWith('```')) continue;
+    if (trimmed.match(/^!\[/)) continue;
+    if (trimmed.startsWith('|')) continue;
+    const text = trimmed.replace(/\s+/g, ' ').trim();
+    if (text.length >= 20) {
+      return smartTruncate(text, 200);
+    }
+  }
+  return '';
+}
+
+// ---------------------------------------------------------------------------
 // Layer 2: Extract sections (## headings with first paragraph)
 // ---------------------------------------------------------------------------
 function extractSections(content) {
@@ -464,10 +484,12 @@ function loadFullData(skill) {
 
   const sections = extractSections(bodyContent);
   const contextual = extractContextual(bodyContent);
+  const summary = extractSummary(bodyContent);
 
   return {
     ...skill,
     sections,
+    summary,
     howItWorks: contextual.howItWorks,
     whenToUse: contextual.whenToUse,
     limitations: contextual.limitations,
@@ -493,6 +515,7 @@ function cleanSkill(skill, includeFull) {
   if (includeFull) {
     const full = loadFullData(skill);
     base.sections = full.sections;
+    base.summary = full.summary;
     base.howItWorks = full.howItWorks;
     base.whenToUse = full.whenToUse;
     base.limitations = full.limitations;

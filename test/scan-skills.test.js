@@ -203,6 +203,40 @@ test('tags defaults to empty array when missing', () => {
   assert.deepEqual(skill.tags, []);
 });
 
+test('extracts summary from first body paragraph', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-summary-'));
+  const dir = path.join(home, '.claude/skills/summary-demo');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'SKILL.md'),
+    `---\nname: summary-demo\ndescription: A demo skill\n---\n\nThis skill provides comprehensive testing capabilities for your project.\nIt covers unit tests, integration tests, and E2E testing.\n\n## When to Use\n\nUse when you need testing.\n`,
+    'utf8'
+  );
+
+  const result = runScanner(home, { args: ['--full'] });
+  const skill = result.skills[0];
+
+  assert.ok(skill.summary, 'summary should be populated');
+  assert.match(skill.summary, /comprehensive testing/);
+  assert.ok(skill.summary.length <= 200, 'summary should be truncated to 200 chars');
+});
+
+test('summary is empty when no body content before headings', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-no-summary-'));
+  const dir = path.join(home, '.claude/skills/no-summary');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'SKILL.md'),
+    `---\nname: no-summary\ndescription: A skill\n---\n\n## When to Use\n\nUse this skill.\n`,
+    'utf8'
+  );
+
+  const result = runScanner(home, { args: ['--full'] });
+  const skill = result.skills[0];
+
+  assert.equal(skill.summary, '');
+});
+
 test('resolves shorthand skill names to the best matching skill', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-shorthand-'));
   writeSkill(home, '.claude/skills/django-tdd', 'django-tdd', 'Django TDD skill');
