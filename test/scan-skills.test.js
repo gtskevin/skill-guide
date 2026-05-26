@@ -237,6 +237,41 @@ test('summary is empty when no body content before headings', () => {
   assert.equal(skill.summary, '');
 });
 
+test('computes completeness score based on documentation quality', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-completeness-'));
+  const dir = path.join(home, '.claude/skills/complete-skill');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'SKILL.md'),
+    `---\nname: complete-skill\ndescription: A well-documented skill\ntags:\n  - testing\n  - tdd\ntriggers:\n  - test\n  - tdd\n---\n\nA comprehensive skill for testing workflows with many patterns.\n\n## When to Use\n\nWhen to use this skill for testing your code and writing reliable tests.\n\n## How It Works\n\nIt follows a workflow that ensures quality through test-driven development.\n\n## Limitations\n\nThe main limitation is that it does not support browser testing yet.\n`,
+    'utf8'
+  );
+
+  const result = runScanner(home, { args: ['--full'] });
+  const skill = result.skills[0];
+
+  assert.ok(typeof skill.completeness === 'number', 'completeness should be a number');
+  assert.ok(skill.completeness >= 0 && skill.completeness <= 100, 'completeness should be 0-100');
+  assert.ok(skill.completeness >= 80, 'well-documented skill should score high');
+});
+
+test('completeness score is low for garbage data', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-garbage-'));
+  const dir = path.join(home, '.claude/skills/garbage-skill');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'SKILL.md'),
+    `---\nname: garbage-skill\ndescription: >-\n---\n\n---\nname: garbage-skill\ncategory: testing\n`,
+    'utf8'
+  );
+
+  const result = runScanner(home, { args: ['--full'] });
+  const skill = result.skills[0];
+
+  assert.ok(typeof skill.completeness === 'number');
+  assert.ok(skill.completeness < 20, 'garbage data should score very low');
+});
+
 test('resolves shorthand skill names to the best matching skill', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-shorthand-'));
   writeSkill(home, '.claude/skills/django-tdd', 'django-tdd', 'Django TDD skill');

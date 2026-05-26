@@ -497,6 +497,53 @@ function loadFullData(skill) {
 }
 
 // ---------------------------------------------------------------------------
+// Compute completeness score (0-100) for documentation quality
+// ---------------------------------------------------------------------------
+const GARBAGE_PATTERNS = /^[>|](-|\+)?$|^---|^\s*$|^category:|^tags:/;
+
+function computeCompleteness(skill, full) {
+  let score = 0;
+
+  // description: 20 points — non-empty and not a YAML artifact
+  if (skill.description && skill.description.length > 2 && !GARBAGE_PATTERNS.test(skill.description)) {
+    score += 20;
+  }
+
+  // summary: 20 points — non-empty and not a YAML artifact
+  if (full && full.summary && full.summary.length > 0 && !GARBAGE_PATTERNS.test(full.summary)) {
+    score += 20;
+  }
+
+  // whenToUse: 20 points — non-empty and no YAML leakage
+  if (full && full.whenToUse && full.whenToUse.length > 20 && !full.whenToUse.startsWith('---')) {
+    score += 20;
+  }
+
+  // howItWorks: 10 points — no YAML metadata
+  if (full && full.howItWorks && full.howItWorks.length > 20 &&
+      !full.howItWorks.includes('category:') && !full.howItWorks.includes('tags:')) {
+    score += 10;
+  }
+
+  // tags: 10 points
+  if (skill.tags && skill.tags.length > 0) {
+    score += 10;
+  }
+
+  // triggers: 10 points
+  if (skill.triggers && skill.triggers.length > 0) {
+    score += 10;
+  }
+
+  // limitations: 10 points
+  if (full && full.limitations && full.limitations.length > 10) {
+    score += 10;
+  }
+
+  return score;
+}
+
+// ---------------------------------------------------------------------------
 // Clean skill for output (remove internal fields)
 // ---------------------------------------------------------------------------
 function cleanSkill(skill, includeFull) {
@@ -519,6 +566,7 @@ function cleanSkill(skill, includeFull) {
     base.howItWorks = full.howItWorks;
     base.whenToUse = full.whenToUse;
     base.limitations = full.limitations;
+    base.completeness = computeCompleteness(skill, full);
   }
 
   return base;
