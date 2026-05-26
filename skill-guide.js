@@ -84,6 +84,7 @@ const LABELS = {
     poweredBy: 'Powered by skill-guide',
     installSkillGuide: 'Install skill-guide to discover your skills',
     topPicks: 'Top Picks',
+    nMore: '+ {count} more',
   },
   zh: {
     yourAgentSkills: '你的 Agent Skills 技能库',
@@ -125,6 +126,7 @@ const LABELS = {
     poweredBy: '由 skill-guide 驱动',
     installSkillGuide: '安装 skill-guide 来发现你的技能',
     topPicks: '精选推荐',
+    nMore: '+ {count} 更多',
   },
 };
 
@@ -808,6 +810,7 @@ function renderRecommendTerminal(data, recommendations) {
       if (gap.skills.length > 0) {
         lines.push(`│      → ${t('tryThese')}: ${gap.skills.map((s) => s.name).join(', ')}`);
       }
+      if (gap.action) lines.push(`│    💡 ${gap.action}`);
     }
     lines.push('│');
   }
@@ -827,6 +830,7 @@ function renderRecommendTerminal(data, recommendations) {
     for (const overlap of overlaps) {
       lines.push(`│    • ${t('skillsInCategory').replace('{count}', overlap.count).replace('{category}', overlap.category)}`);
       lines.push(`│      ${t('considerKeeping')}`);
+      if (overlap.hasMore) lines.push(`│    ... +${overlap.remainingCount} more`);
     }
     lines.push('│');
   }
@@ -868,7 +872,7 @@ function renderRecommendHTML(data, recommendations, user) {
       <p>${escapeHtml(t('skillsInCategory').replace('{count}', overlap.count).replace('{category}', overlap.category))}</p>
       <p class="meta">${t('considerKeeping')}</p>
       <div class="chips">${overlap.skills.map((s) => `<span>${escapeHtml(s)}</span>`).join('')}${
-        overlap.hasMore ? `<span class="chip-more">+ ${overlap.remainingCount} more</span>` : ''
+        overlap.hasMore ? `<span class="chip-more">${escapeHtml(t('nMore').replace('{count}', overlap.remainingCount))}</span>` : ''
       }</div>
     </article>
   `).join('');

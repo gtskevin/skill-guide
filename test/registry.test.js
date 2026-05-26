@@ -170,9 +170,25 @@ test('recommend caps overlap skills at 8 with "+ N more" indicator', () => {
   const result = registry.recommend(installed, []);
   const overlap = result.find((r) => r.type === 'overlap');
   assert.ok(overlap, 'should have overlap result');
-  assert.ok(overlap.skills.length <= 8, 'should cap at 8 skills');
+  assert.strictEqual(overlap.skills.length, 8, 'should cap at exactly 8 skills');
   assert.ok(overlap.hasMore === true, 'should indicate more exist');
   assert.strictEqual(overlap.remainingCount, 7, 'should report remaining count');
+});
+
+test('overlap with exactly 8 skills has no overflow indicator', () => {
+  const registry = require(path.join(root, 'skill-registry'));
+  const installed = Array.from({ length: 8 }, (_, i) => ({
+    name: `skill-${i}`,
+    description: `Skill ${i}`,
+    category: 'testing',
+    source: 'test',
+  }));
+  const result = registry.recommend(installed, []);
+  const overlap = result.find((r) => r.type === 'overlap');
+  assert.ok(overlap, 'should have overlap result');
+  assert.strictEqual(overlap.skills.length, 8, 'should have all 8 skills');
+  assert.strictEqual(overlap.hasMore, false, 'should not have overflow');
+  assert.strictEqual(overlap.remainingCount, 0, 'should have 0 remaining');
 });
 
 test('recommend includes action hints for gap categories', () => {
