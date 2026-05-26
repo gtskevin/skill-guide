@@ -308,3 +308,61 @@ test('recommend HTML contains all enhanced sections', () => {
   assert.ok(html.includes('breakdown-bar'), 'has category breakdown bar');
   assert.ok(html.includes('breakdown-legend'), 'has breakdown legend');
 });
+
+test('full pipeline: share page has all redesigned sections', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-full-pipeline-'));
+  const output = path.join(home, 'share.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/security-audit', 'security-audit', 'OWASP security scanning');
+  writeSkill(home, '.claude/skills/debug', 'debug', 'Systematic debugging');
+  writeSkill(home, '.claude/skills/design-critique', 'design-critique', 'Design feedback');
+
+  execFileSync(process.execPath, [cli, '--share', '--output', output, '--no-open', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex') },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+
+  // Pain-point headline
+  assert.ok(html.includes('but no idea'), 'pain-point headline');
+  // Capability map
+  assert.ok(html.includes('Capability Map'), 'capability map section');
+  // Stack insights
+  assert.ok(html.includes('Strongest'), 'stack insights - strongest');
+  // OG tags with persona
+  assert.ok(html.includes('og:title'), 'OG title');
+  assert.ok(html.includes('AI Skills'), 'OG title mentions AI Skills');
+  // Radar chart
+  assert.ok(html.includes('<svg'), 'radar chart');
+  // CTA
+  assert.ok(html.includes('npx skill-guide'), 'CTA command');
+  assert.ok(html.includes('cta-btn'), 'CTA button');
+});
+
+test('full pipeline: recommend page has completeness scores', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-recommend-full-'));
+  const output = path.join(home, 'recommend.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/qa', 'qa', 'Quality Assurance test');
+  writeSkill(home, '.claude/skills/e2e', 'e2e', 'End-to-end test');
+
+  execFileSync(process.execPath, [cli, '--recommend', '--output', output, '--no-open', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex'), SKILL_REGISTRY_OFFLINE: '1' },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+
+  // Stack overview
+  assert.ok(html.includes('Strongest'), 'stack overview - strongest');
+  // Overlap with completeness
+  assert.ok(html.includes('/100'), 'completeness scores');
+  assert.ok(html.includes('documentation completeness'), 'accuracy label');
+  // Breakdown bar
+  assert.ok(html.includes('breakdown-bar'), 'breakdown bar');
+  // CTA
+  assert.ok(html.includes('npx skill-guide'), 'CTA command');
+});
