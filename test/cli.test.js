@@ -144,7 +144,7 @@ test('--recommend --open generates HTML report', () => {
 
   const html = fs.readFileSync(output, 'utf8');
   assert.match(html, /Skill Recommendations/);
-  assert.match(html, /Powered by skill-guide/);
+  assert.match(html, /Stop guessing/);
   assert.match(html, /npx skill-guide/);
 });
 
@@ -164,7 +164,7 @@ test('--share generates a standalone portfolio HTML', () => {
   const html = fs.readFileSync(output, 'utf8');
   assert.match(html, /My AI Skill Stack/);
   assert.match(html, /Shared by @testuser/);
-  assert.match(html, /Powered by skill-guide/);
+  assert.match(html, /Stop guessing/);
   assert.match(html, /npx skill-guide --open/);
   assert.match(html, /tdd/);
   assert.match(html, /debug/);
