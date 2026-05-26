@@ -113,6 +113,29 @@ test('labels hidden Codex system skills separately from user skills', () => {
   assert.equal(result.sources['codex-user'], 1);
 });
 
+test('body extraction does not include YAML frontmatter', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-frontmatter-leak-'));
+  const dir = path.join(home, '.claude/skills/body-demo');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'SKILL.md'),
+    `---\nname: body-demo\ndescription: A demo skill\ncategory: testing\ntags:\n  - test\n  - demo\n---\n\n## When to Use\n\nWhen to use this skill for testing body extraction and verifying no YAML leaks.\n\n## How It Works\n\nIt parses the markdown content section by section.\n`,
+    'utf8'
+  );
+
+  const result = runScanner(home, { args: ['--full'] });
+  const skill = result.skills[0];
+
+  assert.equal(skill.name, 'body-demo');
+  assert.ok(skill.whenToUse, 'whenToUse should be populated');
+  assert.doesNotMatch(skill.whenToUse, /category:/);
+  assert.doesNotMatch(skill.whenToUse, /tags:/);
+  assert.doesNotMatch(skill.whenToUse, /^---/);
+  if (skill.howItWorks) {
+    assert.doesNotMatch(skill.howItWorks, /category:/);
+  }
+});
+
 test('parses YAML multiline indicators (>- |+ |- >+)', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-multiline-'));
   const dir = path.join(home, '.claude/skills/multiline-demo');

@@ -454,8 +454,11 @@ function loadFullData(skill) {
     } catch (_) { content = ''; }
   }
 
-  const sections = extractSections(content);
-  const contextual = extractContextual(content);
+  // Strip frontmatter before body extraction
+  const bodyContent = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+
+  const sections = extractSections(bodyContent);
+  const contextual = extractContextual(bodyContent);
 
   return {
     ...skill,
