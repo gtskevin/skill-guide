@@ -222,14 +222,16 @@ function recommend(installed, onlineEntries) {
   for (const [cat, skills] of Object.entries(installedByCategory)) {
     if (skills.length >= 3) {
       const MAX_OVERLAP_SHOWN = 8;
-      const shown = skills.slice(0, MAX_OVERLAP_SHOWN);
-      const remaining = skills.length - shown.length;
+      const sorted = [...skills].sort((a, b) => (b.completeness || 0) - (a.completeness || 0));
+      const shown = sorted.slice(0, MAX_OVERLAP_SHOWN);
+      const remaining = sorted.length - shown.length;
       results.push({
         type: 'overlap',
         category: cat,
-        count: skills.length,
-        message: `You have ${skills.length} skills in "${cat}" category`,
+        count: sorted.length,
+        message: `You have ${sorted.length} skills in "${cat}" category`,
         skills: shown.map((s) => s.name),
+        completeness: shown.map((s) => s.completeness || 0),
         hasMore: remaining > 0,
         remainingCount: remaining,
       });

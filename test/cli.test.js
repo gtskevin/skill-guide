@@ -272,6 +272,24 @@ test('share page has pain-point hero and capability map', () => {
   assert.ok(html.includes('AI Skills'), 'OG title should mention AI Skills');
 });
 
+test('recommend page shows completeness scores in overlap', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-recommend-completeness-'));
+  const output = path.join(home, 'recommend.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/qa', 'qa', 'Quality Assurance test');
+  writeSkill(home, '.claude/skills/e2e', 'e2e', 'End-to-end test');
+
+  execFileSync(process.execPath, [cli, '--recommend', '--output', output, '--no-open', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex'), SKILL_REGISTRY_OFFLINE: '1' },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+  assert.ok(html.includes('/100'), 'should show completeness scores');
+  assert.ok(html.includes('documentation completeness'), 'should label as documentation completeness');
+});
+
 test('recommend HTML contains all enhanced sections', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-recommend-final-'));
   const output = path.join(home, 'recommend.html');

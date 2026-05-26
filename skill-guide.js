@@ -863,6 +863,9 @@ function renderRecommendHTML(data, recommendations, user) {
   const popular = recommendations.filter((r) => r.type === 'popular');
   const overlaps = recommendations.filter((r) => r.type === 'overlap');
 
+  // Sort overlaps by count descending, take top 3
+  const topOverlaps = [...overlaps].sort((a, b) => b.count - a.count).slice(0, 3);
+
   const categoryBreakdown = Object.entries(
     data.skills.reduce((acc, s) => { const c = s.category || 'other'; acc[c] = (acc[c] || 0) + 1; return acc; }, {})
   ).sort((a, b) => b[1] - a[1]);
@@ -871,6 +874,11 @@ function renderRecommendHTML(data, recommendations, user) {
     testing: '#10b981', design: '#f59e0b', security: '#ef4444', documentation: '#8b5cf6',
     automation: '#06b6d4', deployment: '#ec4899', 'code-quality': '#14b8a6', development: '#f97316', other: '#6b7280',
   };
+
+  // Stack overview
+  const categoryCounts = categoryBreakdown.filter(([cat]) => cat !== 'other');
+  const strongest = categoryCounts[0];
+  const weakest = categoryCounts[categoryCounts.length - 1];
 
   const gapCards = gaps.map((gap) => `
     <article class="card gap-card">
@@ -883,25 +891,35 @@ function renderRecommendHTML(data, recommendations, user) {
     </article>
   `).join('');
 
-  const popularItems = popular.slice(0, 10).map((skill) => `
+  const popularItems = popular.filter((s) => s.url).slice(0, 5).map((skill) => `
     <article class="card popular-card">
       <h3>${escapeHtml(skill.name)}</h3>
       <p>${escapeHtml(skill.description || '')}</p>
       <p class="meta">${escapeHtml(skill.message)}</p>
-      ${skill.url ? `<a href="${escapeHtml(skill.url)}" class="link">GitHub →</a>` : ''}
+      <a href="${escapeHtml(skill.url)}" class="link">GitHub →</a>
     </article>
   `).join('');
 
-  const overlapItems = overlaps.map((overlap) => `
+  const overlapItems = topOverlaps.map((overlap) => {
+    const skillsWithScores = overlap.skills.map((name, i) => {
+      const score = overlap.completeness ? overlap.completeness[i] : null;
+      return { name, score };
+    });
+    return `
     <article class="card overlap-card">
-      <h3>${escapeHtml(overlap.category)}</h3>
-      <p>${escapeHtml(t('skillsInCategory').replace('{count}', overlap.count).replace('{category}', overlap.category))}</p>
-      <p class="meta">${t('considerKeeping')}</p>
+      <h3>${escapeHtml(overlap.category)} <span class="count">${overlap.count}</span></h3>
+      <p>significant overlap</p>
+      <p class="meta">Most documented:</p>
+      <div class="skill-scores">${skillsWithScores.filter((s) => s.score !== null).map((s) =>
+        `<div class="score-row"><span class="score-name">${escapeHtml(s.name)}</span><span class="score-value">${s.score}/100</span></div>`
+      ).join('')}</div>
+      <p class="meta score-label">Based on documentation completeness</p>
       <div class="chips">${overlap.skills.map((s) => `<span>${escapeHtml(s)}</span>`).join('')}${
         overlap.hasMore ? `<span class="chip-more">${escapeHtml(t('nMore').replace('{count}', overlap.remainingCount))}</span>` : ''
       }</div>
     </article>
-  `).join('');
+  `;
+  }).join('');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -921,9 +939,13 @@ function renderRecommendHTML(data, recommendations, user) {
   .stats{display:flex;gap:1rem;margin:1rem 0;flex-wrap:wrap}
   .stat{background:var(--card);padding:1rem 1.5rem;border-radius:12px;text-align:center}
   .stat b{font-size:2rem;display:block}
+  .overview{background:var(--card);padding:1.5rem;border-radius:12px;margin:1.5rem 0;border:1px solid rgba(255,255,255,0.05)}
+  .overview p{margin:0.5rem 0;font-size:1rem}
+  .overview strong{color:var(--accent)}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
   .card{background:var(--card);padding:1.5rem;border-radius:12px;border:1px solid rgba(255,255,255,0.05)}
-  .card h3{margin-bottom:0.5rem;font-size:1.1rem}
+  .card h3{margin-bottom:0.5rem;font-size:1.1rem;display:flex;align-items:center;gap:0.5rem}
+  .card .count{background:rgba(124,58,237,0.2);padding:0.15rem 0.5rem;border-radius:999px;font-size:0.8rem;color:var(--accent)}
   .card p{color:var(--muted);font-size:0.9rem}
   .card .meta{font-size:0.8rem;margin-top:0.5rem}
   .gap-card{border-left:3px solid var(--gap)}
@@ -935,6 +957,11 @@ function renderRecommendHTML(data, recommendations, user) {
   .chip-more{background:rgba(255,255,255,0.05);padding:0.25rem 0.75rem;border-radius:999px;font-size:0.85rem;color:var(--muted)}
   .link{color:var(--accent2);text-decoration:none;font-size:0.85rem}
   .link:hover{text-decoration:underline}
+  .skill-scores{margin:0.75rem 0}
+  .score-row{display:flex;justify-content:space-between;padding:0.25rem 0;font-size:0.9rem}
+  .score-name{color:var(--text)}
+  .score-value{color:var(--accent);font-family:monospace}
+  .score-label{color:var(--muted);font-size:0.75rem;font-style:italic}
   .cta{text-align:center;margin:3rem 0;padding:2rem;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(6,182,212,0.1));border-radius:16px}
   .cta h2{margin:0 0 0.5rem}
   .cta code{background:var(--card);padding:0.5rem 1rem;border-radius:8px;font-size:1.1rem;display:inline-block;margin:0.5rem 0}
@@ -969,9 +996,14 @@ function renderRecommendHTML(data, recommendations, user) {
     `<span class="legend-item"><span class="legend-dot" style="background:${breakdownColors[cat] || '#6b7280'}"></span>${escapeHtml(cat)} (${count})</span>`
   ).join('')}</div>
 
-  ${gaps.length > 0 ? `<h2>⚠️ ${escapeHtml(t('gapAnalysis'))}</h2><div class="grid">${gapCards}</div>` : ''}
+  <div class="overview">
+    ${strongest ? `<p>💪 <strong>Strongest:</strong> ${escapeHtml(strongest[0])} (${strongest[1]} skills)</p>` : ''}
+    ${weakest ? `<p>⚠️ <strong>Weakest:</strong> ${escapeHtml(weakest[0])} (${weakest[1]} skills)</p>` : ''}
+  </div>
+
+  ${topOverlaps.length > 0 ? `<h2>Cleanup Opportunities</h2><div class="grid">${overlapItems}</div>` : ''}
   ${popular.length > 0 ? `<h2>🔥 ${escapeHtml(t('popularYoureMissing'))}</h2><div class="grid">${popularItems}</div>` : ''}
-  ${overlaps.length > 0 ? `<h2>📋 ${escapeHtml(t('overlapAlert'))}</h2><div class="grid">${overlapItems}</div>` : ''}
+  ${gaps.length > 0 ? `<h2>Gap Analysis</h2><div class="grid">${gapCards}</div>` : ''}
 
   <div class="cta">
     <h2>${escapeHtml(t('ctaHeadline'))}</h2>

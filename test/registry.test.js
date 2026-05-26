@@ -221,6 +221,25 @@ test('popular skills skip entries with example.com URLs', () => {
   assert.equal(popular[0].name, 'skill-b');
 });
 
+test('overlap shows top skills sorted by completeness when available', () => {
+  const registry = require(path.join(root, 'skill-registry'));
+  const installed = [
+    { name: 'skill-a', category: 'testing', completeness: 95, sources: ['user'] },
+    { name: 'skill-b', category: 'testing', completeness: 60, sources: ['user'] },
+    { name: 'skill-c', category: 'testing', completeness: 80, sources: ['user'] },
+  ];
+  const onlineEntries = [];
+
+  const results = registry.recommend(installed, onlineEntries);
+  const overlap = results.find((r) => r.type === 'overlap');
+
+  assert.ok(overlap);
+  assert.equal(overlap.skills[0], 'skill-a');
+  assert.equal(overlap.skills[1], 'skill-c');
+  assert.equal(overlap.skills[2], 'skill-b');
+  assert.deepEqual(overlap.completeness, [95, 80, 60]);
+});
+
 test('recommend returns empty for perfect stack', () => {
   const registry = require(path.join(root, 'skill-registry'));
   const installed = [
