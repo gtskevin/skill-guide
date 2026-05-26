@@ -272,6 +272,28 @@ test('completeness score is low for garbage data', () => {
   assert.ok(skill.completeness < 20, 'garbage data should score very low');
 });
 
+test('categorization uses tags when name/description are ambiguous', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-cat-tags-'));
+  writeSkill(home, '.claude/skills/helper-tool', 'helper-tool', 'A useful helper tool',
+    'tags:\n  - security\n  - audit\n');
+
+  const result = runScanner(home);
+  const skill = result.skills[0];
+
+  assert.equal(skill.category, 'security', 'should use tags for categorization');
+});
+
+test('categorization falls back to description when tags dont match', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-cat-fallback-'));
+  writeSkill(home, '.claude/skills/my-tool', 'my-tool', 'A test framework',
+    'tags:\n  - utility\n');
+
+  const result = runScanner(home);
+  const skill = result.skills[0];
+
+  assert.equal(skill.category, 'testing', 'should fall back to description');
+});
+
 test('resolves shorthand skill names to the best matching skill', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-shorthand-'));
   writeSkill(home, '.claude/skills/django-tdd', 'django-tdd', 'Django TDD skill');

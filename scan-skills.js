@@ -203,7 +203,16 @@ const CATEGORY_MAP = [
   { category: 'development',   keywords: /\b(develop|build|debug|investigate|plan|brainstorm|feature|implement)\b/i },
 ];
 
-function categorize(name, description, triggers) {
+function categorize(name, description, triggers, tags) {
+  // Priority 1: tags match
+  if (tags && tags.length > 0) {
+    const tagText = tags.join(' ');
+    for (const { category, keywords } of CATEGORY_MAP) {
+      if (keywords.test(tagText)) return category;
+    }
+  }
+
+  // Priority 2: description match
   const text = [name, description, ...(triggers || [])].join(' ');
   for (const { category, keywords } of CATEGORY_MAP) {
     if (keywords.test(text)) return category;
