@@ -813,21 +813,53 @@ function renderRecommendTerminal(data, recommendations) {
   const lines = [];
   const totalCategories = new Set(data.skills.map((s) => s.category)).size;
 
+  const groups = groupBy(data.skills, 'category');
+  const categoryCounts = Object.entries(groups)
+    .filter(([cat]) => cat !== 'other')
+    .map(([cat, items]) => ({ cat, count: items.length }))
+    .sort((a, b) => b.count - a.count);
+
+  const strongest = categoryCounts[0];
+  const weakest = categoryCounts[categoryCounts.length - 1];
+
   lines.push('');
   lines.push('┌─ skill-guide recommend ─────────────────────┐');
   lines.push('│                                              │');
   lines.push(`│  ${t('yourSkillStack')}: ${data.totalCount} skills, ${totalCategories}/9 ${t('categoriesCovered')}`);
   lines.push('│                                              │');
 
+  if (strongest) {
+    lines.push(`│  💪 Strongest: ${strongest.cat} (${strongest.count})`);
+  }
+  if (weakest && weakest !== strongest) {
+    lines.push(`│  ⚠️  Weakest: ${weakest.cat} (${weakest.count})`);
+  }
+  lines.push('│');
+
   const gaps = recommendations.filter((r) => r.type === 'gap');
   if (gaps.length > 0) {
     lines.push(`│  ⚠️  ${t('gapAnalysis')} (${gaps.length}):`);
     for (const gap of gaps) {
       lines.push(`│    • ${gap.category} — 0 skills`);
-      if (gap.skills.length > 0) {
-        lines.push(`│      → ${t('tryThese')}: ${gap.skills.map((s) => s.name).join(', ')}`);
-      }
       if (gap.action) lines.push(`│    💡 ${gap.action}`);
+    }
+    lines.push('│');
+  }
+
+  const overlaps = recommendations.filter((r) => r.type === 'overlap');
+  const topOverlaps = [...overlaps].sort((a, b) => b.count - a.count).slice(0, 3);
+  if (topOverlaps.length > 0) {
+    lines.push('│  📋 Cleanup opportunities:');
+    for (const overlap of topOverlaps) {
+      lines.push(`│    • ${overlap.category} (${overlap.count} skills) — significant overlap`);
+      const top3 = overlap.skills.slice(0, 3);
+      if (overlap.completeness) {
+        top3.forEach((name, i) => {
+          const score = overlap.completeness[i];
+          lines.push(`│      ${i + 1}. ${name} (${score}/100)`);
+        });
+      }
+      lines.push('│      Based on documentation completeness');
     }
     lines.push('│');
   }
@@ -835,19 +867,8 @@ function renderRecommendTerminal(data, recommendations) {
   const popular = recommendations.filter((r) => r.type === 'popular');
   if (popular.length > 0) {
     lines.push(`│  🔥 ${t('popularYoureMissing')}:`);
-    for (const skill of popular.slice(0, 5)) {
+    for (const skill of popular.filter((s) => s.url).slice(0, 5)) {
       lines.push(`│    • ${skill.name} (${skill.message})`);
-    }
-    lines.push('│');
-  }
-
-  const overlaps = recommendations.filter((r) => r.type === 'overlap');
-  if (overlaps.length > 0) {
-    lines.push(`│  📋 ${t('overlapAlert')}:`);
-    for (const overlap of overlaps) {
-      lines.push(`│    • ${t('skillsInCategory').replace('{count}', overlap.count).replace('{category}', overlap.category)}`);
-      lines.push(`│      ${t('considerKeeping')}`);
-      if (overlap.hasMore) lines.push(`│    ... +${overlap.remainingCount} more`);
     }
     lines.push('│');
   }
