@@ -136,6 +136,17 @@ const LABELS = {
   },
 };
 
+const GAP_ACTIONS_SHARE = {
+  testing: 'Add a TDD skill to catch bugs before they ship',
+  design: 'Add a UI/UX skill to improve your frontend output',
+  security: 'Add a security audit skill to catch vulnerabilities',
+  documentation: 'Add a docs skill to keep your project well-documented',
+  automation: 'Add an automation skill to eliminate repetitive tasks',
+  deployment: 'Add a deploy skill to streamline your CI/CD pipeline',
+  'code-quality': 'Add a code review skill to maintain standards',
+  development: 'Add a dev workflow skill to boost productivity',
+};
+
 function lang() {
   const l = getArgValue('--lang');
   if (l === 'zh') return 'zh';
@@ -1052,46 +1063,80 @@ function generatePersona(skills) {
   return personas.slice(0, 2).join(' · ');
 }
 
+function isGarbage(text) {
+  if (!text || typeof text !== 'string') return true;
+  const trimmed = text.trim();
+  if (trimmed.length <= 2) return true;
+  if (/^[>|](-|\+)?$/.test(trimmed)) return true;
+  if (/^---/.test(trimmed)) return true;
+  if (/^(category|tags|name|description)\s*:/.test(trimmed)) return true;
+  return false;
+}
+
+function capabilityPrefix(count) {
+  if (count >= 20) return 'Extensive coverage.';
+  if (count >= 10) return 'Solid coverage.';
+  if (count >= 3) return 'Some coverage.';
+  return 'Getting started.';
+}
+
 function renderShareHTML(data, user) {
   const groups = groupBy(data.skills, 'category');
   const totalCategories = Object.keys(groups).length;
   const persona = generatePersona(data.skills);
-
   const radarChart = renderRadarChart(data.skills);
 
-  const topPicks = data.skills
-    .filter((s) => s.whenToUse || s.howItWorks || (s.sections && s.sections.length > 0))
-    .slice(0, 5);
-
-  const categoryCards = Object.entries(groups)
+  // Capability map: one entry per non-empty category (excluding "other")
+  const capabilityCards = Object.entries(groups)
+    .filter(([cat]) => cat !== 'other')
     .sort((a, b) => b[1].length - a[1].length)
-    .map(([category, items]) => `
-      <article class="card">
-        <h3>${escapeHtml(category)} <span class="count">${items.length}</span></h3>
-        <div class="skill-list">${items.map((s) => `
-          <div class="skill-item">
-            <span class="skill-name">${escapeHtml(s.name)}</span>
-            <span class="skill-desc">${escapeHtml(truncate(s.description || '', 80))}</span>
-          </div>
-        `).join('')}</div>
-      </article>
-    `).join('');
-
-  const topPicksSection = topPicks.length > 0 ? `
-    <h2>${escapeHtml(t('topPicks'))}</h2>
-    <div class="grid picks">${topPicks.map((s) => {
-      const trigger = s.triggers ? s.triggers.slice(0, 3).join(', ') : '';
-      const whenToUse = s.whenToUse ? truncate(s.whenToUse, 100) : '';
+    .map(([category, items]) => {
+      const prefix = capabilityPrefix(items.length);
+      const example = items.find((s) => s.description) || items[0];
+      const desc = isGarbage(example?.description) ? '' : truncate(example?.description || '', 80);
       return `
-        <article class="card pick-card">
-          <h3>${escapeHtml(s.name)}</h3>
-          <p>${escapeHtml(truncate(s.description || '', 120))}</p>
-          ${trigger ? `<p class="pick-trigger">Triggers: ${escapeHtml(trigger)}</p>` : ''}
-          ${whenToUse ? `<p class="pick-when">${escapeHtml(whenToUse)}</p>` : ''}
+        <article class="card cap-card">
+          <h3>${escapeHtml(category)} <span class="count">${items.length}</span></h3>
+          <p class="cap-prefix">${escapeHtml(prefix)}</p>
+          ${desc ? `<p class="cap-desc">${escapeHtml(desc)}</p>` : ''}
+          ${example ? `<p class="cap-example">e.g. ${escapeHtml(example.name)}</p>` : ''}
         </article>
       `;
-    }).join('')}</div>
-  ` : '';
+    }).join('');
+
+  // Stack insights
+  const categoryCounts = Object.entries(groups)
+    .filter(([cat]) => cat !== 'other')
+    .map(([cat, items]) => ({ cat, count: items.length }))
+    .sort((a, b) => b.count - a.count);
+
+  const strongest = categoryCounts[0];
+  const weakest = categoryCounts[categoryCounts.length - 1];
+
+  const ALL_CATS = ['testing', 'design', 'security', 'documentation', 'automation', 'deployment', 'code-quality', 'development'];
+  const missingCats = ALL_CATS.filter((cat) => !groups[cat] || groups[cat].length === 0);
+  const gapCategory = missingCats[0] || (weakest && weakest.count <= 2 ? weakest.cat : null);
+
+  const insightsSection = `
+    <h2>Stack Insights</h2>
+    <div class="insights">
+      ${strongest ? `<p class="insight-strong">💪 Strongest: ${escapeHtml(strongest.cat)} (${strongest.count} skills)</p>` : ''}
+      ${gapCategory ? `<p class="insight-gap">⚠️ Gap: ${escapeHtml(gapCategory)} (${groups[gapCategory]?.length || 0} skills)<br><span class="gap-hint">${escapeHtml(GAP_ACTIONS_SHARE[gapCategory] || '')}</span></p>` : ''}
+      <p class="insight-cta">Run <code>--recommend</code> for full analysis</p>
+    </div>
+  `;
+
+  // OG tags
+  const ogTitle = `${escapeHtml(persona)} · ${data.totalCount} AI Skills — skill-guide`;
+  const topCapabilities = Object.entries(groups)
+    .filter(([cat]) => cat !== 'other')
+    .sort((a, b) => b[1].length - a[1].length)
+    .slice(0, 3)
+    .map(([, items]) => items[0]?.name)
+    .filter(Boolean);
+  const ogDescription = topCapabilities.length > 0
+    ? `I can ${topCapabilities.join(', ')}. Here's my full AI skill stack.`
+    : `${data.totalCount} skills across ${totalCategories} categories`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1099,50 +1144,49 @@ function renderShareHTML(data, user) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(t('myAiSkillStack'))} — skill-guide</title>
-<meta property="og:title" content="${escapeHtml(t('myAiSkillStack'))}">
-<meta property="og:description" content="${data.totalCount} skills across ${totalCategories} categories — powered by skill-guide">
+<meta property="og:title" content="${ogTitle}">
+<meta property="og:description" content="${escapeHtml(ogDescription)}">
 <meta property="og:type" content="website">
 <style>
-  :root{--bg:#0f0f23;--card:#1a1a2e;--text:#e0e0e0;--muted:#888;--accent:#7c3aed;--accent2:#06b6d4;--pick:#10b981}
+  :root{--bg:#0f0f23;--card:#1a1a2e;--text:#e0e0e0;--muted:#888;--accent:#7c3aed;--accent2:#06b6d4;--pick:#10b981;--gap:#f59e0b}
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;padding:2rem}
   .container{max-width:960px;margin:0 auto}
   .hero{text-align:center;padding:3rem 0}
-  h1{font-size:3rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.5rem}
+  h1{font-size:2.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.5rem}
   h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:var(--accent2)}
-  .subtitle{color:var(--muted);font-size:1.1rem}
+  .pain{font-size:1.8rem;color:var(--text);font-weight:700;margin:0.5rem 0}
   .persona{font-size:1.3rem;color:var(--accent);font-weight:600;margin:0.5rem 0;letter-spacing:0.05em}
   .user-tag{color:var(--muted);font-size:0.9rem;margin-bottom:0.5rem}
+  .subtitle{color:var(--muted);font-size:1rem}
   .stats{display:flex;gap:1.5rem;justify-content:center;margin:1.5rem 0}
   .stat{background:var(--card);padding:1rem 2rem;border-radius:12px;text-align:center;min-width:120px}
   .stat b{font-size:2.5rem;display:block;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
   .stat span{color:var(--muted);font-size:0.85rem}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
-  .picks{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
   .card{background:var(--card);padding:1.5rem;border-radius:12px;border:1px solid rgba(255,255,255,0.05)}
-  .card h3{margin-bottom:0.75rem;font-size:1.1rem;display:flex;align-items:center;gap:0.5rem}
+  .card h3{margin-bottom:0.5rem;font-size:1.1rem;display:flex;align-items:center;gap:0.5rem}
   .card .count{background:rgba(124,58,237,0.2);padding:0.15rem 0.5rem;border-radius:999px;font-size:0.8rem;color:var(--accent)}
-  .pick-card{border-left:3px solid var(--pick)}
-  .pick-card p{color:var(--muted);font-size:0.9rem}
-  .pick-trigger{color:var(--accent);font-size:0.8rem;margin-top:0.5rem;font-style:italic}
-  .pick-when{color:var(--muted);font-size:0.8rem;margin-top:0.25rem}
-  .skill-list{display:flex;flex-direction:column;gap:0.4rem}
-  .skill-item{display:flex;gap:0.5rem;align-items:baseline}
-  .skill-name{font-weight:600;font-size:0.95rem;white-space:nowrap}
-  .skill-desc{color:var(--muted);font-size:0.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cap-prefix{color:var(--accent);font-size:0.9rem;font-weight:600;margin:0.25rem 0}
+  .cap-desc{color:var(--muted);font-size:0.9rem}
+  .cap-example{color:var(--muted);font-size:0.8rem;font-style:italic;margin-top:0.5rem}
+  .insights{background:var(--card);padding:1.5rem;border-radius:12px;border:1px solid rgba(255,255,255,0.05)}
+  .insight-strong{color:var(--pick);font-size:1.1rem;margin:0.5rem 0}
+  .insight-gap{color:var(--gap);font-size:1.1rem;margin:0.5rem 0}
+  .gap-hint{color:var(--muted);font-size:0.9rem;font-weight:normal}
+  .insight-cta{color:var(--muted);font-size:0.9rem;margin-top:1rem}
+  .insight-cta code{background:rgba(124,58,237,0.2);padding:0.15rem 0.5rem;border-radius:4px;color:var(--accent)}
+  .radar-container{display:flex;justify-content:center;margin:2rem 0}
+  .radar-chart{width:300px;height:300px}
   .cta{text-align:center;margin:3rem 0;padding:2.5rem;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(6,182,212,0.1));border-radius:16px}
   .cta h2{margin:0 0 0.5rem}
   .cta p{color:var(--muted);margin:0.5rem 0}
   .cta code{background:var(--card);padding:0.5rem 1.5rem;border-radius:8px;font-size:1.2rem;display:inline-block;margin:0.75rem 0;color:var(--accent2)}
-  .cta a{color:var(--accent);text-decoration:none;font-weight:600}
-  .cta a:hover{text-decoration:underline}
   .cta-sub{color:var(--muted);margin:0.5rem 0 1.5rem;font-size:1rem}
   .cta-actions{display:flex;gap:1rem;justify-content:center;margin-top:1.5rem}
   .cta-btn{display:inline-block;padding:0.75rem 2rem;border-radius:8px;font-weight:600;text-decoration:none;font-size:1rem;transition:transform 0.2s,box-shadow 0.2s}
   .cta-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(124,58,237,0.3)}
   .cta-btn.primary{background:linear-gradient(135deg,#7c3aed,#06b6d4);color:#fff}
-  .radar-container{display:flex;justify-content:center;margin:2rem 0}
-  .radar-chart{width:300px;height:300px}
   footer{text-align:center;padding:2rem 0;color:var(--muted);font-size:0.8rem}
 </style>
 </head>
@@ -1150,9 +1194,10 @@ function renderShareHTML(data, user) {
 <div class="container">
   <div class="hero">
     ${user ? `<p class="user-tag">${escapeHtml(t('sharedBy').replace('{user}', user))}</p>` : ''}
+    <p class="pain">200+ skills but no idea what you have?</p>
     <h1>${escapeHtml(t('myAiSkillStack'))}</h1>
-    <p class="subtitle">${data.totalCount} ${t('skillsScanned')} · ${totalCategories} ${t('categoriesCovered')}</p>
     <p class="persona">${escapeHtml(persona)}</p>
+    <p class="subtitle">${data.totalCount} ${t('skillsScanned')} · ${totalCategories} ${t('categoriesCovered')}</p>
     <div class="radar-container">${radarChart}</div>
     <div class="stats">
       <div class="stat"><b>${data.totalCount}</b><span>${t('skillsScanned')}</span></div>
@@ -1160,10 +1205,10 @@ function renderShareHTML(data, user) {
     </div>
   </div>
 
-  ${topPicksSection}
+  <h2>Capability Map</h2>
+  <div class="grid">${capabilityCards}</div>
 
-  <h2>${escapeHtml(t('categoryMap'))}</h2>
-  <div class="grid">${categoryCards}</div>
+  ${insightsSection}
 
   <div class="cta">
     <h2>${escapeHtml(t('ctaHeadline'))}</h2>

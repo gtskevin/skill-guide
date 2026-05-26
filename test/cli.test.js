@@ -248,6 +248,30 @@ test('share HTML contains all enhanced sections', () => {
   assert.ok(html.includes('cta-btn'), 'has gradient CTA button');
 });
 
+test('share page has pain-point hero and capability map', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-share-hero-'));
+  const output = path.join(home, 'share.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/security-audit', 'security-audit', 'OWASP security scanning');
+  writeSkill(home, '.claude/skills/debug', 'debug', 'Systematic debugging');
+
+  execFileSync(process.execPath, [cli, '--share', '--output', output, '--no-open', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex') },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+
+  // Pain-point headline
+  assert.ok(html.includes('but no idea'), 'should have pain-point headline');
+  // Capability map section
+  assert.ok(html.includes('Capability Map'), 'should have capability map section');
+  // OG tags with persona
+  assert.ok(html.includes('og:title'), 'should have OG title');
+  assert.ok(html.includes('AI Skills'), 'OG title should mention AI Skills');
+});
+
 test('recommend HTML contains all enhanced sections', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-recommend-final-'));
   const output = path.join(home, 'recommend.html');
