@@ -205,6 +205,22 @@ test('recommend includes action hints for gap categories', () => {
   assert.ok(gap.action.length > 0, 'action hint should not be empty');
 });
 
+test('popular skills skip entries with example.com URLs', () => {
+  const registry = require(path.join(root, 'skill-registry'));
+  const installed = [];
+  const onlineEntries = [
+    { name: 'skill-a', description: 'Skill A', url: 'https://example.com/skill-a', source: 'test' },
+    { name: 'skill-b', description: 'Skill B', url: 'https://github.com/real/repo', source: 'test' },
+    { name: 'skill-c', description: 'Skill C', url: '', source: 'test' },
+  ];
+
+  const results = registry.recommend(installed, onlineEntries);
+  const popular = results.filter((r) => r.type === 'popular');
+
+  assert.equal(popular.length, 1);
+  assert.equal(popular[0].name, 'skill-b');
+});
+
 test('recommend returns empty for perfect stack', () => {
   const registry = require(path.join(root, 'skill-registry'));
   const installed = [

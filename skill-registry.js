@@ -146,6 +146,16 @@ function fetchRegistry(opts = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// URL validation
+// ---------------------------------------------------------------------------
+function isValidUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  if (url.startsWith('#')) return false;
+  if (/example\.com/i.test(url)) return false;
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
+// ---------------------------------------------------------------------------
 // Category constants (mirrored from scan-skills.js CATEGORY_MAP)
 // ---------------------------------------------------------------------------
 const ALL_CATEGORIES = ['testing', 'design', 'security', 'documentation', 'automation', 'deployment', 'code-quality', 'development'];
@@ -240,6 +250,7 @@ function recommend(installed, onlineEntries) {
   }
 
   const popular = Array.from(popularityMap.values())
+    .filter((entry) => isValidUrl(entry.url))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
