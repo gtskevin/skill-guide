@@ -940,9 +940,37 @@ function renderRecommendHTML(data, recommendations, user) {
 </html>`;
 }
 
+function generatePersona(skills) {
+  const categories = {};
+  for (const s of skills) {
+    const cat = s.category || 'other';
+    categories[cat] = (categories[cat] || 0) + 1;
+  }
+
+  const total = skills.length;
+  const personas = [];
+
+  if ((categories.security || 0) / total > 0.15) personas.push('Security Champion');
+  if ((categories.testing || 0) / total > 0.15) personas.push('Quality Engineer');
+  if ((categories.deployment || 0) / total > 0.15) personas.push('DevOps Builder');
+  if ((categories.automation || 0) / total > 0.15) personas.push('Automation Architect');
+  if ((categories.design || 0) / total > 0.15) personas.push('Design System Crafter');
+  if ((categories.documentation || 0) / total > 0.1) personas.push('Documentation Advocate');
+  if ((categories['code-quality'] || 0) / total > 0.1) personas.push('Code Quality Guardian');
+
+  if (personas.length === 0) {
+    if (total > 50) personas.push('Skill Collector');
+    else if (total > 20) personas.push('Full-Stack Explorer');
+    else personas.push('Focused Builder');
+  }
+
+  return personas.slice(0, 2).join(' · ');
+}
+
 function renderShareHTML(data, user) {
   const groups = groupBy(data.skills, 'category');
   const totalCategories = Object.keys(groups).length;
+  const persona = generatePersona(data.skills);
 
   const topPicks = data.skills
     .filter((s) => s.whenToUse || s.howItWorks || (s.sections && s.sections.length > 0))
@@ -990,6 +1018,7 @@ function renderShareHTML(data, user) {
   h1{font-size:3rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.5rem}
   h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:var(--accent2)}
   .subtitle{color:var(--muted);font-size:1.1rem}
+  .persona{font-size:1.3rem;color:var(--accent);font-weight:600;margin:0.5rem 0;letter-spacing:0.05em}
   .user-tag{color:var(--muted);font-size:0.9rem;margin-bottom:0.5rem}
   .stats{display:flex;gap:1.5rem;justify-content:center;margin:1.5rem 0}
   .stat{background:var(--card);padding:1rem 2rem;border-radius:12px;text-align:center;min-width:120px}
@@ -1021,6 +1050,7 @@ function renderShareHTML(data, user) {
     ${user ? `<p class="user-tag">${escapeHtml(t('sharedBy').replace('{user}', user))}</p>` : ''}
     <h1>${escapeHtml(t('myAiSkillStack'))}</h1>
     <p class="subtitle">${data.totalCount} ${t('skillsScanned')} · ${totalCategories} ${t('categoriesCovered')}</p>
+    <p class="persona">${escapeHtml(persona)}</p>
     <div class="stats">
       <div class="stat"><b>${data.totalCount}</b><span>${t('skillsScanned')}</span></div>
       <div class="stat"><b>${totalCategories}</b><span>${t('categoriesCovered')}</span></div>

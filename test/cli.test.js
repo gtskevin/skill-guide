@@ -116,3 +116,92 @@ test('prints a terminal error instead of generating HTML when a skill is not fou
   assert.match(result.stderr, /Scanned 1 skills/);
   assert.equal(fs.existsSync(output), false);
 });
+
+test('--recommend outputs recommendation report', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-recommend-'));
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+
+  const stdout = execFileSync(process.execPath, [cli, '--recommend', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex'), SKILL_REGISTRY_OFFLINE: '1' },
+    encoding: 'utf8',
+  });
+
+  assert.match(stdout, /skill-guide recommend/);
+  assert.match(stdout, /Your skill stack/);
+});
+
+test('--recommend --open generates HTML report', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-recommend-html-'));
+  const output = path.join(home, 'recommend.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+
+  execFileSync(process.execPath, [cli, '--recommend', '--output', output, '--no-open', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex'), SKILL_REGISTRY_OFFLINE: '1' },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+  assert.match(html, /Skill Recommendations/);
+  assert.match(html, /Powered by skill-guide/);
+  assert.match(html, /npx skill-guide/);
+});
+
+test('--share generates a standalone portfolio HTML', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-share-'));
+  const output = path.join(home, 'share.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/debug', 'debug', 'Systematic debugging');
+  writeSkill(home, '.claude/skills/security-audit', 'security-audit', 'OWASP security scanning');
+
+  execFileSync(process.execPath, [cli, '--share', '--output', output, '--no-open', '--refresh', '--user', '@testuser'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex') },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+  assert.match(html, /My AI Skill Stack/);
+  assert.match(html, /Shared by @testuser/);
+  assert.match(html, /Powered by skill-guide/);
+  assert.match(html, /npx skill-guide --open/);
+  assert.match(html, /tdd/);
+  assert.match(html, /debug/);
+  assert.match(html, /security-audit/);
+  assert.match(html, /og:title/);
+});
+
+test('share HTML output contains persona section', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-persona-'));
+  const output = path.join(home, 'share.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/debug', 'debug', 'Systematic debugging');
+  writeSkill(home, '.claude/skills/security-audit', 'security-audit', 'OWASP security scanning');
+
+  execFileSync(process.execPath, [cli, '--share', '--output', output, '--no-open', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex') },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+  assert.ok(html.includes('persona'), 'should contain persona section');
+  assert.ok(html.includes('Developer') || html.includes('Engineer') || html.includes('Builder') || html.includes('Explorer') || html.includes('Collector') || html.includes('Champion'), 'should contain a persona label');
+});
+
+test('--share works without --user flag', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-share-nouser-'));
+  const output = path.join(home, 'share.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+
+  execFileSync(process.execPath, [cli, '--share', '--output', output, '--no-open', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex') },
+    encoding: 'utf8',
+  });
+
+  const html = fs.readFileSync(output, 'utf8');
+  assert.match(html, /My AI Skill Stack/);
+  assert.doesNotMatch(html, /Shared by/);
+});
