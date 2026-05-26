@@ -113,6 +113,24 @@ test('labels hidden Codex system skills separately from user skills', () => {
   assert.equal(result.sources['codex-user'], 1);
 });
 
+test('parses YAML multiline indicators (>- |+ |- >+)', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-multiline-'));
+  const dir = path.join(home, '.claude/skills/multiline-demo');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'SKILL.md'),
+    `---\nname: multiline-demo\ndescription: >-\n  This is a folded multiline\n  description that should be\n  joined into one line.\ntriggers:\n  - test\n---\n\n# Multiline\n`,
+    'utf8'
+  );
+
+  const result = runScanner(home);
+  const skill = result.skills[0];
+
+  assert.equal(skill.name, 'multiline-demo');
+  assert.match(skill.description, /This is a folded multiline/);
+  assert.doesNotMatch(skill.description, /^>-/);
+});
+
 test('resolves shorthand skill names to the best matching skill', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-shorthand-'));
   writeSkill(home, '.claude/skills/django-tdd', 'django-tdd', 'Django TDD skill');

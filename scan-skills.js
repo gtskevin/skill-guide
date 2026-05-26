@@ -122,7 +122,7 @@ function parseFrontmatter(content) {
         continue;
       }
       // End of multiline block
-      if (multilineType === '|' || multilineType === '>') {
+      if (/^[>|]/.test(multilineType)) {
         if (multilineValue && !Array.isArray(result[currentKey])) {
           result[currentKey] = multilineValue.trim();
         }
@@ -138,7 +138,7 @@ function parseFrontmatter(content) {
       let val = kvMatch[2].trim();
 
       // Multi-line indicators
-      if (val === '|' || val === '>') {
+      if (/^[>|](-|\+)?$/.test(val)) {
         inMultiline = true;
         multilineType = val;
         multilineValue = '';
