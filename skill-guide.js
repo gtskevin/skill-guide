@@ -2050,26 +2050,67 @@ function computeWrappedStats(skills, health) {
   // Rare skills this user has (from community baseline)
   const rareFound = skills.filter(s => COMMUNITY_BASELINE.rare_skills.includes(s.name)).map(s => s.name);
 
-  // --- Usage gap analysis (proxy: top-3 categories = "core", rest = "untapped") ---
-  const sortedCats = Object.entries(categories).sort((a, b) => b[1] - a[1]);
-  const coreCats = sortedCats.slice(0, 3).map(([name]) => name);
-  const coreCount = skills.filter(s => coreCats.includes(s.category)).length;
-  const untappedCount = total - coreCount;
+  // --- Usage gap analysis (readiness-based: description + tools + triggers + tokens) ---
+  function computeReadinessScore(skill) {
+    let score = 0;
+    const descLen = (skill.description || '').length;
+    if (descLen > 100) score += 20;
+    if (descLen > 200) score += 10;
+    if (descLen > 400) score += 10;
+    if ((skill.allowedTools || []).length > 0) score += 30;
+    if ((skill.triggers || []).length > 0) score += 20;
+    const tokens = skill.tokenCost || 0;
+    if (tokens > 50) score += 5;
+    if (tokens > 100) score += 5;
+    return score;
+  }
+
+  const scored = skills.map(s => ({ ...s, _readiness: computeReadinessScore(s) }));
+  const coreSkills = scored.filter(s => s._readiness >= 50);
+  const readySkills = scored.filter(s => s._readiness >= 20 && s._readiness < 50);
+  const untappedSkills = scored.filter(s => s._readiness < 20);
+  const coreCount = coreSkills.length;
+  const readyCount = readySkills.length;
+  const untappedCount = untappedSkills.length;
   const corePercent = Math.round((coreCount / total) * 100);
+  const readyPercent = Math.round((readyCount / total) * 100);
+  const untappedPercent = Math.round((untappedCount / total) * 100);
+
+  // Top categories for display (still useful for archetype)
+  const sortedCats = Object.entries(categories).sort((a, b) => b[1] - a[1]);
 
   // --- Developer archetype detection ---
   const topCatPercent = sortedCats.length > 0 ? Math.round((sortedCats[0][1] / total) * 100) : 0;
   let archetype;
-  if (total >= 100 && categoryCount >= 7) {
-    archetype = { name: 'Full-Stack Collector', emoji: '🏗️', tagline: 'You build across the entire stack' };
-  } else if (topCatPercent >= 50 && total < 50) {
+  if (total <= 3) {
+    archetype = { name: 'Newcomer', emoji: '🌱', tagline: 'Just getting started — every expert was once a beginner' };
+  } else if (total <= 10) {
+    archetype = { name: 'Curious Starter', emoji: '🔍', tagline: 'Exploring the landscape with purpose' };
+  } else if (topCatPercent >= 60 && total >= 20) {
     archetype = { name: 'Domain Expert', emoji: '🎯', tagline: 'Depth over breadth — you go deep' };
+  } else if (total >= 200 && categoryCount >= 7) {
+    archetype = { name: 'Full-Stack Collector', emoji: '🏗️', tagline: 'You build across the entire stack' };
+  } else if (total >= 200) {
+    archetype = { name: 'Power User', emoji: '⚡', tagline: 'Your skill arsenal rivals a small army' };
   } else if (categoryCount >= 6 && total < 100) {
     archetype = { name: 'Explorer', emoji: '🧭', tagline: 'Curiosity drives you to every corner' };
   } else if (total >= 50 && categoryCount <= 4) {
     archetype = { name: 'Specialist Builder', emoji: '🔬', tagline: 'Focused mastery in chosen domains' };
   } else {
     archetype = { name: 'Balanced Developer', emoji: '⚖️', tagline: 'Steady growth across the board' };
+  }
+
+  // Core categories from high-readiness skills
+  const coreCatsFromScore = {};
+  for (const s of coreSkills) {
+    coreCatsFromScore[s.category] = (coreCatsFromScore[s.category] || 0) + 1;
+  }
+  const coreCats = Object.entries(coreCatsFromScore)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([name]) => name);
+  if (coreCats.length === 0 && sortedCats.length > 0) {
+    coreCats.push(...sortedCats.slice(0, 2).map(([name]) => name));
   }
 
   return {
@@ -2084,8 +2125,11 @@ function computeWrappedStats(skills, health) {
     coldSkills,
     rareFound,
     coreCount,
+    readyCount,
     untappedCount,
     corePercent,
+    readyPercent,
+    untappedPercent,
     coreCats,
     archetype,
     communityMean: COMMUNITY_BASELINE.skill_count.mean,
@@ -2115,16 +2159,16 @@ function renderWrappedTerminal(data) {
     `   📂 ${isZh ? '覆盖领域' : 'Categories'}: ${wrapped.categoryCount}`,
     `   🔤 ${isZh ? 'Token 成本' : 'Token Cost'}: ~${(wrapped.totalTokens / 1000).toFixed(1)}K`,
     '',
-    isZh ? '── 技能使用差距 ─────────────────────────────────────────' : '── The Usage Gap ──────────────────────────────────────────',
+    isZh ? '── 技能就绪度 ─────────────────────────────────────────' : '── Readiness Breakdown ────────────────────────────────────',
     isZh
-      ? `   ⚡ 你有 ${wrapped.total} 个技能，但核心使用集中在 ${wrapped.coreCount} 个`
-      : `   ⚡ You have ${wrapped.total} skills, but your core usage is ${wrapped.coreCount}`,
+      ? `   ⚡ 你有 ${wrapped.total} 个技能，但只有 ${wrapped.coreCount} 个是精心配置的`
+      : `   ⚡ You have ${wrapped.total} skills, but only ${wrapped.coreCount} are fully configured`,
     isZh
-      ? `      ${wrapped.untappedCount} 个技能还在等待被发现！`
-      : `      ${wrapped.untappedCount} skills are waiting to be discovered!`,
+      ? `      ${wrapped.readyCount} 个基本可用 | ${wrapped.untappedCount} 个几乎空白`
+      : `      ${wrapped.readyCount} mostly ready | ${wrapped.untappedCount} nearly empty`,
     isZh
-      ? `   🎯 你的核心领域: ${wrapped.coreCats.join(', ')}`
-      : `   🎯 Your core domains: ${wrapped.coreCats.join(', ')}`,
+      ? `   🎯 核心领域: ${wrapped.coreCats.join(', ')}`
+      : `   🎯 Core domains: ${wrapped.coreCats.join(', ')}`,
     '',
   ];
 
@@ -2167,8 +2211,8 @@ function renderWrappedTerminal(data) {
   // CTA with suspense-driven share text
   lines.push(isZh ? '── 分享你的报告 ─────────────────────────────────────────' : '── Share Your Report ──────────────────────────────────────');
   const shareHint = isZh
-    ? `   📤 "${wrapped.archetype.name} — ${wrapped.total} 个技能，${wrapped.untappedCount} 个未解锁。你的类型是什么？"`
-    : `   📤 "I'm a ${wrapped.archetype.name} — ${wrapped.total} skills, ${wrapped.untappedCount} untapped. What's your type?"`;
+    ? `   📤 "${wrapped.archetype.name} — ${wrapped.total} 个技能，${wrapped.untappedCount} 个待探索。你的类型是什么？"`
+    : `   📤 "I'm a ${wrapped.archetype.name} — ${wrapped.total} skills, only ${wrapped.coreCount} configured. What's your type?"`;
   lines.push(shareHint);
   lines.push(isZh
     ? '   🔗 使用 --open 生成可分享的 HTML 报告'
@@ -2239,8 +2283,8 @@ function renderWrappedHTML(data) {
   }).join('');
 
   const shareText = isZh
-    ? `${wrapped.archetype.emoji} 我是「${wrapped.archetype.name}」— ${wrapped.total} 个技能，${wrapped.untappedCount} 个未解锁。你的开发者类型是什么？`
-    : `${wrapped.archetype.emoji} I'm a ${wrapped.archetype.name} — ${wrapped.total} skills, ${wrapped.untappedCount} untapped. What's your developer type?`;
+    ? `${wrapped.archetype.emoji} 我是「${wrapped.archetype.name}」— ${wrapped.total} 个技能，只有 ${wrapped.coreCount} 个精心配置。你的开发者类型是什么？`
+    : `${wrapped.archetype.emoji} I'm a ${wrapped.archetype.name} — ${wrapped.total} skills, only ${wrapped.coreCount} fully configured. What's your developer type?`;
 
   return `<!DOCTYPE html>
 <html lang="${lang()}">
@@ -2351,7 +2395,7 @@ function renderWrappedHTML(data) {
     .dna-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
     .dna-count { width: 80px; text-align: right; font-size: 0.85rem; color: var(--muted); }
     .radar-container { display: flex; justify-content: center; padding: 1rem; }
-    .radar-chart { width: 280px; height: 280px; }
+    .radar-chart { width: min(280px, 80vw); height: min(280px, 80vw); }
     .share-section {
       text-align: center;
       padding: 2rem;
@@ -2411,7 +2455,7 @@ function renderWrappedHTML(data) {
       gap: 2rem;
       margin: 1.5rem 0;
     }
-    .gap-core, .gap-untapped {
+    .gap-core, .gap-ready, .gap-untapped {
       text-align: center;
       flex: 1;
       padding: 1.25rem;
@@ -2420,6 +2464,10 @@ function renderWrappedHTML(data) {
     .gap-core {
       background: rgba(124,58,237,0.1);
       border: 1px solid rgba(124,58,237,0.2);
+    }
+    .gap-ready {
+      background: rgba(6,182,212,0.08);
+      border: 1px solid rgba(6,182,212,0.15);
     }
     .gap-untapped {
       background: rgba(245,158,11,0.08);
@@ -2430,6 +2478,7 @@ function renderWrappedHTML(data) {
       font-weight: 800;
     }
     .gap-core .gap-number { color: var(--accent); }
+    .gap-ready .gap-number { color: var(--accent2); }
     .gap-untapped .gap-number { color: #f59e0b; }
     .gap-label { font-weight: 600; margin-top: 0.25rem; }
     .gap-detail { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
@@ -2454,6 +2503,7 @@ function renderWrappedHTML(data) {
       margin-top: 1rem;
     }
     .gap-bar-core { background: var(--accent); }
+    .gap-bar-ready { background: var(--accent2); }
     .gap-bar-untapped { background: #f59e0b; }
     .gap-bar-labels {
       display: flex;
@@ -2497,29 +2547,38 @@ function renderWrappedHTML(data) {
     </div>
 
     <div class="section" style="background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(124,58,237,0.08));border:1px solid rgba(245,158,11,0.15)">
-      <h2 class="section-title">${isZh ? '⚡ 使用差距' : '⚡ The Usage Gap'}</h2>
+      <h2 class="section-title">${isZh ? '⚡ 技能就绪度' : '⚡ Readiness Breakdown'}</h2>
+      <p style="color:var(--muted);margin-bottom:1rem;font-size:0.9rem">
+        ${isZh ? '基于描述完整度、工具配置和触发词' : 'Based on description depth, tool config, and triggers'}
+      </p>
       <div class="gap-visual">
         <div class="gap-core">
           <div class="gap-number">${wrapped.coreCount}</div>
-          <div class="gap-label">${isZh ? '核心技能' : 'Core Skills'}</div>
-          <div class="gap-detail">${isZh ? '你的主力领域: ' : 'Your focus: '}${wrapped.coreCats.join(', ')}</div>
+          <div class="gap-label">${isZh ? '精心配置' : 'Fully Configured'}</div>
+          <div class="gap-detail">${isZh ? '随时可用的核心技能' : 'Ready-to-use core skills'}</div>
         </div>
-        <div class="gap-divider">
-          <div class="gap-vs">vs</div>
+        <div class="gap-divider"><div class="gap-vs">+</div></div>
+        <div class="gap-ready">
+          <div class="gap-number">${wrapped.readyCount}</div>
+          <div class="gap-label">${isZh ? '基本可用' : 'Mostly Ready'}</div>
+          <div class="gap-detail">${isZh ? '需要一些配置' : 'Needs a bit of config'}</div>
         </div>
+        <div class="gap-divider"><div class="gap-vs">+</div></div>
         <div class="gap-untapped">
           <div class="gap-number">${wrapped.untappedCount}</div>
-          <div class="gap-label">${isZh ? '未解锁潜力' : 'Untapped Potential'}</div>
-          <div class="gap-detail">${isZh ? '等待被发现的技能' : 'Skills waiting to be discovered'}</div>
+          <div class="gap-label">${isZh ? '几乎空白' : 'Nearly Empty'}</div>
+          <div class="gap-detail">${isZh ? '安装了但没配置' : 'Installed but not configured'}</div>
         </div>
       </div>
       <div class="gap-bar-wrap">
         <div class="gap-bar-core" style="width:${wrapped.corePercent}%"></div>
-        <div class="gap-bar-untapped" style="width:${100 - wrapped.corePercent}%"></div>
+        <div class="gap-bar-ready" style="width:${wrapped.readyPercent}%"></div>
+        <div class="gap-bar-untapped" style="width:${wrapped.untappedPercent}%"></div>
       </div>
       <div class="gap-bar-labels">
         <span>${wrapped.corePercent}% ${isZh ? '核心' : 'core'}</span>
-        <span>${100 - wrapped.corePercent}% ${isZh ? '未探索' : 'unexplored'}</span>
+        <span>${wrapped.readyPercent}% ${isZh ? '可用' : 'ready'}</span>
+        <span>${wrapped.untappedPercent}% ${isZh ? '空白' : 'empty'}</span>
       </div>
     </div>
 
