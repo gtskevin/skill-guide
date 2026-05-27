@@ -31,6 +31,7 @@ function usage() {
     '  skill-guide --recommend [--open] [--output <file>] [--format html|json] [--lang en|zh] [--refresh]',
     '  skill-guide --share [--open] [--output <file>] [--lang en|zh] [--user <name>]',
     '  skill-guide --doctor [--refresh]',
+    '  skill-guide --health [--refresh]        # Health dashboard: tokens, hidden, stale, security',
     '',
     'Examples:',
     '  npx skill-guide --open',
@@ -383,6 +384,7 @@ function te(text) {
 function parseMode() {
   if (hasFlag('--help') || hasFlag('-h')) return { mode: 'help' };
   if (hasFlag('--doctor')) return { mode: 'doctor' };
+  if (hasFlag('--health')) return { mode: 'health' };
   if (hasFlag('--recommend')) return { mode: 'recommend' };
   if (hasFlag('--share')) return { mode: 'share' };
   if (hasFlag('--full') || args[0] === 'all') return { mode: 'full' };
@@ -404,7 +406,7 @@ function scannerArgsFor(mode) {
   const scannerArgs = [];
   if (hasFlag('--refresh')) scannerArgs.push('--refresh');
 
-  if (mode.mode === 'list' || mode.mode === 'doctor') {
+  if (mode.mode === 'list' || mode.mode === 'doctor' || mode.mode === 'health') {
     scannerArgs.push('--list');
   } else if (mode.mode === 'skill') {
     scannerArgs.push('--skill', mode.value);
