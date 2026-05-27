@@ -2129,6 +2129,348 @@ function renderWrappedTerminal(data) {
   return lines.join('\n');
 }
 
+function renderWrappedHTML(data) {
+  const skills = data.skills || [];
+  const health = computeHealthStats(skills);
+  const personality = analyzeSkillPersonality(skills);
+  const radar = computeRadarScores(skills, health);
+  const wrapped = computeWrappedStats(skills, health);
+  const isZh = lang() === 'zh';
+
+  function renderRadarChart(dimensions) {
+    const size = 200;
+    const center = size / 2;
+    const radius = 80;
+    const levels = 5;
+
+    function pentagonPoints(r) {
+      return Array.from({ length: 5 }, (_, i) => {
+        const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+        return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
+      }).join(' ');
+    }
+
+    const dataPoints = dimensions.map((d, i) => {
+      const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+      const r = (d.score / 100) * radius;
+      return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
+    }).join(' ');
+
+    const labels = dimensions.map((d, i) => {
+      const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+      const labelR = radius + 25;
+      const x = center + labelR * Math.cos(angle);
+      const y = center + labelR * Math.sin(angle);
+      const anchor = i === 0 ? 'middle' : i < 3 ? 'start' : 'end';
+      return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="#94a3b8" font-size="11">${d.name}</text>`;
+    }).join('');
+
+    return `
+      <svg viewBox="0 0 ${size} ${size}" class="radar-chart">
+        ${Array.from({ length: levels }, (_, i) => {
+          const r = (radius / levels) * (i + 1);
+          return `<polygon points="${pentagonPoints(r)}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
+        }).join('')}
+        <polygon points="${dataPoints}" fill="rgba(124,58,237,0.3)" stroke="#7c3aed" stroke-width="2"/>
+        ${labels}
+      </svg>
+    `;
+  }
+
+  const categoryBars = wrapped.categoryBreakdown.slice(0, 6).map(cat => {
+    const barWidth = Math.max(2, cat.percent);
+    const colors = ['#7c3aed', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
+    const color = colors[wrapped.categoryBreakdown.indexOf(cat) % colors.length];
+    return `
+      <div class="dna-row">
+        <span class="dna-name">${escapeHtml(cat.name)}</span>
+        <div class="dna-bar"><div class="dna-fill" style="width:${barWidth}%;background:${color}"></div></div>
+        <span class="dna-count">${cat.count} (${cat.percent}%)</span>
+      </div>`;
+  }).join('');
+
+  const shareText = isZh
+    ? `我的 AI 技能报告：${wrapped.total} 个技能，覆盖 ${wrapped.categoryCount} 个领域，超过了 ${wrapped.skillPercentile}% 的用户！技能栈估值 $${wrapped.skillValue.toLocaleString()}。`
+    : `My AI Skill Report: ${wrapped.total} skills, ${wrapped.categoryCount} categories, exceeding ${wrapped.skillPercentile}% of users! Skill stack valued at $${wrapped.skillValue.toLocaleString()}.`;
+
+  return `<!DOCTYPE html>
+<html lang="${lang()}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${isZh ? '我的 AI 技能报告' : 'My AI Skill Report'} — skill-guide</title>
+  <meta property="og:title" content="${isZh ? '我的 AI 技能报告' : 'My AI Skill Report'} — skill-guide">
+  <meta property="og:description" content="${escapeHtml(shareText)}">
+  <style>
+    :root {
+      --bg: #0f0f23;
+      --card: #1a1a2e;
+      --text: #e0e0e0;
+      --muted: #888;
+      --accent: #7c3aed;
+      --accent2: #06b6d4;
+      --good: #10b981;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .hero {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 50%, #0c1222 100%);
+    }
+    .hero-emoji { font-size: 4rem; margin-bottom: 1rem; }
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    .hero-subtitle { color: var(--muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+    .section {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat-label { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+    .compare-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .compare-label { width: 140px; font-weight: 500; }
+    .compare-bar-wrap { flex: 1; }
+    .compare-bar {
+      height: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+    .compare-fill {
+      height: 100%;
+      border-radius: 5px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .compare-value { width: 80px; text-align: right; font-weight: 600; color: var(--accent); }
+    .dna-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+    }
+    .dna-name { width: 120px; font-size: 0.9rem; color: var(--muted); }
+    .dna-bar { flex: 1; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+    .dna-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+    .dna-count { width: 80px; text-align: right; font-size: 0.85rem; color: var(--muted); }
+    .radar-container { display: flex; justify-content: center; padding: 1rem; }
+    .radar-chart { width: 280px; height: 280px; }
+    .share-section {
+      text-align: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.1));
+      border-radius: 16px;
+      margin-top: 2rem;
+    }
+    .share-btn {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      margin: 0.5rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .share-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
+    .share-btn.primary { background: linear-gradient(135deg, #7c3aed, #06b6d4); color: #fff; }
+    .share-btn.secondary { background: rgba(255,255,255,0.1); color: var(--text); }
+    .share-text {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1rem auto;
+      max-width: 600px;
+      text-align: left;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .cta {
+      text-align: center;
+      padding: 2rem;
+      margin-top: 2rem;
+    }
+    .cta code {
+      background: var(--card);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      display: inline-block;
+      margin: 0.5rem 0;
+    }
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    @media (max-width: 600px) {
+      .hero-title { font-size: 1.8rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="hero-emoji">${personality.emoji}</div>
+    <h1 class="hero-title">${isZh ? '我的 AI 技能报告' : 'My AI Skill Report'}</h1>
+    <p class="hero-subtitle">${escapeHtml(personality.description)}</p>
+  </div>
+
+  <div class="container">
+    <div class="section">
+      <h2 class="section-title">${isZh ? '📊 你的数据' : '📊 Your Stats'}</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">${wrapped.total}</div>
+          <div class="stat-label">${isZh ? '总技能数' : 'Total Skills'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${wrapped.categoryCount}</div>
+          <div class="stat-label">${isZh ? '覆盖领域' : 'Categories'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${(wrapped.totalTokens / 1000).toFixed(1)}K</div>
+          <div class="stat-label">${isZh ? 'Token 成本' : 'Token Cost'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">$${wrapped.skillValue.toLocaleString()}</div>
+          <div class="stat-label">${isZh ? '技能估值' : 'Skill Value'}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">${isZh ? '🏆 社区对比' : '🏆 Community Comparison'}</h2>
+      <p style="color:var(--muted);margin-bottom:1rem;font-size:0.9rem">
+        ${isZh ? `基于 ${wrapped.sampleSize.toLocaleString()} 个公开仓库的数据` : `Based on data from ${wrapped.sampleSize.toLocaleString()} public repositories`}
+      </p>
+      <div class="compare-row">
+        <span class="compare-label">${isZh ? '技能数' : 'Skills'}</span>
+        <div class="compare-bar-wrap">
+          <div class="compare-bar">
+            <div class="compare-fill" style="width:${wrapped.skillPercentile}%"></div>
+          </div>
+        </div>
+        <span class="compare-value">Top ${100 - wrapped.skillPercentile}%</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">${isZh ? '领域覆盖' : 'Categories'}</span>
+        <div class="compare-bar-wrap">
+          <div class="compare-bar">
+            <div class="compare-fill" style="width:${wrapped.categoryPercentile}%"></div>
+          </div>
+        </div>
+        <span class="compare-value">Top ${100 - wrapped.categoryPercentile}%</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">${isZh ? 'Token 成本' : 'Token Cost'}</span>
+        <div class="compare-bar-wrap">
+          <div class="compare-bar">
+            <div class="compare-fill" style="width:${wrapped.tokenPercentile}%"></div>
+          </div>
+        </div>
+        <span class="compare-value">Top ${100 - wrapped.tokenPercentile}%</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">${isZh ? '🧬 技能 DNA' : '🧬 Skill DNA'}</h2>
+      ${categoryBars}
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">${isZh ? '📈 五维健康雷达' : '📈 Health Radar'}</h2>
+      <div class="radar-container">
+        ${renderRadarChart(radar.dimensions)}
+      </div>
+    </div>
+
+    <div class="share-section">
+      <h2>${isZh ? '📤 分享你的报告' : '📤 Share Your Report'}</h2>
+      <p style="color:var(--muted);margin:0.5rem 0">${isZh ? '让朋友也看看自己的技能 DNA' : 'Let friends discover their skill DNA'}</p>
+      <div class="share-text">${escapeHtml(shareText)}</div>
+      <button class="share-btn primary" onclick="copyShare()">${isZh ? '复制分享文案' : 'Copy Share Text'}</button>
+      <button class="share-btn secondary" onclick="copyLink()">${isZh ? '复制命令' : 'Copy Command'}</button>
+    </div>
+
+    <div class="cta">
+      <p style="color:var(--muted);margin-bottom:0.5rem">${isZh ? '生成你自己的技能报告' : 'Generate your own skill report'}</p>
+      <code>npx skill-guide --wrapped --open</code>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Powered by <a href="https://github.com/gtskevin/skill-guide" style="color:var(--accent)">skill-guide</a></p>
+  </div>
+
+  <script>
+    function copyShare() {
+      navigator.clipboard.writeText(${JSON.stringify(shareText + '\n\nnpx skill-guide --wrapped --open')}).then(() => {
+        alert('${isZh ? '已复制到剪贴板！' : 'Copied to clipboard!'}');
+      });
+    }
+    function copyLink() {
+      navigator.clipboard.writeText('npx skill-guide --wrapped --open').then(() => {
+        alert('${isZh ? '已复制到剪贴板！' : 'Copied to clipboard!'}');
+      });
+    }
+  </script>
+</body>
+</html>`;
+}
+
 function generatePrescription(skills, health) {
   const prescriptions = [];
   const totalTokens = skills.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
