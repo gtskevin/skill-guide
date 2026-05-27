@@ -566,6 +566,7 @@ function cleanSkill(skill, includeFull) {
     allowedTools: skill.allowedTools,
     version: skill.version,
     dir: skill.dir.replace(HOME, '~'),
+    tokenCost: estimateTokens(skill.description),
   };
 
   if (includeFull) {

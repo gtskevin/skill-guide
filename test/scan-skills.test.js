@@ -363,3 +363,11 @@ test('health detects security red flags', () => {
   const risky = result.skills.find(s => s.name === 'risky-skill');
   assert.ok(risky);
 });
+
+test('cleanSkill includes tokenCost', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-tokencost-'));
+  writeSkill(home, '.claude/skills/test', 'test-skill', 'A'.repeat(400));
+  const result = runScanner(home);
+
+  assert.equal(result.skills[0].tokenCost, 100); // 400/4 = 100
+});
