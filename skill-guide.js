@@ -2592,6 +2592,24 @@ function main() {
     process.exit(0);
   }
 
+  if (mode.mode === 'wrapped') {
+    process.stdout.write(renderWrappedTerminal(data));
+
+    const shouldOpen = hasFlag('--open') && !hasFlag('--no-open');
+    const outputFile = getArgValue('--output');
+    if (shouldOpen || outputFile) {
+      const html = renderWrappedHTML(data);
+      const defaultFile = path.join(os.tmpdir(), 'skill-guide-wrapped.html');
+      const targetFile = outputFile ? path.resolve(outputFile) : defaultFile;
+      fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+      fs.writeFileSync(targetFile, html, 'utf8');
+      if (shouldOpen) openFile(targetFile);
+      process.stdout.write(`Generated: ${targetFile}\n`);
+    }
+
+    process.exit(0);
+  }
+
   if (mode.mode === 'recommend') {
     const installed = data.skills;
     const refresh = hasFlag('--refresh');
