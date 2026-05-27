@@ -366,3 +366,26 @@ test('full pipeline: recommend page has completeness scores', () => {
   // CTA
   assert.ok(html.includes('npx skill-guide'), 'CTA command');
 });
+
+test('--health outputs health dashboard to terminal', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-health-terminal-'));
+  writeSkill(home, '.claude/skills/test', 'test-skill', 'A test skill for health check');
+  const output = runCli(home, ['--health', '--refresh']);
+
+  assert.match(output, /Skill Health Dashboard/);
+  assert.match(output, /Token Cost/);
+  assert.match(output, /Description Budget/);
+  assert.match(output, /Total Skills/);
+});
+
+test('--health --open generates HTML file', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-health-html-'));
+  writeSkill(home, '.claude/skills/test', 'test-skill', 'A test skill');
+  const outputFile = path.join(home, 'health-report.html');
+  runCli(home, ['--health', '--output', outputFile, '--no-open', '--refresh']);
+
+  assert.ok(fs.existsSync(outputFile));
+  const html = fs.readFileSync(outputFile, 'utf8');
+  assert.match(html, /Skill Health Dashboard/);
+  assert.match(html, /health-card/);
+});
