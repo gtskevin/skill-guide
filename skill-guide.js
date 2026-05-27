@@ -1406,153 +1406,80 @@ function renderHealthTerminal(data) {
 }
 
 function renderHealthHTML(data) {
-  const health = computeHealthStats(data.skills || []);
-  const langLabels = {
-    en: {
-      title: 'Skill Health Dashboard',
-      totalSkills: 'Total Skills',
-      tokenCost: 'Token Cost',
-      estimatedTokens: 'Estimated Tokens',
-      contextWindow: 'Context Window',
-      descriptionBudget: 'Description Budget',
-      hiddenSkills: 'Hidden Skills Estimate',
-      staleSkills: 'Stale Skills',
-      securityFlags: 'Security Red Flags',
-      duplicates: 'Potential Duplicates',
-      summary: 'Summary',
-      healthy: 'No issues found. Your skill setup looks healthy!',
-      issuesFound: '{count} potential issue(s) found.',
-      lastModified: 'Last modified',
-      daysAgo: 'days ago',
-      withinBudget: 'Within budget',
-      overBudget: 'OVER BUDGET — some skills may be silently hidden!',
-      approachingBudget: 'Approaching budget limit',
-    },
-    zh: {
-      title: '技能健康仪表盘',
-      totalSkills: '技能总数',
-      tokenCost: 'Token 成本',
-      estimatedTokens: '预估 Token 数',
-      contextWindow: '上下文窗口',
-      descriptionBudget: '描述预算',
-      hiddenSkills: '隐藏技能估算',
-      staleSkills: '过期技能',
-      securityFlags: '安全风险标记',
-      duplicates: '潜在重复',
-      summary: '总结',
-      healthy: '未发现问题，你的技能配置看起来很健康！',
-      issuesFound: '发现 {count} 个潜在问题。',
-      lastModified: '最后修改',
-      daysAgo: '天前',
-      withinBudget: '预算内',
-      overBudget: '超出预算 — 部分技能可能被静默隐藏！',
-      approachingBudget: '接近预算上限',
-    },
-  };
+  const skills = data.skills || [];
+  const health = computeHealthStats(skills);
+  const personality = analyzeSkillPersonality(skills);
+  const radar = computeRadarScores(skills, health);
+  const topConsumers = renderTopConsumers(skills, 10);
+  const prescriptions = generatePrescription(skills, health);
 
-  const l = langLabels[lang()] || langLabels.en;
+  function renderRadarChart(dimensions) {
+    const size = 200;
+    const center = size / 2;
+    const radius = 80;
+    const levels = 5;
 
-  function statusColor(percent) {
-    if (percent > 100) return '#ef4444';
-    if (percent > 80) return '#f59e0b';
-    return '#22c55e';
-  }
+    function pentagonPoints(r) {
+      return Array.from({ length: 5 }, (_, i) => {
+        const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+        return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
+      }).join(' ');
+    }
 
-  function severityBadge(flags) {
-    const highRisk = ['eval-exec', 'pipe-from-curl', 'destructive-commands'];
-    const hasHigh = flags.some(f => highRisk.includes(f));
-    return hasHigh
-      ? '<span style="background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:4px;font-size:12px;">HIGH</span>'
-      : '<span style="background:#fffbeb;color:#d97706;padding:2px 8px;border-radius:4px;font-size:12px;">MEDIUM</span>';
-  }
+    const dataPoints = dimensions.map((d, i) => {
+      const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+      const r = (d.score / 100) * radius;
+      return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
+    }).join(' ');
 
-  const cards = [
-    `<div class="health-card">
-      <h3>${l.tokenCost}</h3>
-      <div class="big-number">~${health.totalTokenEstimate.toLocaleString()}</div>
-      <p>${l.estimatedTokens}</p>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width:${Math.min(health.contextWindowPercent, 100)}%;background:${statusColor(health.contextWindowPercent)}"></div>
-      </div>
-      <p class="small">${l.contextWindow}: ${health.contextWindowPercent}%</p>
-    </div>`,
+    const labels = dimensions.map((d, i) => {
+      const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+      const labelR = radius + 25;
+      const x = center + labelR * Math.cos(angle);
+      const y = center + labelR * Math.sin(angle);
+      const anchor = i === 0 ? 'middle' : i < 3 ? 'start' : 'end';
+      return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="#94a3b8" font-size="11">${d.name}</text>`;
+    }).join('');
 
-    `<div class="health-card">
-      <h3>${l.descriptionBudget}</h3>
-      <div class="big-number">${health.budgetUsedPercent}%</div>
-      <p>${health.totalDescriptionLength.toLocaleString()} / ${health.descriptionBudget.toLocaleString()} chars</p>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width:${Math.min(health.budgetUsedPercent, 100)}%;background:${statusColor(health.budgetUsedPercent)}"></div>
-      </div>
-      <p class="small">${health.budgetUsedPercent > 100 ? l.overBudget : health.budgetUsedPercent > 80 ? l.approachingBudget : l.withinBudget}</p>
-    </div>`,
-
-    `<div class="health-card ${health.hiddenSkillEstimate > 0 ? 'warning' : 'good'}">
-      <h3>${l.hiddenSkills}</h3>
-      <div class="big-number">${health.hiddenSkillEstimate}</div>
-      <p>${l.totalSkills}: ${health.totalSkills}</p>
-    </div>`,
-  ];
-
-  let securitySection = '';
-  if (health.securityFlags.length > 0) {
-    const rows = health.securityFlags.map(s => `
-      <tr>
-        <td>${escapeHtml(s.name)}</td>
-        <td>${s.flags.join(', ')}</td>
-        <td>${severityBadge(s.flags)}</td>
-      </tr>
-    `).join('');
-
-    securitySection = `
-      <section class="health-section">
-        <h2>${l.securityFlags} (${health.securityFlags.length})</h2>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Name</th><th>Flags</th><th>Severity</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-      </section>
+    return `
+      <svg viewBox="0 0 ${size} ${size}" class="radar-chart">
+        ${Array.from({ length: levels }, (_, i) => {
+          const r = (radius / levels) * (i + 1);
+          return `<polygon points="${pentagonPoints(r)}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
+        }).join('')}
+        <polygon points="${dataPoints}" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" stroke-width="2"/>
+        ${labels}
+      </svg>
     `;
   }
 
-  let duplicateSection = '';
-  if (health.duplicateGroups.length > 0) {
-    const rows = health.duplicateGroups.map(g => `
-      <tr>
-        <td>${g.names.map(n => escapeHtml(n)).join(' = ')}</td>
-      </tr>
-    `).join('');
-
-    duplicateSection = `
-      <section class="health-section">
-        <h2>${l.duplicates} (${health.duplicateGroups.length})</h2>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Names</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-      </section>
-    `;
+  function scoreColor(score) {
+    if (score >= 80) return '#22c55e';
+    if (score >= 60) return '#f59e0b';
+    return '#ef4444';
   }
 
-  const issues = health.securityFlags.length + health.duplicateGroups.length;
-  const summaryText = issues === 0 ? l.healthy : l.issuesFound.replace('{count}', issues);
+  function scoreLabel(score) {
+    if (score >= 90) return 'A+';
+    if (score >= 80) return 'A';
+    if (score >= 70) return 'B';
+    if (score >= 60) return 'C';
+    if (score >= 50) return 'D';
+    return 'F';
+  }
 
   return `<!DOCTYPE html>
 <html lang="${lang()}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${l.title}</title>
+  <title>Skill Health Report</title>
   <style>
     :root {
       --bg: #0f172a;
-      --card-bg: #1e293b;
+      --card: #1e293b;
       --text: #e2e8f0;
-      --text-muted: #94a3b8;
+      --muted: #94a3b8;
       --accent: #3b82f6;
       --good: #22c55e;
       --warn: #f59e0b;
@@ -1560,114 +1487,331 @@ function renderHealthHTML(data) {
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 2rem;
     }
-    .container { max-width: 1200px; margin: 0 auto; }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .hero {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
     }
-    .subtitle { color: var(--text-muted); margin-bottom: 2rem; }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
+    .score-circle {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 2rem;
+      border: 4px solid;
     }
-    .health-card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 1.5rem;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .health-card.warning { border-color: var(--warn); }
-    .health-card.good { border-color: var(--good); }
-    .health-card h3 {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.5rem;
-    }
-    .big-number {
-      font-size: 3rem;
+    .score-number {
+      font-size: 4rem;
       font-weight: 700;
       line-height: 1;
-      margin-bottom: 0.5rem;
     }
-    .progress-bar {
+    .score-label {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+    .personality {
+      margin-top: 1rem;
+    }
+    .personality-emoji {
+      font-size: 3rem;
+    }
+    .personality-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+    .personality-desc {
+      color: var(--muted);
+      max-width: 500px;
+      margin: 1rem auto;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .section {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .radar-container {
+      display: flex;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .radar-chart {
+      width: 300px;
+      height: 300px;
+    }
+    .consumer-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .consumer-rank {
+      width: 24px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .consumer-name {
+      flex: 1;
+      font-weight: 500;
+    }
+    .consumer-bar {
+      width: 120px;
       height: 8px;
       background: rgba(255,255,255,0.1);
       border-radius: 4px;
-      margin: 1rem 0;
       overflow: hidden;
     }
-    .progress-fill {
+    .consumer-fill {
       height: 100%;
       border-radius: 4px;
-      transition: width 0.3s ease;
+      background: var(--accent);
     }
-    .small { font-size: 0.75rem; color: var(--text-muted); }
-    .health-section {
-      background: var(--card-bg);
+    .consumer-tokens {
+      width: 80px;
+      text-align: right;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+    .prescription-card {
+      background: rgba(255,255,255,0.05);
       border-radius: 12px;
       padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .health-section h2 {
-      font-size: 1.25rem;
       margin-bottom: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
     }
-    .table-wrap { overflow-x: auto; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .prescription-card:hover {
+      background: rgba(255,255,255,0.08);
     }
-    th, td {
-      padding: 0.75rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+    .prescription-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
     }
-    th {
+    .prescription-emoji {
+      font-size: 1.5rem;
+    }
+    .prescription-title {
+      font-weight: 600;
+      flex: 1;
+    }
+    .prescription-impact {
       font-size: 0.75rem;
-      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: 4px;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
-    .summary {
-      background: var(--card-bg);
+    .impact-high { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .impact-medium { background: rgba(245,158,11,0.2); color: #f59e0b; }
+    .impact-low { background: rgba(34,197,94,0.2); color: #22c55e; }
+    .prescription-desc {
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+    .prescription-items {
+      margin-top: 1rem;
+      display: none;
+    }
+    .prescription-card.expanded .prescription-items {
+      display: block;
+    }
+    .prescription-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      font-size: 0.875rem;
+    }
+    .item-name {
+      font-weight: 500;
+      min-width: 120px;
+    }
+    .item-action {
+      color: var(--muted);
+    }
+    .share-section {
+      text-align: center;
+      padding: 2rem;
+    }
+    .share-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .share-btn:hover {
+      transform: scale(1.05);
+    }
+    .copy-feedback {
+      color: var(--good);
+      margin-top: 1rem;
+      display: none;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--card);
       border-radius: 12px;
       padding: 1.5rem;
       text-align: center;
-      font-size: 1.125rem;
       border: 1px solid rgba(255,255,255,0.1);
     }
-    .summary.good { border-color: var(--good); }
-    .summary.warning { border-color: var(--warn); }
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>${l.title}</h1>
-    <p class="subtitle">${new Date().toISOString().slice(0, 10)}</p>
-
-    <div class="cards">${cards.join('')}</div>
-
-    ${securitySection}
-    ${duplicateSection}
-
-    <div class="summary ${issues === 0 ? 'good' : 'warning'}">
-      ${summaryText}
+  <div class="hero">
+    <div class="score-circle" style="border-color: ${scoreColor(radar.overall)}">
+      <div class="score-number" style="color: ${scoreColor(radar.overall)}">${radar.overall}</div>
+      <div class="score-label" style="color: ${scoreColor(radar.overall)}">${scoreLabel(radar.overall)}</div>
+    </div>
+    <div class="personality">
+      <div class="personality-emoji">${personality.emoji}</div>
+      <div class="personality-title">${personality.type} · ${personality.title}</div>
+      <div class="personality-desc">${personality.description}</div>
     </div>
   </div>
+
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number">${skills.length}</div>
+        <div class="stat-label">Total Skills</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">~${(health.totalTokenEstimate / 1000).toFixed(1)}K</div>
+        <div class="stat-label">Token Cost</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${health.contextWindowPercent}%</div>
+        <div class="stat-label">Context Usage</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${health.budgetUsedPercent}%</div>
+        <div class="stat-label">Budget Usage</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📊 Health Radar</div>
+      <div class="radar-container">
+        ${renderRadarChart(radar.dimensions)}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🏆 Top 10 Token Consumers</div>
+      ${topConsumers.map(c => `
+        <div class="consumer-row">
+          <div class="consumer-rank">${c.rank}</div>
+          <div class="consumer-name">${escapeHtml(c.name)}</div>
+          <div class="consumer-bar">
+            <div class="consumer-fill" style="width: ${c.barWidth}%"></div>
+          </div>
+          <div class="consumer-tokens">${c.tokenCost.toLocaleString()} tokens</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="section">
+      <div class="section-title">💊 Prescriptions</div>
+      ${prescriptions.map(p => `
+        <div class="prescription-card" onclick="this.classList.toggle('expanded')">
+          <div class="prescription-header">
+            <div class="prescription-emoji">${p.emoji}</div>
+            <div class="prescription-title">${p.title}</div>
+            <div class="prescription-impact impact-${p.impact}">${p.impact}</div>
+          </div>
+          <div class="prescription-desc">${p.description}</div>
+          <div class="prescription-items">
+            ${p.items.map(item => `
+              <div class="prescription-item">
+                <div class="item-name">${escapeHtml(item.name)}</div>
+                <div class="item-action">${item.action}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="section share-section">
+      <div class="section-title">📤 Share Your Health Report</div>
+      <p style="color: var(--muted); margin-bottom: 1.5rem;">Copy to clipboard and share on social media</p>
+      <button class="share-btn" onclick="copyReport()">Copy Report to Clipboard</button>
+      <div class="copy-feedback" id="copyFeedback">✅ Copied!</div>
+    </div>
+  </div>
+
+  <script>
+    function copyReport() {
+      const report = \`🏆 Skill Health Report
+
+Score: ${radar.overall}/100 (${scoreLabel(radar.overall)})
+Personality: ${personality.emoji} ${personality.type} · ${personality.title}
+
+📊 Stats:
+• Total Skills: ${skills.length}
+• Token Cost: ~${(health.totalTokenEstimate / 1000).toFixed(1)}K
+• Context Usage: ${health.contextWindowPercent}%
+• Budget Usage: ${health.budgetUsedPercent}%
+
+${personality.description}
+
+Generate your report: npx skill-guide --health --open\`;
+
+      navigator.clipboard.writeText(report).then(() => {
+        const feedback = document.getElementById('copyFeedback');
+        feedback.style.display = 'block';
+        setTimeout(() => feedback.style.display = 'none', 2000);
+      });
+    }
+  </script>
 </body>
 </html>`;
 }

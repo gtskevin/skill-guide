@@ -386,6 +386,6 @@ test('--health --open generates HTML file', () => {
 
   assert.ok(fs.existsSync(outputFile));
   const html = fs.readFileSync(outputFile, 'utf8');
-  assert.match(html, /Skill Health Dashboard/);
-  assert.match(html, /health-card/);
+  assert.match(html, /Skill Health Report/);
+  assert.match(html, /score-circle/);
 });
