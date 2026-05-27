@@ -451,7 +451,7 @@ function scannerArgsFor(mode) {
 
 function runScanner(mode) {
   const args = scannerArgsFor(mode);
-  if (mode.mode === 'full' || mode.mode === 'recommend' || mode.mode === 'share') {
+  if (mode.mode === 'full' || mode.mode === 'recommend' || mode.mode === 'share' || mode.mode === 'wrapped') {
     const result = spawnSync(process.execPath, [SCANNER, ...args], {
       cwd: process.cwd(),
       encoding: 'utf8',
