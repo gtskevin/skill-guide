@@ -2047,6 +2047,31 @@ function computeWrappedStats(skills, health) {
     .slice(0, 5)
     .map(s => s.name);
 
+  // Rare skills this user has (from community baseline)
+  const rareFound = skills.filter(s => COMMUNITY_BASELINE.rare_skills.includes(s.name)).map(s => s.name);
+
+  // --- Usage gap analysis (proxy: top-3 categories = "core", rest = "untapped") ---
+  const sortedCats = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+  const coreCats = sortedCats.slice(0, 3).map(([name]) => name);
+  const coreCount = skills.filter(s => coreCats.includes(s.category)).length;
+  const untappedCount = total - coreCount;
+  const corePercent = Math.round((coreCount / total) * 100);
+
+  // --- Developer archetype detection ---
+  const topCatPercent = sortedCats.length > 0 ? Math.round((sortedCats[0][1] / total) * 100) : 0;
+  let archetype;
+  if (total >= 100 && categoryCount >= 7) {
+    archetype = { name: 'Full-Stack Collector', emoji: '🏗️', tagline: 'You build across the entire stack' };
+  } else if (topCatPercent >= 50 && total < 50) {
+    archetype = { name: 'Domain Expert', emoji: '🎯', tagline: 'Depth over breadth — you go deep' };
+  } else if (categoryCount >= 6 && total < 100) {
+    archetype = { name: 'Explorer', emoji: '🧭', tagline: 'Curiosity drives you to every corner' };
+  } else if (total >= 50 && categoryCount <= 4) {
+    archetype = { name: 'Specialist Builder', emoji: '🔬', tagline: 'Focused mastery in chosen domains' };
+  } else {
+    archetype = { name: 'Balanced Developer', emoji: '⚖️', tagline: 'Steady growth across the board' };
+  }
+
   return {
     total,
     categoryCount,
@@ -2057,6 +2082,12 @@ function computeWrappedStats(skills, health) {
     skillValue,
     categoryBreakdown,
     coldSkills,
+    rareFound,
+    coreCount,
+    untappedCount,
+    corePercent,
+    coreCats,
+    archetype,
     communityMean: COMMUNITY_BASELINE.skill_count.mean,
     communityMedian: COMMUNITY_BASELINE.skill_count.median,
     sampleSize: COMMUNITY_BASELINE.sample_size,
@@ -2076,22 +2107,39 @@ function renderWrappedTerminal(data) {
          : '║              Your AI Skill Report                         ║',
     '╚══════════════════════════════════════════════════════════════╝',
     '',
-    `${personality.emoji} ${isZh ? '你是' : 'You are'}: ${personality.type} (${personality.title})`,
-    `   ${personality.description}`,
+    `${wrapped.archetype.emoji} ${isZh ? '你的开发者类型' : 'Your Developer Type'}: ${wrapped.archetype.name}`,
+    `   ${isZh ? '你的技能 DNA 指向：' : 'Your skill DNA says:'} ${wrapped.archetype.tagline}`,
     '',
     isZh ? '── 你的数据 ─────────────────────────────────────────────' : '── Your Stats ─────────────────────────────────────────────',
     `   📦 ${isZh ? '总技能数' : 'Total Skills'}: ${wrapped.total}`,
     `   📂 ${isZh ? '覆盖领域' : 'Categories'}: ${wrapped.categoryCount}`,
     `   🔤 ${isZh ? 'Token 成本' : 'Token Cost'}: ~${(wrapped.totalTokens / 1000).toFixed(1)}K`,
-    `   💰 ${isZh ? '技能估值' : 'Skill Value'}: $${wrapped.skillValue.toLocaleString()}`,
     '',
-    isZh ? '── 社区对比 ─────────────────────────────────────────────' : '── Community Comparison ───────────────────────────────────',
-    `   🏆 ${isZh ? '技能数超过了' : 'Skills exceed'} ${wrapped.skillPercentile}% ${isZh ? '的用户' : 'of users'}`,
-    `      ${isZh ? '你' : 'You'}: ${wrapped.total} | ${isZh ? '社区平均' : 'Community avg'}: ${wrapped.communityMean} | ${isZh ? '中位数' : 'Median'}: ${wrapped.communityMedian}`,
-    `   📊 ${isZh ? '领域覆盖超过了' : 'Categories exceed'} ${wrapped.categoryPercentile}% ${isZh ? '的用户' : 'of users'}`,
-    `   ⚡ ${isZh ? 'Token 成本超过了' : 'Token cost exceeds'} ${wrapped.tokenPercentile}% ${isZh ? '的用户' : 'of users'}`,
+    isZh ? '── 技能使用差距 ─────────────────────────────────────────' : '── The Usage Gap ──────────────────────────────────────────',
+    isZh
+      ? `   ⚡ 你有 ${wrapped.total} 个技能，但核心使用集中在 ${wrapped.coreCount} 个`
+      : `   ⚡ You have ${wrapped.total} skills, but your core usage is ${wrapped.coreCount}`,
+    isZh
+      ? `      ${wrapped.untappedCount} 个技能还在等待被发现！`
+      : `      ${wrapped.untappedCount} skills are waiting to be discovered!`,
+    isZh
+      ? `   🎯 你的核心领域: ${wrapped.coreCats.join(', ')}`
+      : `   🎯 Your core domains: ${wrapped.coreCats.join(', ')}`,
     '',
   ];
+
+  // Community comparison with archetype
+  lines.push(isZh ? '── 社区对比 ─────────────────────────────────────────────' : '── Community Comparison ───────────────────────────────────');
+  lines.push(isZh
+    ? `   🏆 技能数超过了 ${wrapped.skillPercentile}% 的用户`
+    : `   🏆 Skills exceed ${wrapped.skillPercentile}% of users`);
+  lines.push(`      ${isZh ? '你' : 'You'}: ${wrapped.total} | ${isZh ? '社区平均' : 'Community avg'}: ${wrapped.communityMean} | ${isZh ? '中位数' : 'Median'}: ${wrapped.communityMedian}`);
+  if (wrapped.rareFound.length > 0) {
+    lines.push(isZh
+      ? `   💎 你拥有 ${wrapped.rareFound.length} 个稀有技能: ${wrapped.rareFound.join(', ')}`
+      : `   💎 You own ${wrapped.rareFound.length} rare skill(s): ${wrapped.rareFound.join(', ')}`);
+  }
+  lines.push('');
 
   // Category breakdown
   lines.push(isZh ? '── 技能 DNA ─────────────────────────────────────────────' : '── Skill DNA ─────────────────────────────────────────────');
@@ -2116,14 +2164,15 @@ function renderWrappedTerminal(data) {
   }
   lines.push('');
 
-  // CTA
+  // CTA with suspense-driven share text
   lines.push(isZh ? '── 分享你的报告 ─────────────────────────────────────────' : '── Share Your Report ──────────────────────────────────────');
+  const shareHint = isZh
+    ? `   📤 "${wrapped.archetype.name} — ${wrapped.total} 个技能，${wrapped.untappedCount} 个未解锁。你的类型是什么？"`
+    : `   📤 "I'm a ${wrapped.archetype.name} — ${wrapped.total} skills, ${wrapped.untappedCount} untapped. What's your type?"`;
+  lines.push(shareHint);
   lines.push(isZh
-    ? '   📤 使用 --open 生成可分享的 HTML 报告'
-    : '   📤 Use --open to generate a shareable HTML report');
-  lines.push(isZh
-    ? '   🔗 分享到社交媒体，让朋友也看看自己的技能 DNA'
-    : '   🔗 Share on social media and let friends discover their skill DNA');
+    ? '   🔗 使用 --open 生成可分享的 HTML 报告'
+    : '   🔗 Use --open to generate a shareable HTML report');
   lines.push('');
 
   return lines.join('\n');
@@ -2190,8 +2239,8 @@ function renderWrappedHTML(data) {
   }).join('');
 
   const shareText = isZh
-    ? `我的 AI 技能报告：${wrapped.total} 个技能，覆盖 ${wrapped.categoryCount} 个领域，超过了 ${wrapped.skillPercentile}% 的用户！技能栈估值 $${wrapped.skillValue.toLocaleString()}。`
-    : `My AI Skill Report: ${wrapped.total} skills, ${wrapped.categoryCount} categories, exceeding ${wrapped.skillPercentile}% of users! Skill stack valued at $${wrapped.skillValue.toLocaleString()}.`;
+    ? `${wrapped.archetype.emoji} 我是「${wrapped.archetype.name}」— ${wrapped.total} 个技能，${wrapped.untappedCount} 个未解锁。你的开发者类型是什么？`
+    : `${wrapped.archetype.emoji} I'm a ${wrapped.archetype.name} — ${wrapped.total} skills, ${wrapped.untappedCount} untapped. What's your developer type?`;
 
   return `<!DOCTYPE html>
 <html lang="${lang()}">
@@ -2355,17 +2404,77 @@ function renderWrappedHTML(data) {
       color: var(--muted);
       font-size: 0.85rem;
     }
+    .gap-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      margin: 1.5rem 0;
+    }
+    .gap-core, .gap-untapped {
+      text-align: center;
+      flex: 1;
+      padding: 1.25rem;
+      border-radius: 12px;
+    }
+    .gap-core {
+      background: rgba(124,58,237,0.1);
+      border: 1px solid rgba(124,58,237,0.2);
+    }
+    .gap-untapped {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.15);
+    }
+    .gap-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+    }
+    .gap-core .gap-number { color: var(--accent); }
+    .gap-untapped .gap-number { color: #f59e0b; }
+    .gap-label { font-weight: 600; margin-top: 0.25rem; }
+    .gap-detail { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
+    .gap-divider { display: flex; align-items: center; }
+    .gap-vs {
+      background: rgba(255,255,255,0.1);
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.85rem;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gap-bar-wrap {
+      display: flex;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+    .gap-bar-core { background: var(--accent); }
+    .gap-bar-untapped { background: #f59e0b; }
+    .gap-bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
     @media (max-width: 600px) {
       .hero-title { font-size: 1.8rem; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .gap-visual { flex-direction: column; gap: 1rem; }
+      .gap-divider { transform: rotate(90deg); }
     }
   </style>
 </head>
 <body>
   <div class="hero">
-    <div class="hero-emoji">${personality.emoji}</div>
-    <h1 class="hero-title">${isZh ? '我的 AI 技能报告' : 'My AI Skill Report'}</h1>
-    <p class="hero-subtitle">${escapeHtml(personality.description)}</p>
+    <div class="hero-emoji">${wrapped.archetype.emoji}</div>
+    <h1 class="hero-title">${isZh ? wrapped.archetype.name : wrapped.archetype.name}</h1>
+    <p class="hero-subtitle">${escapeHtml(wrapped.archetype.tagline)}</p>
   </div>
 
   <div class="container">
@@ -2384,10 +2493,33 @@ function renderWrappedHTML(data) {
           <div class="stat-value">${(wrapped.totalTokens / 1000).toFixed(1)}K</div>
           <div class="stat-label">${isZh ? 'Token 成本' : 'Token Cost'}</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value">$${wrapped.skillValue.toLocaleString()}</div>
-          <div class="stat-label">${isZh ? '技能估值' : 'Skill Value'}</div>
+      </div>
+    </div>
+
+    <div class="section" style="background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(124,58,237,0.08));border:1px solid rgba(245,158,11,0.15)">
+      <h2 class="section-title">${isZh ? '⚡ 使用差距' : '⚡ The Usage Gap'}</h2>
+      <div class="gap-visual">
+        <div class="gap-core">
+          <div class="gap-number">${wrapped.coreCount}</div>
+          <div class="gap-label">${isZh ? '核心技能' : 'Core Skills'}</div>
+          <div class="gap-detail">${isZh ? '你的主力领域: ' : 'Your focus: '}${wrapped.coreCats.join(', ')}</div>
         </div>
+        <div class="gap-divider">
+          <div class="gap-vs">vs</div>
+        </div>
+        <div class="gap-untapped">
+          <div class="gap-number">${wrapped.untappedCount}</div>
+          <div class="gap-label">${isZh ? '未解锁潜力' : 'Untapped Potential'}</div>
+          <div class="gap-detail">${isZh ? '等待被发现的技能' : 'Skills waiting to be discovered'}</div>
+        </div>
+      </div>
+      <div class="gap-bar-wrap">
+        <div class="gap-bar-core" style="width:${wrapped.corePercent}%"></div>
+        <div class="gap-bar-untapped" style="width:${100 - wrapped.corePercent}%"></div>
+      </div>
+      <div class="gap-bar-labels">
+        <span>${wrapped.corePercent}% ${isZh ? '核心' : 'core'}</span>
+        <span>${100 - wrapped.corePercent}% ${isZh ? '未探索' : 'unexplored'}</span>
       </div>
     </div>
 
@@ -2414,15 +2546,12 @@ function renderWrappedHTML(data) {
         </div>
         <span class="compare-value">Top ${100 - wrapped.categoryPercentile}%</span>
       </div>
-      <div class="compare-row">
-        <span class="compare-label">${isZh ? 'Token 成本' : 'Token Cost'}</span>
-        <div class="compare-bar-wrap">
-          <div class="compare-bar">
-            <div class="compare-fill" style="width:${wrapped.tokenPercentile}%"></div>
-          </div>
-        </div>
-        <span class="compare-value">Top ${100 - wrapped.tokenPercentile}%</span>
-      </div>
+      ${wrapped.rareFound.length > 0 ? `
+      <div style="margin-top:1rem;padding:1rem;background:rgba(245,158,11,0.08);border-radius:12px;border:1px solid rgba(245,158,11,0.15)">
+        <div style="font-weight:600;margin-bottom:0.5rem">${isZh ? '💎 稀有技能收藏' : '💎 Rare Skills Found'}</div>
+        <div style="color:var(--muted);font-size:0.9rem">${wrapped.rareFound.map(s => `<code style="background:rgba(255,255,255,0.08);padding:0.2rem 0.5rem;border-radius:4px;margin:0.2rem;display:inline-block">${escapeHtml(s)}</code>`).join(' ')}</div>
+        <div style="color:var(--muted);font-size:0.85rem;margin-top:0.5rem">${isZh ? `只有不到 2% 的用户拥有这些技能` : `Less than 2% of users own these skills`}</div>
+      </div>` : ''}
     </div>
 
     <div class="section">
