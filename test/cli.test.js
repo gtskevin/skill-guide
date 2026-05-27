@@ -372,10 +372,11 @@ test('--health outputs health dashboard to terminal', () => {
   writeSkill(home, '.claude/skills/test', 'test-skill', 'A test skill for health check');
   const output = runCli(home, ['--health', '--refresh']);
 
-  assert.match(output, /Skill Health Dashboard/);
-  assert.match(output, /Token Cost/);
-  assert.match(output, /Description Budget/);
+  assert.match(output, /Skill Health Report/);
+  assert.match(output, /Health Score/);
+  assert.match(output, /You are/);
   assert.match(output, /Total Skills/);
+  assert.match(output, /Five Dimensions/);
 });
 
 test('--health --open generates HTML file', () => {

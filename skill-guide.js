@@ -1353,54 +1353,57 @@ function computeHealthStats(skills) {
 }
 
 function renderHealthTerminal(data) {
-  const health = computeHealthStats(data.skills || []);
+  const skills = data.skills || [];
+  const health = computeHealthStats(skills);
+  const personality = analyzeSkillPersonality(skills);
+  const radar = computeRadarScores(skills, health);
+  const topConsumers = renderTopConsumers(skills, 5);
+  const prescriptions = generatePrescription(skills, health);
+
+  const scoreColor = (s) => s >= 80 ? '🟢' : s >= 60 ? '🟡' : '🔴';
 
   const lines = [
     '╔══════════════════════════════════════════════════════════════╗',
-    '║              Skill Health Dashboard                        ║',
+    '║              Skill Health Report                           ║',
     '╚══════════════════════════════════════════════════════════════╝',
     '',
-    `📊 Total Skills: ${health.totalSkills}`,
+    `${scoreColor(radar.overall)} Health Score: ${radar.overall}/100`,
     '',
-    '── Token Cost ──────────────────────────────────────────────',
-    `   Estimated tokens: ~${health.totalTokenEstimate.toLocaleString()}`,
-    `   Context window: ${health.contextWindowPercent}% of 200K`,
+    `${personality.emoji} You are: ${personality.type} (${personality.title})`,
+    `   ${personality.description}`,
     '',
-    '── Description Budget ──────────────────────────────────────',
-    `   Used: ${health.totalDescriptionLength.toLocaleString()} / ${health.descriptionBudget.toLocaleString()} chars (${health.budgetUsedPercent}%)`,
-    `   Hidden skills estimate: ~${health.hiddenSkillEstimate}`,
-    health.budgetUsedPercent > 100
-      ? '   ⚠️  OVER BUDGET — some skills may be silently hidden!'
-      : health.budgetUsedPercent > 80
-        ? '   ⚠️  Approaching budget limit'
-        : '   ✅ Within budget',
+    '── Your Stats ─────────────────────────────────────────────',
+    `   📦 Total Skills: ${skills.length}`,
+    `   🔤 Token Cost: ~${(health.totalTokenEstimate / 1000).toFixed(1)}K (${health.contextWindowPercent}% of context)`,
+    `   📏 Budget Usage: ${health.budgetUsedPercent}%`,
     '',
   ];
 
-  if (health.securityFlags.length > 0) {
-    lines.push('── Security Red Flags ─────────────────────────────────────');
-    for (const skill of health.securityFlags.slice(0, 10)) {
-      lines.push(`   🔍 ${skill.name}: ${skill.flags.join(', ')}`);
+  if (topConsumers.length > 0) {
+    lines.push('── Top 5 Token Consumers ──────────────────────────────────');
+    for (const c of topConsumers) {
+      const bar = '█'.repeat(Math.round(c.barWidth / 10)) + '░'.repeat(10 - Math.round(c.barWidth / 10));
+      lines.push(`   ${c.rank}. ${c.name} ${bar} ${c.tokenCost.toLocaleString()} tokens`);
     }
     lines.push('');
   }
 
-  if (health.duplicateGroups.length > 0) {
-    lines.push('── Potential Duplicates ────────────────────────────────────');
-    for (const group of health.duplicateGroups.slice(0, 5)) {
-      lines.push(`   📋 ${group.names.join(' = ')}`);
+  if (prescriptions.length > 0) {
+    lines.push('── Prescriptions ──────────────────────────────────────────');
+    for (const p of prescriptions) {
+      lines.push(`   ${p.emoji} ${p.title} [${p.impact}]`);
+      lines.push(`      ${p.description}`);
     }
     lines.push('');
   }
 
-  const issues = health.securityFlags.length + health.duplicateGroups.length;
-  lines.push('── Summary ────────────────────────────────────────────────');
-  if (issues === 0) {
-    lines.push('   ✅ No issues found. Your skill setup looks healthy!');
-  } else {
-    lines.push(`   Found ${issues} potential issue${issues > 1 ? 's' : ''}. Run with --open for detailed HTML report.`);
+  lines.push('── Five Dimensions ────────────────────────────────────────');
+  for (const d of radar.dimensions) {
+    const bar = '█'.repeat(Math.round(d.score / 10)) + '░'.repeat(10 - Math.round(d.score / 10));
+    lines.push(`   ${d.name} ${bar} ${d.score}/100`);
   }
   lines.push('');
+  lines.push('💡 Run with --open for interactive dashboard with shareable report');
 
   return lines.join('\n');
 }
