@@ -2063,6 +2063,72 @@ function computeWrappedStats(skills, health) {
   };
 }
 
+function renderWrappedTerminal(data) {
+  const skills = data.skills || [];
+  const health = computeHealthStats(skills);
+  const personality = analyzeSkillPersonality(skills);
+  const wrapped = computeWrappedStats(skills, health);
+  const isZh = lang() === 'zh';
+
+  const lines = [
+    '╔══════════════════════════════════════════════════════════════╗',
+    isZh ? '║              你的 AI 技能报告                              ║'
+         : '║              Your AI Skill Report                         ║',
+    '╚══════════════════════════════════════════════════════════════╝',
+    '',
+    `${personality.emoji} ${isZh ? '你是' : 'You are'}: ${personality.type} (${personality.title})`,
+    `   ${personality.description}`,
+    '',
+    isZh ? '── 你的数据 ─────────────────────────────────────────────' : '── Your Stats ─────────────────────────────────────────────',
+    `   📦 ${isZh ? '总技能数' : 'Total Skills'}: ${wrapped.total}`,
+    `   📂 ${isZh ? '覆盖领域' : 'Categories'}: ${wrapped.categoryCount}`,
+    `   🔤 ${isZh ? 'Token 成本' : 'Token Cost'}: ~${(wrapped.totalTokens / 1000).toFixed(1)}K`,
+    `   💰 ${isZh ? '技能估值' : 'Skill Value'}: $${wrapped.skillValue.toLocaleString()}`,
+    '',
+    isZh ? '── 社区对比 ─────────────────────────────────────────────' : '── Community Comparison ───────────────────────────────────',
+    `   🏆 ${isZh ? '技能数超过了' : 'Skills exceed'} ${wrapped.skillPercentile}% ${isZh ? '的用户' : 'of users'}`,
+    `      ${isZh ? '你' : 'You'}: ${wrapped.total} | ${isZh ? '社区平均' : 'Community avg'}: ${wrapped.communityMean} | ${isZh ? '中位数' : 'Median'}: ${wrapped.communityMedian}`,
+    `   📊 ${isZh ? '领域覆盖超过了' : 'Categories exceed'} ${wrapped.categoryPercentile}% ${isZh ? '的用户' : 'of users'}`,
+    `   ⚡ ${isZh ? 'Token 成本超过了' : 'Token cost exceeds'} ${wrapped.tokenPercentile}% ${isZh ? '的用户' : 'of users'}`,
+    '',
+  ];
+
+  // Category breakdown
+  lines.push(isZh ? '── 技能 DNA ─────────────────────────────────────────────' : '── Skill DNA ─────────────────────────────────────────────');
+  for (const cat of wrapped.categoryBreakdown.slice(0, 6)) {
+    const bar = '█'.repeat(Math.max(1, Math.round(cat.percent / 5)));
+    lines.push(`   ${cat.name.padEnd(15)} ${bar} ${cat.count} (${cat.percent}%)`);
+  }
+  lines.push('');
+
+  // Fun facts
+  lines.push(isZh ? '── 趣味数据 ─────────────────────────────────────────────' : '── Fun Facts ──────────────────────────────────────────────');
+  lines.push(isZh
+    ? `   💡 你的技能栈估值 $${wrapped.skillValue.toLocaleString()}（按每个技能 $5 计算）`
+    : `   💡 Your skill stack is valued at $${wrapped.skillValue.toLocaleString()} (at $5 per skill)`);
+  lines.push(isZh
+    ? `   🎯 你超过了 ${wrapped.skillPercentile}% 的 Claude Code 用户`
+    : `   🎯 You exceed ${wrapped.skillPercentile}% of Claude Code users`);
+  if (wrapped.coldSkills.length > 0) {
+    lines.push(isZh
+      ? `   🔍 你最冷门的技能: ${wrapped.coldSkills[0]}`
+      : `   🔍 Your coldest skill: ${wrapped.coldSkills[0]}`);
+  }
+  lines.push('');
+
+  // CTA
+  lines.push(isZh ? '── 分享你的报告 ─────────────────────────────────────────' : '── Share Your Report ──────────────────────────────────────');
+  lines.push(isZh
+    ? '   📤 使用 --open 生成可分享的 HTML 报告'
+    : '   📤 Use --open to generate a shareable HTML report');
+  lines.push(isZh
+    ? '   🔗 分享到社交媒体，让朋友也看看自己的技能 DNA'
+    : '   🔗 Share on social media and let friends discover their skill DNA');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
 function generatePrescription(skills, health) {
   const prescriptions = [];
   const totalTokens = skills.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
