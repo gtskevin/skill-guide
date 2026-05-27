@@ -5,6 +5,7 @@
   <img src="https://img.shields.io/github/actions/workflow/status/gtskevin/skill-guide/test.yml?branch=main&style=flat-square&label=tests" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
   <img src="https://img.shields.io/badge/Language-Any%20%F0%9F%8C%90-7dd3fc?style=flat-square" />
+  <img src="https://img.shields.io/badge/Feature-Health%20Dashboard-fbbf24?style=flat-square" />
 </p>
 
 <p align="center">
@@ -13,6 +14,8 @@
 
 > **200+ agent skills installed but you only use 3?**
 > One command scans everything — Claude Code, Codex, cc-switch, plugins — and generates a beautiful slide deck so you actually know what you have.
+>
+> **Plus:** `--health` gives you a personality analysis, radar chart, and smart prescriptions to optimize your skill library.
 
 <p align="center">
   <a href="https://gtskevin.github.io/skill-guide/"><strong>Live Demo</strong></a>
@@ -32,7 +35,9 @@ npx skill-guide --open        # ← that's it. HTML slides open in your browser.
 
 skill-guide reads every skill from Claude Code, Codex, `~/.cc-switch/skills/`, and plugin marketplaces, then generates a polished slide deck you can view in any browser.
 
-**4 modes:**
+**Plus:** `--health` gives you a personality analysis ("You're a Collector!"), a five-dimension radar chart, and smart prescriptions to optimize your skill library.
+
+**5 modes:**
 
 | Mode | Command | Output |
 |------|---------|--------|
@@ -40,6 +45,7 @@ skill-guide reads every skill from Claude Code, Codex, `~/.cc-switch/skills/`, a
 | **Deep-dive** | `/skill-guide investigate` or `npx skill-guide --skill investigate --open` | How it works, when to use, limitations, triggers |
 | **Tool-selection** | "Which skill for security?" | Ranked recommendations with comparison |
 | **Full manual** | `/skill-guide all` or `npx skill-guide --full --open` | One page per skill, complete reference |
+| **Health** | `npx skill-guide --health --open` | Health score, personality, radar chart, prescriptions |
 | **Doctor** | `npx skill-guide --doctor` | Environment and source diagnostics |
 
 ## Platform Support
@@ -74,6 +80,40 @@ skill-guide reads every skill from Claude Code, Codex, `~/.cc-switch/skills/`, a
     <td align="center"><em>Quick reference table</em></td>
   </tr>
 </table>
+
+### Health Dashboard Preview
+
+```bash
+npx skill-guide --health --open
+```
+
+**Terminal output:**
+```
+🟡 Health Score: 66/100
+🏛️ You are: Collector (The Collector)
+Your skill library is like a museum — rich and comprehensive, but may need a curator.
+
+📦 Total Skills: 341
+🔤 Token Cost: ~20.3K (10.14% of context)
+📏 Budget Usage: 504%
+
+💡 Fun Fact: Your 341 skills average ~59 tokens each.
+   This means you've used 10.14% of your context window before typing a single character.
+   Imagine your laptop using 10.14% of RAM just by booting up.
+
+💡 Optimization Tips [low]
+   Your skill library is well-balanced. Top 5 only account for 3%
+🛡️ Security Review [medium]
+   7 skills have security flags, recommend manual review
+📦 Budget Overage [high]
+   Total description exceeds budget by 64,647 chars, ~341 skills may be hidden
+
+Token Efficiency ████████░░ 80/100
+Organization ██████████ 100/100
+Security ███░░░░░░░ 30/100
+Freshness ██████████ 100/100
+Budget Control ██░░░░░░░░ 19/100
+```
 
 ## Quick Start
 
@@ -125,6 +165,7 @@ npx skill-guide --search security --open
 npx skill-guide --skill test-driven-development --open
 npx skill-guide --share --open                    # Share your skill stack
 npx skill-guide --recommend --open                # Get recommendations
+npx skill-guide --health --open                   # Health dashboard with personality & radar chart
 npx skill-guide --format json
 npx skill-guide --doctor
 ```
@@ -167,6 +208,21 @@ npx skill-guide --recommend                       # Terminal output
 npx skill-guide --recommend --format json         # JSON for agents
 ```
 
+### Health check your skills
+```bash
+npx skill-guide --health --open                   # Full HTML dashboard
+npx skill-guide --health                          # Terminal output
+npx skill-guide --health --lang zh --open         # Chinese UI
+```
+
+**What you get:**
+- **Health Score** — 0-100 rating of your skill library's health
+- **Personality Analysis** — Are you a Collector, Minimalist, Security Expert, or Specialist?
+- **Five-Dimension Radar Chart** — Token Efficiency, Organization, Security, Freshness, Budget Control
+- **Smart Prescriptions** — Actionable recommendations based on your actual skill data
+- **Fun Facts** — "Your 341 skills use 10% of your context window before you type a single character!"
+- **One-Click Share** — Copy report to clipboard for sharing
+
 ## How it works
 
 ```
@@ -208,6 +264,7 @@ skill-guide/
 | `--share` | Generate a shareable portfolio HTML |
 | `--user <name>` | Add personalized tag to share page |
 | `--recommend` | Show skill recommendations from online directories |
+| `--health` | Generate health dashboard with personality analysis, radar chart, and prescriptions |
 | `--lang <code>` | UI language (en, zh, or any — auto-translated) |
 | `--doctor` | Check paths, sources, and scan counts |
 
@@ -230,6 +287,7 @@ Automatic — ask in any language, get output in that language. No configuration
 ## Why skill-guide?
 
 - **The only skill that maps your skills** — scans Claude Code, Codex, cc-switch, and plugin sources in one visual overview
+- **Health dashboard** — personality analysis, radar chart, and actionable prescriptions to optimize your skill library
 - **Zero dependencies** — pure Node.js with `fs`, `path`, `os`. No `npm install` needed
 - **Beautiful output** — scroll-snap slides with keyboard nav, animations, and responsive design
 - **Any language** — ask in Chinese, get Chinese. Ask in Japanese, get Japanese. Auto-detected.
@@ -242,11 +300,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Roadmap
 
-- [ ] `--share` — generate a shareable standalone HTML or Markdown summary
+- [x] `--share` — generate a shareable standalone HTML or Markdown summary
+- [x] `--health` — health dashboard with personality analysis, radar chart, and prescriptions
 - [ ] Gemini CLI skill scanning (`~/.gemini/skills`)
 - [ ] `--diff` — show recently added/removed skills since last scan
 - [ ] `--export markdown` — output a Markdown table for pasting into issues and docs
-- [ ] Skill health scores based on frontmatter completeness
 
 Have an idea? [Open a feature request](https://github.com/gtskevin/skill-guide/issues/new?template=feature_request.yml).
 
