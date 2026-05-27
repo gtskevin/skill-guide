@@ -1291,6 +1291,120 @@ function renderShareHTML(data, user) {
 </html>`;
 }
 
+function estimateTokens(text) {
+  if (!text) return 0;
+  return Math.ceil(text.length / 4);
+}
+
+function computeHealthStats(skills) {
+  const CONTEXT_WINDOW = 200_000;
+  const DESCRIPTION_BUDGET = 16_000;
+
+  let totalDescriptionLength = 0;
+  let totalTokenEstimate = 0;
+  const securityFlags = [];
+  const duplicates = new Map();
+
+  for (const skill of skills) {
+    const descLen = (skill.description || '').length;
+    totalDescriptionLength += descLen;
+    totalTokenEstimate += estimateTokens(skill.description);
+
+    // Security red flags
+    const content = (skill.description || '').toLowerCase();
+    const flags = [];
+    if (content.includes('curl ') && content.includes(' | ')) flags.push('pipe-from-curl');
+    if (content.includes('eval(') || content.includes('exec(')) flags.push('eval-exec');
+    if (content.includes('api_key') || content.includes('apikey') || content.includes('token')) flags.push('handles-secrets');
+    if (content.includes('rm -rf') || content.includes('rmdir /s')) flags.push('destructive-commands');
+    if (flags.length > 0) {
+      securityFlags.push({ name: skill.name, flags });
+    }
+
+    // Duplicate detection
+    const normalizedName = skill.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (duplicates.has(normalizedName)) {
+      duplicates.get(normalizedName).push(skill.name);
+    } else {
+      duplicates.set(normalizedName, [skill.name]);
+    }
+  }
+
+  const duplicateGroups = [...duplicates.entries()]
+    .filter(([, names]) => names.length > 1)
+    .map(([normalized, names]) => ({ normalized, names }));
+
+  const hiddenCount = DESCRIPTION_BUDGET > 0
+    ? Math.max(0, Math.floor((totalDescriptionLength - DESCRIPTION_BUDGET) / 100))
+    : 0;
+
+  return {
+    totalSkills: skills.length,
+    totalDescriptionLength,
+    totalTokenEstimate,
+    descriptionBudget: DESCRIPTION_BUDGET,
+    budgetUsedPercent: Math.round((totalDescriptionLength / DESCRIPTION_BUDGET) * 100),
+    hiddenSkillEstimate: Math.min(hiddenCount, skills.length),
+    staleSkills: [],  // Scanner doesn't pass _mdFile to skill-guide
+    securityFlags,
+    duplicateGroups,
+    contextWindowPercent: Math.round((totalTokenEstimate / CONTEXT_WINDOW) * 100 * 100) / 100,
+  };
+}
+
+function renderHealthTerminal(data) {
+  const health = computeHealthStats(data.skills || []);
+
+  const lines = [
+    '╔══════════════════════════════════════════════════════════════╗',
+    '║              Skill Health Dashboard                        ║',
+    '╚══════════════════════════════════════════════════════════════╝',
+    '',
+    `📊 Total Skills: ${health.totalSkills}`,
+    '',
+    '── Token Cost ──────────────────────────────────────────────',
+    `   Estimated tokens: ~${health.totalTokenEstimate.toLocaleString()}`,
+    `   Context window: ${health.contextWindowPercent}% of 200K`,
+    '',
+    '── Description Budget ──────────────────────────────────────',
+    `   Used: ${health.totalDescriptionLength.toLocaleString()} / ${health.descriptionBudget.toLocaleString()} chars (${health.budgetUsedPercent}%)`,
+    `   Hidden skills estimate: ~${health.hiddenSkillEstimate}`,
+    health.budgetUsedPercent > 100
+      ? '   ⚠️  OVER BUDGET — some skills may be silently hidden!'
+      : health.budgetUsedPercent > 80
+        ? '   ⚠️  Approaching budget limit'
+        : '   ✅ Within budget',
+    '',
+  ];
+
+  if (health.securityFlags.length > 0) {
+    lines.push('── Security Red Flags ─────────────────────────────────────');
+    for (const skill of health.securityFlags.slice(0, 10)) {
+      lines.push(`   🔍 ${skill.name}: ${skill.flags.join(', ')}`);
+    }
+    lines.push('');
+  }
+
+  if (health.duplicateGroups.length > 0) {
+    lines.push('── Potential Duplicates ────────────────────────────────────');
+    for (const group of health.duplicateGroups.slice(0, 5)) {
+      lines.push(`   📋 ${group.names.join(' = ')}`);
+    }
+    lines.push('');
+  }
+
+  const issues = health.securityFlags.length + health.duplicateGroups.length;
+  lines.push('── Summary ────────────────────────────────────────────────');
+  if (issues === 0) {
+    lines.push('   ✅ No issues found. Your skill setup looks healthy!');
+  } else {
+    lines.push(`   Found ${issues} potential issue${issues > 1 ? 's' : ''}. Run with --open for detailed HTML report.`);
+  }
+  lines.push('');
+
+  return lines.join('\n');
+}
+
 function main() {
   const mode = parseMode();
   if (mode.mode === 'help') {
@@ -1302,6 +1416,11 @@ function main() {
   if (mode.mode === 'doctor') {
     process.stdout.write(`${printDoctor(data)}\n`);
     return;
+  }
+
+  if (mode.mode === 'health') {
+    process.stdout.write(renderHealthTerminal(data));
+    process.exit(0);
   }
 
   if (mode.mode === 'recommend') {
