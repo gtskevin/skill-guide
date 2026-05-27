@@ -47,6 +47,7 @@ skill-guide reads every skill from Claude Code, Codex, `~/.cc-switch/skills/`, a
 | **Full manual** | `/skill-guide all` or `npx skill-guide --full --open` | One page per skill, complete reference |
 | **Health** | `npx skill-guide --health --open` | Health score, personality, radar chart, prescriptions |
 | **Doctor** | `npx skill-guide --doctor` | Environment and source diagnostics |
+| **Wrapped** | `npx skill-guide --wrapped --open` | HTML report | Personal "Spotify Wrapped" for your skills |
 
 ## Platform Support
 
@@ -166,6 +167,7 @@ npx skill-guide --skill test-driven-development --open
 npx skill-guide --share --open                    # Share your skill stack
 npx skill-guide --recommend --open                # Get recommendations
 npx skill-guide --health --open                   # Health dashboard with personality & radar chart
+npx skill-guide --wrapped --open                  # Generate your personal skill report
 npx skill-guide --format json
 npx skill-guide --doctor
 ```
@@ -222,6 +224,15 @@ npx skill-guide --health --lang zh --open         # Chinese UI
 - **Smart Prescriptions** — Actionable recommendations based on your actual skill data
 - **Fun Facts** — "Your 341 skills use 10% of your context window before you type a single character!"
 - **One-Click Share** — Copy report to clipboard for sharing
+
+### Personal Skill Report (--wrapped)
+
+Your "Spotify Wrapped" for AI skills:
+- Skill personality type (Collector, Minimalist, Security Expert, etc.)
+- Community comparison (percentile rankings vs other users)
+- Skill DNA breakdown (category distribution)
+- Skill stack valuation
+- Shareable HTML report with one-click copy
 
 ## How it works
 

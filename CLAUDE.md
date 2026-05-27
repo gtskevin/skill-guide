@@ -24,6 +24,7 @@ node skill-guide.js --skill <name> --open
 node skill-guide.js --full --open
 node skill-guide.js --share --open        # Generate shareable portfolio page
 node skill-guide.js --recommend --open    # Show recommendations from online directories
+node skill-guide.js --wrapped --open      # Personal skill report (Spotify Wrapped)
 node skill-guide.js --doctor              # Diagnose skill paths, sources, duplicates, malformed files
 node skill-guide.js --lang zh --open      # Chinese UI labels (built-in)
 ```
