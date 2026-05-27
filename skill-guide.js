@@ -11,6 +11,34 @@ const SCANNER = path.join(ROOT, 'scan-skills.js');
 const registryModule = require('./skill-registry');
 const args = process.argv.slice(2);
 
+// ---------------------------------------------------------------------------
+// Synthetic community baseline (Phase 1: based on GitHub public data estimates)
+// Will be replaced with real telemetry data as user base grows
+// ---------------------------------------------------------------------------
+const COMMUNITY_BASELINE = {
+  version: '1.0.0',
+  sample_size: 1500,
+  skill_count: {
+    mean: 45,
+    median: 23,
+    stddev: 80,
+    percentiles: { p10: 5, p25: 12, p50: 23, p75: 65, p90: 156, p95: 250, p99: 400 },
+  },
+  category_count: {
+    mean: 4.2,
+    percentiles: { p10: 1, p25: 2, p50: 4, p75: 6, p90: 8, p95: 9, p99: 9 },
+  },
+  token_cost: {
+    mean: 8500,
+    percentiles: { p10: 500, p25: 2000, p50: 4200, p75: 12000, p90: 25000, p95: 40000, p99: 80000 },
+  },
+  top_categories: ['design', 'security', 'automation', 'testing', 'deployment'],
+  rare_skills: [
+    'inventory-demand-planning', 'defi-amm-security', 'enterprise-agent-ops',
+    'quality-nonconformance', 'ecc-tools-cost-audit',
+  ],
+};
+
 function hasFlag(flag) {
   return args.includes(flag);
 }
@@ -32,6 +60,7 @@ function usage() {
     '  skill-guide --share [--open] [--output <file>] [--lang en|zh] [--user <name>]',
     '  skill-guide --doctor [--refresh]',
     '  skill-guide --health [--open] [--refresh]  # Health dashboard: tokens, hidden, stale, security',
+    '  skill-guide --wrapped [--open] [--output <file>] [--lang en|zh]  # Personal skill report (Spotify Wrapped for developers)',
     '',
     'Examples:',
     '  npx skill-guide --open',
@@ -384,6 +413,7 @@ function te(text) {
 function parseMode() {
   if (hasFlag('--help') || hasFlag('-h')) return { mode: 'help' };
   if (hasFlag('--doctor')) return { mode: 'doctor' };
+  if (hasFlag('--wrapped')) return { mode: 'wrapped' };
   if (hasFlag('--health')) return { mode: 'health' };
   if (hasFlag('--recommend')) return { mode: 'recommend' };
   if (hasFlag('--share')) return { mode: 'share' };
@@ -412,7 +442,7 @@ function scannerArgsFor(mode) {
     scannerArgs.push('--skill', mode.value);
   } else if (mode.mode === 'search') {
     scannerArgs.push('--search', mode.value);
-  } else if (mode.mode === 'full' || mode.mode === 'recommend' || mode.mode === 'share') {
+  } else if (mode.mode === 'full' || mode.mode === 'recommend' || mode.mode === 'share' || mode.mode === 'wrapped') {
     scannerArgs.push('--full');
   }
 
