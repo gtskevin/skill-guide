@@ -581,6 +581,87 @@ function cleanSkill(skill, includeFull) {
   return base;
 }
 
+function estimateTokens(text) {
+  if (!text) return 0;
+  // Rough estimate: ~4 characters per token for English text
+  // This is conservative; actual tokenization varies by model
+  return Math.ceil(text.length / 4);
+}
+
+function computeHealthStats(skills) {
+  const CONTEXT_WINDOW = 200_000; // Claude's context window
+  const DESCRIPTION_BUDGET = 16_000; // ~1% of context for skill descriptions
+  const STALE_DAYS = 30;
+
+  let totalDescriptionLength = 0;
+  let totalTokenEstimate = 0;
+  const staleSkills = [];
+  const securityFlags = [];
+  const duplicates = new Map();
+
+  for (const skill of skills) {
+    // Token cost
+    const descLen = (skill.description || '').length;
+    totalDescriptionLength += descLen;
+    totalTokenEstimate += estimateTokens(skill.description);
+
+    // Stale detection (based on file mtime)
+    try {
+      const stat = fs.statSync(skill._mdFile);
+      const daysSinceModified = (Date.now() - stat.mtimeMs) / (1000 * 60 * 60 * 24);
+      if (daysSinceModified > STALE_DAYS) {
+        staleSkills.push({
+          name: skill.name,
+          daysSinceModified: Math.floor(daysSinceModified),
+          lastModified: stat.mtime.toISOString().slice(0, 10),
+        });
+      }
+    } catch (_) { /* ignore stat errors */ }
+
+    // Security red flags (simple patterns)
+    const content = (skill._content || '').toLowerCase();
+    const flags = [];
+    if (content.includes('curl ') && content.includes(' | ')) flags.push('pipe-from-curl');
+    if (content.includes('eval(') || content.includes('exec(')) flags.push('eval-exec');
+    if (content.includes('api_key') || content.includes('apikey') || content.includes('token')) flags.push('handles-secrets');
+    if (content.includes('rm -rf') || content.includes('rmdir /s')) flags.push('destructive-commands');
+    if (flags.length > 0) {
+      securityFlags.push({ name: skill.name, flags });
+    }
+
+    // Duplicate detection (by normalized name)
+    const normalizedName = skill.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (duplicates.has(normalizedName)) {
+      duplicates.get(normalizedName).push(skill.name);
+    } else {
+      duplicates.set(normalizedName, [skill.name]);
+    }
+  }
+
+  // Filter out non-duplicates
+  const duplicateGroups = [...duplicates.entries()]
+    .filter(([, names]) => names.length > 1)
+    .map(([normalized, names]) => ({ normalized, names }));
+
+  // Hidden skills calculation
+  const hiddenCount = DESCRIPTION_BUDGET > 0
+    ? Math.max(0, Math.floor((totalDescriptionLength - DESCRIPTION_BUDGET) / 100))
+    : 0;
+
+  return {
+    totalSkills: skills.length,
+    totalDescriptionLength,
+    totalTokenEstimate,
+    descriptionBudget: DESCRIPTION_BUDGET,
+    budgetUsedPercent: Math.round((totalDescriptionLength / DESCRIPTION_BUDGET) * 100),
+    hiddenSkillEstimate: Math.min(hiddenCount, skills.length),
+    staleSkills: staleSkills.sort((a, b) => b.daysSinceModified - a.daysSinceModified),
+    securityFlags,
+    duplicateGroups,
+    contextWindowPercent: Math.round((totalTokenEstimate / CONTEXT_WINDOW) * 100 * 100) / 100,
+  };
+}
+
 function normalizeSkillName(name) {
   return String(name || '').replace(/^[^:]+:/, '').toLowerCase();
 }

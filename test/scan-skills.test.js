@@ -312,3 +312,13 @@ test('resolves shorthand skill names to the best matching skill', () => {
     'codex-plugin': 0,
   });
 });
+
+test('scanner loads skills for health analysis', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-health-'));
+  writeSkill(home, '.claude/skills/test', 'test-skill', 'A'.repeat(400));
+  const result = runScanner(home);
+
+  // Verify the skill was loaded correctly for health analysis
+  assert.equal(result.skills.length, 1);
+  assert.equal(result.skills[0].name, 'test-skill');
+});
