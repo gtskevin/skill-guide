@@ -2001,6 +2001,68 @@ function computeRadarScores(skills, health) {
   };
 }
 
+function computeWrappedStats(skills, health) {
+  const total = skills.length;
+  const categories = {};
+  for (const skill of skills) {
+    categories[skill.category] = (categories[skill.category] || 0) + 1;
+  }
+  const categoryCount = Object.keys(categories).length;
+  const totalTokens = skills.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
+
+  // Percentile calculation using synthetic distribution
+  function getPercentile(value, percentiles) {
+    const entries = Object.entries(percentiles).sort((a, b) => a[1] - b[1]);
+    for (let i = 0; i < entries.length; i++) {
+      if (value <= entries[i][1]) {
+        if (i === 0) return parseInt(entries[i][0].slice(1));
+        const prev = entries[i - 1];
+        const next = entries[i];
+        const ratio = (value - prev[1]) / (next[1] - prev[1]);
+        return Math.round(parseInt(prev[0].slice(1)) + ratio * (parseInt(next[0].slice(1)) - parseInt(prev[0].slice(1))));
+      }
+    }
+    return 99;
+  }
+
+  const skillPercentile = getPercentile(total, COMMUNITY_BASELINE.skill_count.percentiles);
+  const categoryPercentile = getPercentile(categoryCount, COMMUNITY_BASELINE.category_count.percentiles);
+  const tokenPercentile = getPercentile(totalTokens, COMMUNITY_BASELINE.token_cost.percentiles);
+
+  // Skill valuation (fun metric: $5 per skill as baseline)
+  const skillValue = total * 5;
+
+  // Category breakdown
+  const categoryBreakdown = Object.entries(categories)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({
+      name,
+      count,
+      percent: Math.round((count / total) * 100),
+    }));
+
+  // Cold/uncommon skills: skills with low token cost
+  const coldSkills = [...skills]
+    .sort((a, b) => (a.tokenCost || 0) - (b.tokenCost || 0))
+    .slice(0, 5)
+    .map(s => s.name);
+
+  return {
+    total,
+    categoryCount,
+    totalTokens,
+    skillPercentile,
+    categoryPercentile,
+    tokenPercentile,
+    skillValue,
+    categoryBreakdown,
+    coldSkills,
+    communityMean: COMMUNITY_BASELINE.skill_count.mean,
+    communityMedian: COMMUNITY_BASELINE.skill_count.median,
+    sampleSize: COMMUNITY_BASELINE.sample_size,
+  };
+}
+
 function generatePrescription(skills, health) {
   const prescriptions = [];
   const totalTokens = skills.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
