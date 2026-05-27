@@ -31,7 +31,7 @@ function usage() {
     '  skill-guide --recommend [--open] [--output <file>] [--format html|json] [--lang en|zh] [--refresh]',
     '  skill-guide --share [--open] [--output <file>] [--lang en|zh] [--user <name>]',
     '  skill-guide --doctor [--refresh]',
-    '  skill-guide --health [--refresh]        # Health dashboard: tokens, hidden, stale, security',
+    '  skill-guide --health [--open] [--refresh]  # Health dashboard: tokens, hidden, stale, security',
     '',
     'Examples:',
     '  npx skill-guide --open',
@@ -1405,6 +1405,273 @@ function renderHealthTerminal(data) {
   return lines.join('\n');
 }
 
+function renderHealthHTML(data) {
+  const health = computeHealthStats(data.skills || []);
+  const langLabels = {
+    en: {
+      title: 'Skill Health Dashboard',
+      totalSkills: 'Total Skills',
+      tokenCost: 'Token Cost',
+      estimatedTokens: 'Estimated Tokens',
+      contextWindow: 'Context Window',
+      descriptionBudget: 'Description Budget',
+      hiddenSkills: 'Hidden Skills Estimate',
+      staleSkills: 'Stale Skills',
+      securityFlags: 'Security Red Flags',
+      duplicates: 'Potential Duplicates',
+      summary: 'Summary',
+      healthy: 'No issues found. Your skill setup looks healthy!',
+      issuesFound: '{count} potential issue(s) found.',
+      lastModified: 'Last modified',
+      daysAgo: 'days ago',
+      withinBudget: 'Within budget',
+      overBudget: 'OVER BUDGET — some skills may be silently hidden!',
+      approachingBudget: 'Approaching budget limit',
+    },
+    zh: {
+      title: '技能健康仪表盘',
+      totalSkills: '技能总数',
+      tokenCost: 'Token 成本',
+      estimatedTokens: '预估 Token 数',
+      contextWindow: '上下文窗口',
+      descriptionBudget: '描述预算',
+      hiddenSkills: '隐藏技能估算',
+      staleSkills: '过期技能',
+      securityFlags: '安全风险标记',
+      duplicates: '潜在重复',
+      summary: '总结',
+      healthy: '未发现问题，你的技能配置看起来很健康！',
+      issuesFound: '发现 {count} 个潜在问题。',
+      lastModified: '最后修改',
+      daysAgo: '天前',
+      withinBudget: '预算内',
+      overBudget: '超出预算 — 部分技能可能被静默隐藏！',
+      approachingBudget: '接近预算上限',
+    },
+  };
+
+  const l = langLabels[lang()] || langLabels.en;
+
+  function statusColor(percent) {
+    if (percent > 100) return '#ef4444';
+    if (percent > 80) return '#f59e0b';
+    return '#22c55e';
+  }
+
+  function severityBadge(flags) {
+    const highRisk = ['eval-exec', 'pipe-from-curl', 'destructive-commands'];
+    const hasHigh = flags.some(f => highRisk.includes(f));
+    return hasHigh
+      ? '<span style="background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:4px;font-size:12px;">HIGH</span>'
+      : '<span style="background:#fffbeb;color:#d97706;padding:2px 8px;border-radius:4px;font-size:12px;">MEDIUM</span>';
+  }
+
+  const cards = [
+    `<div class="health-card">
+      <h3>${l.tokenCost}</h3>
+      <div class="big-number">~${health.totalTokenEstimate.toLocaleString()}</div>
+      <p>${l.estimatedTokens}</p>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${Math.min(health.contextWindowPercent, 100)}%;background:${statusColor(health.contextWindowPercent)}"></div>
+      </div>
+      <p class="small">${l.contextWindow}: ${health.contextWindowPercent}%</p>
+    </div>`,
+
+    `<div class="health-card">
+      <h3>${l.descriptionBudget}</h3>
+      <div class="big-number">${health.budgetUsedPercent}%</div>
+      <p>${health.totalDescriptionLength.toLocaleString()} / ${health.descriptionBudget.toLocaleString()} chars</p>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${Math.min(health.budgetUsedPercent, 100)}%;background:${statusColor(health.budgetUsedPercent)}"></div>
+      </div>
+      <p class="small">${health.budgetUsedPercent > 100 ? l.overBudget : health.budgetUsedPercent > 80 ? l.approachingBudget : l.withinBudget}</p>
+    </div>`,
+
+    `<div class="health-card ${health.hiddenSkillEstimate > 0 ? 'warning' : 'good'}">
+      <h3>${l.hiddenSkills}</h3>
+      <div class="big-number">${health.hiddenSkillEstimate}</div>
+      <p>${l.totalSkills}: ${health.totalSkills}</p>
+    </div>`,
+  ];
+
+  let securitySection = '';
+  if (health.securityFlags.length > 0) {
+    const rows = health.securityFlags.map(s => `
+      <tr>
+        <td>${escapeHtml(s.name)}</td>
+        <td>${s.flags.join(', ')}</td>
+        <td>${severityBadge(s.flags)}</td>
+      </tr>
+    `).join('');
+
+    securitySection = `
+      <section class="health-section">
+        <h2>${l.securityFlags} (${health.securityFlags.length})</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Flags</th><th>Severity</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </section>
+    `;
+  }
+
+  let duplicateSection = '';
+  if (health.duplicateGroups.length > 0) {
+    const rows = health.duplicateGroups.map(g => `
+      <tr>
+        <td>${g.names.map(n => escapeHtml(n)).join(' = ')}</td>
+      </tr>
+    `).join('');
+
+    duplicateSection = `
+      <section class="health-section">
+        <h2>${l.duplicates} (${health.duplicateGroups.length})</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Names</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </section>
+    `;
+  }
+
+  const issues = health.securityFlags.length + health.duplicateGroups.length;
+  const summaryText = issues === 0 ? l.healthy : l.issuesFound.replace('{count}', issues);
+
+  return `<!DOCTYPE html>
+<html lang="${lang()}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${l.title}</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .health-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .health-card.warning { border-color: var(--warn); }
+    .health-card.good { border-color: var(--good); }
+    .health-card h3 {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .big-number {
+      font-size: 3rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .progress-bar {
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      margin: 1rem 0;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .small { font-size: 0.75rem; color: var(--text-muted); }
+    .health-section {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .health-section h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    th {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .summary {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      font-size: 1.125rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .summary.good { border-color: var(--good); }
+    .summary.warning { border-color: var(--warn); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>${l.title}</h1>
+    <p class="subtitle">${new Date().toISOString().slice(0, 10)}</p>
+
+    <div class="cards">${cards.join('')}</div>
+
+    ${securitySection}
+    ${duplicateSection}
+
+    <div class="summary ${issues === 0 ? 'good' : 'warning'}">
+      ${summaryText}
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 function main() {
   const mode = parseMode();
   if (mode.mode === 'help') {
@@ -1420,6 +1687,19 @@ function main() {
 
   if (mode.mode === 'health') {
     process.stdout.write(renderHealthTerminal(data));
+
+    const shouldOpen = hasFlag('--open') && !hasFlag('--no-open');
+    const outputFile = getArgValue('--output');
+    if (shouldOpen || outputFile) {
+      const html = renderHealthHTML(data);
+      const defaultFile = path.join(os.tmpdir(), 'skill-guide-health.html');
+      const targetFile = outputFile ? path.resolve(outputFile) : defaultFile;
+      fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+      fs.writeFileSync(targetFile, html, 'utf8');
+      if (shouldOpen) openFile(targetFile);
+      process.stdout.write(`Generated: ${targetFile}\n`);
+    }
+
     process.exit(0);
   }
 
