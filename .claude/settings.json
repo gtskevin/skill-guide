@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Bash",
+      "AskUserQuestion",
+      "WebFetch"
+    ]
+  },
+  "env": {
+    "CC_MODE": "daily"
+  }
+}

@@ -1359,6 +1359,7 @@ function renderHealthTerminal(data) {
   const radar = computeRadarScores(skills, health);
   const topConsumers = renderTopConsumers(skills, 5);
   const prescriptions = generatePrescription(skills, health);
+  const isZh = lang() === 'zh';
 
   const scoreColor = (s) => s >= 80 ? '🟢' : s >= 60 ? '🟡' : '🔴';
 
@@ -1369,18 +1370,32 @@ function renderHealthTerminal(data) {
     '',
     `${scoreColor(radar.overall)} Health Score: ${radar.overall}/100`,
     '',
-    `${personality.emoji} You are: ${personality.type} (${personality.title})`,
+    `${personality.emoji} ${isZh ? '你是' : 'You are'}: ${personality.type} (${personality.title})`,
     `   ${personality.description}`,
     '',
-    '── Your Stats ─────────────────────────────────────────────',
-    `   📦 Total Skills: ${skills.length}`,
-    `   🔤 Token Cost: ~${(health.totalTokenEstimate / 1000).toFixed(1)}K (${health.contextWindowPercent}% of context)`,
-    `   📏 Budget Usage: ${health.budgetUsedPercent}%`,
+    isZh ? '── 你的数据 ─────────────────────────────────────────────' : '── Your Stats ─────────────────────────────────────────────',
+    `   📦 ${isZh ? '总技能数' : 'Total Skills'}: ${skills.length}`,
+    `   🔤 ${isZh ? 'Token 成本' : 'Token Cost'}: ~${(health.totalTokenEstimate / 1000).toFixed(1)}K (${health.contextWindowPercent}% ${isZh ? 'of context' : 'of context'})`,
+    `   📏 ${isZh ? '预算使用' : 'Budget Usage'}: ${health.budgetUsedPercent}%`,
     '',
   ];
 
+  // Fun Fact
+  const tokenPerSkill = skills.length > 0 ? Math.round(health.totalTokenEstimate / skills.length) : 0;
+  lines.push(isZh ? '── 趣味数据 ─────────────────────────────────────────────' : '── Fun Fact ───────────────────────────────────────────────');
+  lines.push(isZh
+    ? `   💡 你的 ${skills.length} 个技能，平均每个 ~${tokenPerSkill} tokens。`
+    : `   💡 Your ${skills.length} skills average ~${tokenPerSkill} tokens each.`);
+  lines.push(isZh
+    ? `      这意味着你还没说话，就用掉了 ${health.contextWindowPercent}% 的上下文窗口。`
+    : `      This means you've used ${health.contextWindowPercent}% of your context window before typing a single character.`);
+  lines.push(isZh
+    ? `      想象一下，你的笔记本电脑开机就占了 ${health.contextWindowPercent}% 内存。`
+    : `      Imagine your laptop using ${health.contextWindowPercent}% of RAM just by booting up.`);
+  lines.push('');
+
   if (topConsumers.length > 0) {
-    lines.push('── Top 5 Token Consumers ──────────────────────────────────');
+    lines.push(isZh ? '── Top 5 Token 消耗者 ──────────────────────────────────' : '── Top 5 Token Consumers ──────────────────────────────────');
     for (const c of topConsumers) {
       const bar = '█'.repeat(Math.round(c.barWidth / 10)) + '░'.repeat(10 - Math.round(c.barWidth / 10));
       lines.push(`   ${c.rank}. ${c.name} ${bar} ${c.tokenCost.toLocaleString()} tokens`);
@@ -1389,21 +1404,21 @@ function renderHealthTerminal(data) {
   }
 
   if (prescriptions.length > 0) {
-    lines.push('── Prescriptions ──────────────────────────────────────────');
+    lines.push(isZh ? '── 处方 ──────────────────────────────────────────────────' : '── Prescriptions ──────────────────────────────────────────');
     for (const p of prescriptions) {
-      lines.push(`   ${p.emoji} ${p.title} [${p.impact}]`);
-      lines.push(`      ${p.description}`);
+      lines.push(`   ${p.emoji} ${isZh ? p.title : p.titleEn} [${p.impact}]`);
+      lines.push(`      ${isZh ? p.description : p.descriptionEn}`);
     }
     lines.push('');
   }
 
-  lines.push('── Five Dimensions ────────────────────────────────────────');
+  lines.push(isZh ? '── 五维评分 ──────────────────────────────────────────────' : '── Five Dimensions ────────────────────────────────────────');
   for (const d of radar.dimensions) {
     const bar = '█'.repeat(Math.round(d.score / 10)) + '░'.repeat(10 - Math.round(d.score / 10));
     lines.push(`   ${d.name} ${bar} ${d.score}/100`);
   }
   lines.push('');
-  lines.push('💡 Run with --open for interactive dashboard with shareable report');
+  lines.push(isZh ? '💡 使用 --open 打开交互式仪表盘，支持一键分享' : '💡 Run with --open for interactive dashboard with shareable report');
 
   return lines.join('\n');
 }
@@ -1834,70 +1849,84 @@ function analyzeSkillPersonality(skills) {
   }
 
   const topCategory = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
+  const isZh = lang() === 'zh';
 
   if (total > 100) {
     return {
-      type: '收藏家',
+      type: isZh ? '收藏家' : 'Collector',
       emoji: '🏛️',
       title: 'The Collector',
-      description: '你的技能库像一个博物馆——丰富、全面，但可能需要一个策展人。你相信"有备无患"，但有时候少即是多。',
-      advice: '建议：定期审视，保留精品。质量 > 数量。',
+      description: isZh
+        ? '你的技能库像一个博物馆——丰富、全面，但可能需要一个策展人。你相信"有备无患"，但有时候少即是多。'
+        : 'Your skill library is like a museum — rich and comprehensive, but may need a curator. You believe in "better safe than sorry," but sometimes less is more.',
+      advice: isZh ? '建议：定期审视，保留精品。质量 > 数量。' : 'Advice: Review regularly, keep the best. Quality > Quantity.',
     };
   }
 
   if (total < 10) {
     return {
-      type: '极简主义者',
+      type: isZh ? '极简主义者' : 'Minimalist',
       emoji: '🧘',
       title: 'The Minimalist',
-      description: '你的技能库像一个精心策划的展览——每一件都有其 purpose。你懂得"少即是多"的智慧。',
-      advice: '建议：保持精简，但可以探索新领域。',
+      description: isZh
+        ? '你的技能库像一个精心策划的展览——每一件都有其 purpose。你懂得"少即是多"的智慧。'
+        : 'Your skill library is like a curated exhibition — every piece has its purpose. You understand the wisdom of "less is more."',
+      advice: isZh ? '建议：保持精简，但可以探索新领域。' : 'Advice: Stay lean, but explore new domains.',
     };
   }
 
   if (securityCount > total * 0.3) {
     return {
-      type: '安全专家',
+      type: isZh ? '安全专家' : 'Security Expert',
       emoji: '🛡️',
       title: 'The Security Expert',
-      description: '你的技能库像一个安全堡垒——你关注权限、审计和风险控制。安全是你的第一优先级。',
-      advice: '建议：安全很好，但别让安全成为效率的障碍。',
+      description: isZh
+        ? '你的技能库像一个安全堡垒——你关注权限、审计和风险控制。安全是你的第一优先级。'
+        : 'Your skill library is like a security fortress — you focus on permissions, audits, and risk control. Security is your top priority.',
+      advice: isZh ? '建议：安全很好，但别让安全成为效率的障碍。' : 'Advice: Security is great, but don\'t let it block efficiency.',
     };
   }
 
   if (pluginCount > total * 0.5) {
     return {
-      type: '插件达人',
+      type: isZh ? '插件达人' : 'Plugin Enthusiast',
       emoji: '🔌',
       title: 'The Plugin Enthusiast',
-      description: '你的技能库像一个插件博览会——你相信社区的力量，喜欢尝试新工具。',
-      advice: '建议：插件很好，但要注意质量和维护状态。',
+      description: isZh
+        ? '你的技能库像一个插件博览会——你相信社区的力量，喜欢尝试新工具。'
+        : 'Your skill library is like a plugin expo — you believe in the power of community and love trying new tools.',
+      advice: isZh ? '建议：插件很好，但要注意质量和维护状态。' : 'Advice: Plugins are great, but watch for quality and maintenance.',
     };
   }
 
   if (topCategory && topCategory[1] > total * 0.4) {
     const categoryNames = {
-      'coding': '代码工匠',
-      'testing': '质量守护者',
-      'devops': '部署大师',
-      'documentation': '文档专家',
-      'analysis': '数据分析师',
+      'coding': { zh: '代码工匠', en: 'Code Craftsman' },
+      'testing': { zh: '质量守护者', en: 'Quality Guardian' },
+      'devops': { zh: '部署大师', en: 'DevOps Master' },
+      'documentation': { zh: '文档专家', en: 'Documentation Expert' },
+      'analysis': { zh: '数据分析师', en: 'Data Analyst' },
     };
+    const cat = categoryNames[topCategory[0]] || { zh: '领域专家', en: 'Domain Expert' };
     return {
-      type: categoryNames[topCategory[0]] || '领域专家',
+      type: isZh ? cat.zh : cat.en,
       emoji: '🎯',
       title: 'The Specialist',
-      description: `你的技能库专注于 ${topCategory[0]} 领域——你是这个领域的专家，深度优于广度。`,
-      advice: '建议：在专精领域继续深耕，适当扩展边界。',
+      description: isZh
+        ? `你的技能库专注于 ${topCategory[0]} 领域——你是这个领域的专家，深度优于广度。`
+        : `Your skill library focuses on ${topCategory[0]} — you're an expert in this domain, depth over breadth.`,
+      advice: isZh ? '建议：在专精领域继续深耕，适当扩展边界。' : 'Advice: Keep deepening your expertise, expand boundaries when ready.',
     };
   }
 
   return {
-    type: '全能选手',
+    type: isZh ? '全能选手' : 'All-Rounder',
     emoji: '🌟',
     title: 'The All-Rounder',
-    description: '你的技能库像一个工具箱——什么都有一点，平衡而全面。你是个多面手。',
-    advice: '建议：在全面的基础上，找到自己的专长领域。',
+    description: isZh
+      ? '你的技能库像一个工具箱——什么都有一点，平衡而全面。你是个多面手。'
+      : 'Your skill library is like a toolbox — a bit of everything, balanced and comprehensive. You\'re a versatile player.',
+    advice: isZh ? '建议：在全面的基础上，找到自己的专长领域。' : 'Advice: Build on your breadth, find your specialty.',
   };
 }
 
@@ -1923,19 +1952,20 @@ function renderTopConsumers(skills, limit = 10) {
 }
 
 function computeRadarScores(skills, health) {
+  const isZh = lang() === 'zh';
   const tokenScore = Math.max(0, 100 - health.contextWindowPercent * 2);
   const dupScore = Math.max(0, 100 - health.duplicateGroups.length * 10);
-  const secScore = Math.max(0, 100 - health.securityFlags.length * 15);
+  const secScore = Math.max(0, 100 - health.securityFlags.length * 10); // Changed from 15 to 10
   const freshScore = Math.max(0, 100 - health.staleSkills.length * 5);
   const budgetScore = Math.max(0, 100 - Math.max(0, health.budgetUsedPercent - 100) / 5);
 
   return {
     dimensions: [
-      { name: 'Token 效率', nameEn: 'Token Efficiency', score: Math.round(tokenScore) },
-      { name: '组织性', nameEn: 'Organization', score: Math.round(dupScore) },
-      { name: '安全性', nameEn: 'Security', score: Math.round(secScore) },
-      { name: '新鲜度', nameEn: 'Freshness', score: Math.round(freshScore) },
-      { name: '预算控制', nameEn: 'Budget Control', score: Math.round(budgetScore) },
+      { name: isZh ? 'Token 效率' : 'Token Efficiency', nameEn: 'Token Efficiency', score: Math.round(tokenScore) },
+      { name: isZh ? '组织性' : 'Organization', nameEn: 'Organization', score: Math.round(dupScore) },
+      { name: isZh ? '安全性' : 'Security', nameEn: 'Security', score: Math.round(secScore) },
+      { name: isZh ? '新鲜度' : 'Freshness', nameEn: 'Freshness', score: Math.round(freshScore) },
+      { name: isZh ? '预算控制' : 'Budget Control', nameEn: 'Budget Control', score: Math.round(budgetScore) },
     ],
     overall: Math.round((tokenScore + dupScore + secScore + freshScore + budgetScore) / 5),
   };
@@ -1952,20 +1982,26 @@ function generatePrescription(skills, health) {
   if (topConsumers.length > 0) {
     const topTokens = topConsumers.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
     const percent = totalTokens > 0 ? (topTokens / totalTokens * 100).toFixed(0) : 0;
+    const isSignificant = parseInt(percent) >= 10;
+
     prescriptions.push({
       type: 'optimize',
-      emoji: '🎯',
-      title: '快速瘦身',
-      titleEn: 'Quick Diet',
-      description: `删除这 ${topConsumers.length} 个最大消耗者，立刻节省 ${topTokens.toLocaleString()} tokens (${percent}%)`,
-      descriptionEn: `Remove these ${topConsumers.length} top consumers to save ${topTokens.toLocaleString()} tokens (${percent}%)`,
+      emoji: isSignificant ? '🎯' : '💡',
+      title: isSignificant ? '快速瘦身' : '优化建议',
+      titleEn: isSignificant ? 'Quick Diet' : 'Optimization Tips',
+      description: isSignificant
+        ? `删除这 ${topConsumers.length} 个最大消耗者，立刻节省 ${topTokens.toLocaleString()} tokens (${percent}%)`
+        : `你的技能库很均衡，没有明显的瘦身空间。Top ${topConsumers.length} 只占 ${percent}%`,
+      descriptionEn: isSignificant
+        ? `Remove these ${topConsumers.length} top consumers to save ${topTokens.toLocaleString()} tokens (${percent}%)`
+        : `Your skill library is well-balanced. Top ${topConsumers.length} only account for ${percent}%`,
       items: topConsumers.map(s => ({
         name: s.name,
         tokens: s.tokenCost,
-        action: '考虑删除或精简描述',
-        actionEn: 'Consider removing or shortening description',
+        action: isSignificant ? '考虑删除或精简描述' : '保持现状',
+        actionEn: isSignificant ? 'Consider removing or shortening description' : 'Keep as is',
       })),
-      impact: 'high',
+      impact: isSignificant ? 'high' : 'low',
     });
   }
 
@@ -2011,8 +2047,8 @@ function generatePrescription(skills, health) {
       emoji: '📦',
       title: '预算超支',
       titleEn: 'Budget Overage',
-      description: `描述总长度超出预算 ${overAmount.toLocaleString()} 字符，约 ${Math.floor(overAmount / 100)} 个技能可能被隐藏`,
-      descriptionEn: `Total description exceeds budget by ${overAmount.toLocaleString()} chars, ~${Math.floor(overAmount / 100)} skills may be hidden`,
+      description: `描述总长度超出预算 ${overAmount.toLocaleString()} 字符，约 ${Math.min(Math.floor(overAmount / 100), skills.length)} 个技能可能被隐藏`,
+      descriptionEn: `Total description exceeds budget by ${overAmount.toLocaleString()} chars, ~${Math.min(Math.floor(overAmount / 100), skills.length)} skills may be hidden`,
       items: [{
         name: '整体',
         action: '精简技能描述，删除不必要的细节',
