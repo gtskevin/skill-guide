@@ -1672,6 +1672,212 @@ function renderHealthHTML(data) {
 </html>`;
 }
 
+function analyzeSkillPersonality(skills) {
+  const total = skills.length;
+  const categories = {};
+  let totalTokens = 0;
+  let securityCount = 0;
+  let pluginCount = 0;
+
+  for (const skill of skills) {
+    categories[skill.category] = (categories[skill.category] || 0) + 1;
+    totalTokens += skill.tokenCost || 0;
+    if ((skill.allowedTools || []).length > 0) securityCount++;
+    if ((skill.sources || []).some(s => s.includes('plugin'))) pluginCount++;
+  }
+
+  const topCategory = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
+
+  if (total > 100) {
+    return {
+      type: '收藏家',
+      emoji: '🏛️',
+      title: 'The Collector',
+      description: '你的技能库像一个博物馆——丰富、全面，但可能需要一个策展人。你相信"有备无患"，但有时候少即是多。',
+      advice: '建议：定期审视，保留精品。质量 > 数量。',
+    };
+  }
+
+  if (total < 10) {
+    return {
+      type: '极简主义者',
+      emoji: '🧘',
+      title: 'The Minimalist',
+      description: '你的技能库像一个精心策划的展览——每一件都有其 purpose。你懂得"少即是多"的智慧。',
+      advice: '建议：保持精简，但可以探索新领域。',
+    };
+  }
+
+  if (securityCount > total * 0.3) {
+    return {
+      type: '安全专家',
+      emoji: '🛡️',
+      title: 'The Security Expert',
+      description: '你的技能库像一个安全堡垒——你关注权限、审计和风险控制。安全是你的第一优先级。',
+      advice: '建议：安全很好，但别让安全成为效率的障碍。',
+    };
+  }
+
+  if (pluginCount > total * 0.5) {
+    return {
+      type: '插件达人',
+      emoji: '🔌',
+      title: 'The Plugin Enthusiast',
+      description: '你的技能库像一个插件博览会——你相信社区的力量，喜欢尝试新工具。',
+      advice: '建议：插件很好，但要注意质量和维护状态。',
+    };
+  }
+
+  if (topCategory && topCategory[1] > total * 0.4) {
+    const categoryNames = {
+      'coding': '代码工匠',
+      'testing': '质量守护者',
+      'devops': '部署大师',
+      'documentation': '文档专家',
+      'analysis': '数据分析师',
+    };
+    return {
+      type: categoryNames[topCategory[0]] || '领域专家',
+      emoji: '🎯',
+      title: 'The Specialist',
+      description: `你的技能库专注于 ${topCategory[0]} 领域——你是这个领域的专家，深度优于广度。`,
+      advice: '建议：在专精领域继续深耕，适当扩展边界。',
+    };
+  }
+
+  return {
+    type: '全能选手',
+    emoji: '🌟',
+    title: 'The All-Rounder',
+    description: '你的技能库像一个工具箱——什么都有一点，平衡而全面。你是个多面手。',
+    advice: '建议：在全面的基础上，找到自己的专长领域。',
+  };
+}
+
+function renderTopConsumers(skills, limit = 10) {
+  const sorted = [...skills]
+    .sort((a, b) => (b.tokenCost || 0) - (a.tokenCost || 0))
+    .slice(0, limit);
+
+  const totalTokens = skills.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
+
+  return sorted.map((skill, i) => {
+    const percent = totalTokens > 0 ? ((skill.tokenCost || 0) / totalTokens * 100).toFixed(1) : 0;
+    const barWidth = Math.min(percent * 2, 100);
+    return {
+      rank: i + 1,
+      name: skill.name,
+      tokenCost: skill.tokenCost || 0,
+      percent: parseFloat(percent),
+      barWidth,
+      category: skill.category,
+    };
+  });
+}
+
+function computeRadarScores(skills, health) {
+  const tokenScore = Math.max(0, 100 - health.contextWindowPercent * 2);
+  const dupScore = Math.max(0, 100 - health.duplicateGroups.length * 10);
+  const secScore = Math.max(0, 100 - health.securityFlags.length * 15);
+  const freshScore = Math.max(0, 100 - health.staleSkills.length * 5);
+  const budgetScore = Math.max(0, 100 - Math.max(0, health.budgetUsedPercent - 100) / 5);
+
+  return {
+    dimensions: [
+      { name: 'Token 效率', nameEn: 'Token Efficiency', score: Math.round(tokenScore) },
+      { name: '组织性', nameEn: 'Organization', score: Math.round(dupScore) },
+      { name: '安全性', nameEn: 'Security', score: Math.round(secScore) },
+      { name: '新鲜度', nameEn: 'Freshness', score: Math.round(freshScore) },
+      { name: '预算控制', nameEn: 'Budget Control', score: Math.round(budgetScore) },
+    ],
+    overall: Math.round((tokenScore + dupScore + secScore + freshScore + budgetScore) / 5),
+  };
+}
+
+function generatePrescription(skills, health) {
+  const prescriptions = [];
+  const totalTokens = skills.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
+
+  const topConsumers = [...skills]
+    .sort((a, b) => (b.tokenCost || 0) - (a.tokenCost || 0))
+    .slice(0, 5);
+
+  if (topConsumers.length > 0) {
+    const topTokens = topConsumers.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
+    const percent = totalTokens > 0 ? (topTokens / totalTokens * 100).toFixed(0) : 0;
+    prescriptions.push({
+      type: 'optimize',
+      emoji: '🎯',
+      title: '快速瘦身',
+      titleEn: 'Quick Diet',
+      description: `删除这 ${topConsumers.length} 个最大消耗者，立刻节省 ${topTokens.toLocaleString()} tokens (${percent}%)`,
+      descriptionEn: `Remove these ${topConsumers.length} top consumers to save ${topTokens.toLocaleString()} tokens (${percent}%)`,
+      items: topConsumers.map(s => ({
+        name: s.name,
+        tokens: s.tokenCost,
+        action: '考虑删除或精简描述',
+        actionEn: 'Consider removing or shortening description',
+      })),
+      impact: 'high',
+    });
+  }
+
+  if (health.securityFlags.length > 0) {
+    prescriptions.push({
+      type: 'security',
+      emoji: '🛡️',
+      title: '安全审查',
+      titleEn: 'Security Review',
+      description: `${health.securityFlags.length} 个技能有安全风险标记，建议人工审查`,
+      descriptionEn: `${health.securityFlags.length} skills have security flags, recommend manual review`,
+      items: health.securityFlags.slice(0, 5).map(s => ({
+        name: s.name,
+        flags: s.flags,
+        action: '审查权限和命令',
+        actionEn: 'Review permissions and commands',
+      })),
+      impact: 'medium',
+    });
+  }
+
+  if (health.duplicateGroups.length > 0) {
+    prescriptions.push({
+      type: 'dedup',
+      emoji: '🔄',
+      title: '去重优化',
+      titleEn: 'Deduplication',
+      description: `发现 ${health.duplicateGroups.length} 组重复技能，建议合并或删除`,
+      descriptionEn: `Found ${health.duplicateGroups.length} duplicate groups, consider merging or removing`,
+      items: health.duplicateGroups.slice(0, 3).map(g => ({
+        name: g.names.join(' = '),
+        action: '选择保留一个，删除其他',
+        actionEn: 'Keep one, remove others',
+      })),
+      impact: 'low',
+    });
+  }
+
+  if (health.budgetUsedPercent > 100) {
+    const overAmount = health.totalDescriptionLength - health.descriptionBudget;
+    prescriptions.push({
+      type: 'budget',
+      emoji: '📦',
+      title: '预算超支',
+      titleEn: 'Budget Overage',
+      description: `描述总长度超出预算 ${overAmount.toLocaleString()} 字符，约 ${Math.floor(overAmount / 100)} 个技能可能被隐藏`,
+      descriptionEn: `Total description exceeds budget by ${overAmount.toLocaleString()} chars, ~${Math.floor(overAmount / 100)} skills may be hidden`,
+      items: [{
+        name: '整体',
+        action: '精简技能描述，删除不必要的细节',
+        actionEn: 'Shorten skill descriptions, remove unnecessary details',
+      }],
+      impact: 'high',
+    });
+  }
+
+  return prescriptions;
+}
+
 function main() {
   const mode = parseMode();
   if (mode.mode === 'help') {
