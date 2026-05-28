@@ -84,6 +84,6 @@ test('translates UI labels to Chinese when --lang zh', () => {
 
   assert.match(html, /个技能已扫描/);
   assert.match(html, /分类概览/);
-  assert.match(html, /精选推荐/);
+  assert.match(html, /每类最佳/);
   assert.match(html, /快速参考/);
 });

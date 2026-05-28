@@ -52,22 +52,23 @@ function getArgValue(flag) {
 function usage() {
   return [
     'Usage:',
-    '  skill-guide [--open] [--output <file>] [--format html|json] [--lang en|zh] [--refresh]',
-    '  skill-guide --search <query> [--open] [--output <file>] [--format html|json] [--lang en|zh]',
-    '  skill-guide --skill <name> [--open] [--output <file>] [--format html|json] [--lang en|zh]',
-    '  skill-guide --full [--open] [--output <file>] [--format html|json] [--lang en|zh]',
-    '  skill-guide --recommend [--open] [--output <file>] [--format html|json] [--lang en|zh] [--refresh]',
-    '  skill-guide --share [--open] [--output <file>] [--lang en|zh] [--user <name>]',
-    '  skill-guide --doctor [--refresh]',
-    '  skill-guide --health [--open] [--refresh]  # Health dashboard: tokens, hidden, stale, security',
-    '  skill-guide --wrapped [--open] [--output <file>] [--lang en|zh]  # Personal skill report (Spotify Wrapped for developers)',
+    '  skill-guide                          # Dashboard: personality, radar, insights (opens HTML)',
+    '  skill-guide --find <name|query>       # Deep dive or search (opens HTML)',
+    '  skill-guide --doctor                  # Quick environment diagnostic',
+    '',
+    'Options:',
+    '  --output <file>   Write to file instead of default',
+    '  --format json     JSON output (no HTML)',
+    '  --lang en|zh      UI language',
+    '  --refresh         Force re-scan (ignore cache)',
+    '  --all             Show skills from all platforms (default: current platform)',
+    '  --no-open         Do not open HTML in browser',
     '',
     'Examples:',
-    '  npx skill-guide --open',
-    '  npx skill-guide --search security --open',
-    '  npx skill-guide --skill tdd --lang zh --open',
-    '  npx skill-guide --recommend --open',
-    '  npx skill-guide --doctor',
+    '  npx skill-guide                        # See your dashboard',
+    '  npx skill-guide --find investigate     # Deep dive into a skill',
+    '  npx skill-guide --find security        # Search for security skills',
+    '  npx skill-guide --doctor               # Check for issues',
   ].join('\n');
 }
 
@@ -413,21 +414,17 @@ function te(text) {
 function parseMode() {
   if (hasFlag('--help') || hasFlag('-h')) return { mode: 'help' };
   if (hasFlag('--doctor')) return { mode: 'doctor' };
-  if (hasFlag('--wrapped')) return { mode: 'wrapped' };
-  if (hasFlag('--health')) return { mode: 'health' };
   if (hasFlag('--recommend')) return { mode: 'recommend' };
   if (hasFlag('--share')) return { mode: 'share' };
-  if (hasFlag('--full') || args[0] === 'all') return { mode: 'full' };
 
-  const skill = getArgValue('--skill');
-  if (skill) return { mode: 'skill', value: skill };
+  // --find: unified search + deep dive (also supports legacy --search, --skill)
+  const find = getArgValue('--find') || getArgValue('--search') || getArgValue('--skill');
+  if (find) return { mode: 'find', value: find };
 
-  const search = getArgValue('--search');
-  if (search) return { mode: 'search', value: search };
-
-  const valueFlags = new Set(['--output', '--skill', '--search', '--format', '--lang']);
+  // Positional arg: treat as --find
+  const valueFlags = new Set(['--output', '--find', '--search', '--skill', '--format', '--lang', '--user']);
   const positional = args.find((arg, index) => !arg.startsWith('-') && !valueFlags.has(args[index - 1]));
-  if (positional) return { mode: 'skill', value: positional };
+  if (positional) return { mode: 'find', value: positional };
 
   return { mode: 'list' };
 }
@@ -436,13 +433,12 @@ function scannerArgsFor(mode) {
   const scannerArgs = [];
   if (hasFlag('--refresh')) scannerArgs.push('--refresh');
 
-  if (mode.mode === 'list' || mode.mode === 'doctor' || mode.mode === 'health') {
+  if (mode.mode === 'list' || mode.mode === 'doctor') {
     scannerArgs.push('--list');
-  } else if (mode.mode === 'skill') {
+  } else if (mode.mode === 'find') {
+    // Try as skill first, fall back to search
     scannerArgs.push('--skill', mode.value);
-  } else if (mode.mode === 'search') {
-    scannerArgs.push('--search', mode.value);
-  } else if (mode.mode === 'full' || mode.mode === 'recommend' || mode.mode === 'share' || mode.mode === 'wrapped') {
+  } else {
     scannerArgs.push('--full');
   }
 
@@ -451,7 +447,8 @@ function scannerArgsFor(mode) {
 
 function runScanner(mode) {
   const args = scannerArgsFor(mode);
-  if (mode.mode === 'full' || mode.mode === 'recommend' || mode.mode === 'share' || mode.mode === 'wrapped') {
+  const needsFullBuffer = mode.mode !== 'list' && mode.mode !== 'doctor';
+  if (needsFullBuffer) {
     const result = spawnSync(process.execPath, [SCANNER, ...args], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -567,11 +564,21 @@ function renderCover(data, mode) {
     full: t('completeManual'),
   }[mode.mode] || t('discovery');
 
+  // Add personality for default mode
+  const skills = data.skills || [];
+  let personalityLine = '';
+  if (mode.mode === 'list' && skills.length > 0) {
+    const personality = analyzeSkillPersonality(skills);
+    const wrapped = computeWrappedStats(skills, computeHealthStats(skills));
+    personalityLine = `<p class="sub" style="font-size:1.3rem;color:var(--accent);font-weight:600;margin-top:8px">${personality.emoji} ${escapeHtml(personality.type)} · Exceeds ${wrapped.skillPercentile}% of users</p>`;
+  }
+
   return `<section class="slide cover">
     <div class="rv center">
       <div class="kicker" data-i18n="label">${escapeHtml(modeLabel)}</div>
       <h1><span class="grad" data-i18n="label">${escapeHtml(title)}</span></h1>
       <p class="sub">${escapeHtml(data.totalCount || 0)} ${t('skillsScanned')} · ${escapeHtml(subtitle)}</p>
+      ${personalityLine}
       <div class="stats">${Object.entries(data.sources || {}).map(([source, count]) => `<div class="stat"><b>${count}</b><span data-i18n="label">${escapeHtml(source)}</span></div>`).join('')}</div>
     </div>
   </section>`;
@@ -596,19 +603,43 @@ function renderCategorySlide(skills) {
 }
 
 function renderHighlights(skills) {
-  const highlights = [...skills]
-    .sort((a, b) => ((b.triggers || []).length + (b.sources || []).length) - ((a.triggers || []).length + (a.sources || []).length))
-    .slice(0, 8);
+  const isZh = lang() === 'zh';
+
+  // Score skills by configuration quality (readiness)
+  function readinessScore(s) {
+    let score = 0;
+    if ((s.description || '').length > 100) score += 20;
+    if ((s.description || '').length > 200) score += 10;
+    if ((s.allowedTools || []).length > 0) score += 30;
+    if ((s.triggers || []).length > 0) score += 20;
+    if ((s.tokenCost || 0) > 50) score += 10;
+    if ((s.sources || []).length > 1) score += 10;
+    return score;
+  }
+
+  // Pick the best skill from each major category
+  const groups = groupBy(skills, 'category');
+  const topPicks = Object.entries(groups)
+    .filter(([, items]) => items.length > 0)
+    .sort((a, b) => b[1].length - a[1].length)
+    .slice(0, 6)
+    .map(([category, items]) => {
+      const best = [...items].sort((a, b) => readinessScore(b) - readinessScore(a))[0];
+      return { ...best, _pickCategory: category };
+    });
 
   return `<section class="slide">
     <div class="rv wide">
-      <h2 data-i18n="label">${t('highlights')}</h2>
-      <div class="list">${highlights.map((skill, index) => `<article class="row">
+      <h2 data-i18n="label">${isZh ? '每类最佳' : 'Best in Category'}</h2>
+      <p class="sub" style="margin-bottom:24px">${isZh
+        ? '从每个领域中选出配置最完整的技能'
+        : 'The best-configured skill from each category'}</p>
+      <div class="list">${topPicks.map((skill, index) => `<article class="row">
         <strong>${index + 1}</strong>
         <div>
           <h3>${escapeHtml(skill.name)}</h3>
           <p data-i18n="desc">${te(truncate(skill.description, 180))}</p>
-          <div>${categoryBadge(skill.category)}${sourceBadges(skill.sources)}</div>
+          <div>${categoryBadge(skill._pickCategory)}${(skill.triggers || []).length > 0 ? `<span class="badge" style="background:rgba(34,197,94,.08);color:var(--accent2);border:1px solid rgba(34,197,94,.15)">${skill.triggers.length} triggers</span>` : ''}${(skill.sources || []).length > 1 ? `<span class="badge" style="background:rgba(129,140,248,.08);color:var(--ab);border:1px solid rgba(129,140,248,.15)">${skill.sources.length} platforms</span>` : ''}</div>
         </div>
       </article>`).join('')}</div>
     </div>
@@ -666,6 +697,173 @@ function renderSelection(data, mode) {
   </section>${renderReference(data.skills.slice(0, 20), t('comparisonReference'))}`;
 }
 
+
+function renderInsightDashboardSlide(skills) {
+  const isZh = lang() === 'zh';
+  const health = computeHealthStats(skills);
+  const personality = analyzeSkillPersonality(skills);
+  const radar = computeRadarScores(skills, health);
+  const wrapped = computeWrappedStats(skills, health);
+  const totalTokens = skills.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
+  const tokenK = (totalTokens / 1000).toFixed(1);
+  const pct = Math.round((totalTokens / 200000) * 100 * 100) / 100;
+
+  return `<section class="slide">
+    <div class="rv center">
+      <div class="kicker" data-i18n="label">${isZh ? '你的技能画像' : 'YOUR SKILL PROFILE'}</div>
+      <h2>${personality.emoji} ${escapeHtml(personality.type)}</h2>
+      <p class="sub">${escapeHtml(personality.description)}</p>
+      <div class="stats" style="margin:24px 0">
+        <div class="stat"><b>${skills.length}</b><span>${isZh ? '技能' : 'skills'}</span></div>
+        <div class="stat"><b>${radar.overall}/100</b><span>${isZh ? '健康度' : 'health'}</span></div>
+        <div class="stat"><b>${wrapped.skillPercentile}%</b><span>${isZh ? '超越' : 'exceed'}</span></div>
+        <div class="stat"><b>~${tokenK}K</b><span>tokens</span></div>
+      </div>
+      ${renderDimensionRadar(radar.dimensions)}
+      <p class="sub" style="margin-top:16px;font-size:14px;color:var(--muted)">${isZh
+        ? `🔤 技能在你开口前就占了 ${pct}% 的 context window`
+        : `🔤 Your skills consume ${pct}% of your context window before you type a single word`}</p>
+    </div>
+  </section>`;
+}
+
+function renderCleanupSlide(skills) {
+  const isZh = lang() === 'zh';
+
+  // Source breakdown
+  const userSkills = skills.filter(s => (s.sources || []).some(src => ['claude-user', 'codex-user', 'cc-switch'].includes(src)));
+  const pluginSkills = skills.filter(s => (s.sources || []).some(src => ['claude-plugin', 'codex-plugin'].includes(src)));
+  const systemSkills = skills.filter(s => (s.sources || []).includes('openai-system'));
+
+  // Duplicates (same name in user + plugin)
+  const nameMap = {};
+  for (const s of skills) {
+    if (!nameMap[s.name]) nameMap[s.name] = new Set();
+    for (const src of (s.sources || [])) nameMap[s.name].add(src);
+  }
+  const duplicates = Object.entries(nameMap)
+    .filter(([, srcs]) => 
+      [...srcs].some(s => ['claude-user','codex-user','cc-switch'].includes(s)) &&
+      [...srcs].some(s => ['claude-plugin','codex-plugin'].includes(s))
+    )
+    .map(([name]) => name);
+
+  // Under-configured
+  const wrapped = computeWrappedStats(skills, computeHealthStats(skills));
+  const dormant = wrapped.untappedCount || 0;
+  const dormantPct = skills.length > 0 ? Math.round((dormant / skills.length) * 100) : 0;
+
+  const userPct = skills.length > 0 ? Math.round((userSkills.length / skills.length) * 100) : 0;
+  const pluginPct = skills.length > 0 ? Math.round((pluginSkills.length / skills.length) * 100) : 0;
+
+  return `<section class="slide">
+    <div class="rv center">
+      <div class="kicker" data-i18n="label">${isZh ? '清理指南' : 'CLEANUP GUIDE'}</div>
+      <h2>${isZh ? '你的技能从哪来的？' : 'Where did your skills come from?'}</h2>
+      <div class="stats" style="margin:20px 0">
+        <div class="stat" style="border-color:var(--accent)"><b>${userSkills.length}</b><span>${isZh ? '你手动安装' : 'you installed'}</span></div>
+        <div class="stat"><b>${pluginSkills.length}</b><span>${isZh ? '插件自动安装' : 'auto-installed'}</span></div>
+        <div class="stat"><b>${systemSkills.length}</b><span>${isZh ? '系统内置' : 'system'}</span></div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;height:12px;max-width:400px;margin:0 auto 20px;overflow:hidden;display:flex">
+        <div style="background:var(--accent);height:100%;width:${userPct}%" title="${isZh ? '手动安装' : 'User installed'}"></div>
+        <div style="background:var(--ab);height:100%;width:${pluginPct}%" title="${isZh ? '插件安装' : 'Plugin installed'}"></div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;max-width:580px;margin:0 auto 16px;text-align:left">
+        <p style="margin:0 0 8px;color:var(--accent);font-weight:600;font-size:14px">🛡️ ${isZh ? '放心：技能之间没有依赖关系' : 'Good news: skills have zero dependencies'}</p>
+        <p style="font-size:13px;color:var(--muted);margin:0">${isZh
+          ? '每个 SKILL.md 是独立文件。删除任何一个都不会影响其他技能。你的恐惧是多余的。'
+          : 'Each SKILL.md is self-contained. Removing any skill will not break others. You can safely clean up.'}</p>
+      </div>
+
+      ${duplicates.length > 0 ? (() => {
+        // Build precise delete commands with paths
+        const dupeDetails = duplicates.map(name => {
+          const skill = skills.find(s => s.name === name);
+          const dir = skill ? skill.dir : '';
+          // Expand ~ to actual path hint
+          const displayDir = dir || `~/.claude/skills/${name}`;
+          return { name, dir: displayDir };
+        });
+        return `<div style="background:var(--card);border:1px solid rgba(234,179,8,0.3);border-radius:var(--r);padding:16px;max-width:580px;margin:0 auto 16px;text-align:left">
+          <p style="margin:0 0 8px;color:#f59e0b;font-weight:600;font-size:14px">⚠️ ${isZh ? `${duplicates.length} 个重复技能` : `${duplicates.length} duplicate skills`}</p>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 8px">${isZh
+            ? '这些技能同时存在于你的目录和插件目录中。删除用户目录的副本即可，插件版本会保留。'
+            : 'These exist in both your directory and the plugin directory. Remove the user copy — the plugin version stays.'}</p>
+          ${dupeDetails.map(d => `<div style="margin:6px 0;display:flex;align-items:center;gap:8px">
+            <code style="flex:1;padding:4px 8px;background:var(--bg);border-radius:4px;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(d.dir)}</code>
+            <code style="padding:4px 8px;background:var(--bg);border-radius:4px;font-size:12px;color:var(--accent2);cursor:pointer;white-space:nowrap" onclick="copyText('Please delete the skill at ${d.dir}')">📋 copy</code>
+          </div>`).join('')}
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0;font-style:italic">${isZh
+            ? '💡 复制后粘贴给 Claude，它会删除指定路径的 skill'
+            : '💡 Paste to Claude — it will remove the skill at that exact path'}</p>
+        </div>`;
+      })() : ''}
+
+      ${dormant > 0 ? `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;max-width:580px;margin:0 auto;text-align:left">
+        <p style="margin:0 0 8px;color:var(--muted);font-weight:600;font-size:14px">📋 ${isZh ? `${dormant} 个配置不完整（${dormantPct}%）` : `${dormant} under-configured (${dormantPct}%)`}</p>
+        <p style="font-size:13px;color:var(--muted);margin:0">${isZh
+          ? '这些技能缺少描述或触发词，Claude 难以自动调用。如果你用不到，可以直接删除。'
+          : 'These lack descriptions or triggers — Claude cannot activate them. If you do not use them, feel free to remove.'}</p>
+      </div>` : ''}
+    </div>
+  </section>`;
+}
+
+function renderNextStepsSlide(skills) {
+  const isZh = lang() === 'zh';
+  const sample = (skills || []).filter(s => (s.description || '').length > 100).slice(0, 3);
+  const sampleName = sample.length > 0 ? sample[0].name : 'investigate';
+  const sampleName2 = sample.length > 1 ? sample[1].name : 'security-audit';
+  const searchCmd = `npx skill-guide --find security`;
+  const skillCmd = `npx skill-guide --find ${sampleName}`;
+  const fullCmd = `npx skill-guide --full`;
+  const recommendCmd = `npx skill-guide --recommend`;
+  const shareCmd = `npx skill-guide --share`;
+  const doctorCmd = `npx skill-guide --doctor`;
+
+  return `<section class="slide">
+    <div class="rv center">
+      <div class="kicker" data-i18n="label">${isZh ? '下一步' : 'GO DEEPER'}</div>
+      <h2 data-i18n="label">${isZh ? '试试这些命令' : 'Try these commands'}</h2>
+      <p class="sub" style="font-size:14px">${isZh ? '点击命令即可复制' : 'Click any command to copy'}</p>
+      <div style="max-width:640px;margin:24px auto 0;text-align:left">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px">
+          <p style="margin:0 0 6px;color:var(--accent);font-weight:600;font-size:14px">${isZh ? '🔍 搜索技能' : '🔍 Search for a skill'}</p>
+          <code style="display:block;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:13px;color:var(--accent2);cursor:pointer" onclick="copyText('${searchCmd}')">${searchCmd}</code>
+          <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">${isZh ? '试试替换关键词: debug, deploy, design, test...' : 'Replace the keyword: try debug, deploy, design, test...'}</p>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px">
+          <p style="margin:0 0 6px;color:var(--accent);font-weight:600;font-size:14px">${isZh ? '📖 深入了解一个技能' : '📖 Deep dive into a skill'}</p>
+          <code style="display:block;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:13px;color:var(--accent2);cursor:pointer" onclick="copyText('${skillCmd}')">${skillCmd}</code>
+          <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">${isZh ? `查看 ${sampleName} 的触发词、使用场景和限制` : `See ${sampleName}\'s triggers, use cases, and limitations`}</p>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px">
+          <p style="margin:0 0 6px;color:var(--accent);font-weight:600;font-size:14px">${isZh ? '📊 完整参考手册' : '📊 Full reference'}</p>
+          <code style="display:block;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:13px;color:var(--accent2);cursor:pointer" onclick="copyText('${fullCmd}')">${fullCmd}</code>
+          <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">${isZh ? '一页一个技能，完整的使用手册' : 'One page per skill, complete manual'}</p>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px">
+          <p style="margin:0 0 6px;color:var(--accent);font-weight:600;font-size:14px">${isZh ? '🌐 在线推荐' : '🌐 Get recommendations'}</p>
+          <code style="display:block;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:13px;color:var(--accent2);cursor:pointer" onclick="copyText('${recommendCmd}')">${recommendCmd}</code>
+          <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">${isZh ? '发现你缺少的热门技能，清理重叠的技能' : 'Discover missing popular skills, clean up overlaps'}</p>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px">
+          <p style="margin:0 0 6px;color:var(--accent);font-weight:600;font-size:14px">${isZh ? '📤 分享你的技能栈' : '📤 Share your skill stack'}</p>
+          <code style="display:block;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:13px;color:var(--accent2);cursor:pointer" onclick="copyText('${shareCmd}')">${shareCmd}</code>
+          <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">${isZh ? '生成一个可分享的技能组合页面' : 'Generate a shareable portfolio page of your skills'}</p>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px">
+          <p style="margin:0 0 6px;color:var(--accent);font-weight:600;font-size:14px">${isZh ? '🩺 诊断环境' : '🩺 Diagnose environment'}</p>
+          <code style="display:block;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:13px;color:var(--accent2);cursor:pointer" onclick="copyText('${doctorCmd}')">${doctorCmd}</code>
+          <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">${isZh ? '检查损坏文件、重复技能、路径问题' : 'Check broken files, duplicates, path issues'}</p>
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
 function renderSlides(data, mode) {
   if (data.error) {
     return `${renderCover(data, mode)}<section class="slide"><div class="rv center"><h2>Error</h2><p class="sub">${escapeHtml(data.error)}</p></div></section>`;
@@ -674,7 +872,7 @@ function renderSlides(data, mode) {
   if (mode.mode === 'search') return `${renderCover(data, mode)}${renderSelection(data, mode)}`;
   if (mode.mode === 'skill') return `${renderCover(data, mode)}${renderSkillDetails(data.skills)}`;
   if (mode.mode === 'full') return `${renderCover(data, mode)}${renderCategorySlide(data.skills)}${renderSkillDetails(data.skills)}${renderReference(data.skills, t('completeReference'))}`;
-  return `${renderCover(data, mode)}${renderCategorySlide(data.skills)}${renderHighlights(data.skills)}${renderReference(data.skills)}`;
+  return `${renderCover(data, mode)}${renderInsightDashboardSlide(data.skills)}${renderCleanupSlide(data.skills)}${renderCategorySlide(data.skills)}${renderHighlights(data.skills)}${renderReference(data.skills)}${renderNextStepsSlide(data.skills)}`;
 }
 
 function renderHtml(data, mode) {
@@ -723,6 +921,7 @@ ${slides}
 <nav class="progress" aria-label="${lang() === 'zh' ? '幻灯片导航' : 'Slide navigation'}"></nav>
 <div class="shortcut" aria-hidden="true">↓ ↑ Space</div>
 <script>
+function copyText(t){var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');var b=event&&event.target?event.target.closest('code,button'):null;if(b){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o},1200)}}catch(e){}document.body.removeChild(ta)}
 const seen=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('v')}),{threshold:.12});
 document.querySelectorAll('.rv').forEach(el=>seen.observe(el));
 const slides=[...document.querySelectorAll('.slide')];
@@ -741,6 +940,36 @@ function openFile(file) {
   const command = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'cmd' : 'xdg-open';
   const argsForOpen = process.platform === 'win32' ? ['/c', 'start', '', file] : [file];
   spawnSync(command, argsForOpen, { stdio: 'ignore', detached: true });
+}
+
+function shouldAutoOpen() {
+  if (hasFlag('--no-open')) return false;
+  if (hasFlag('--open')) return true;
+  const format = getArgValue('--format');
+  if (format === 'json') return false;
+  if (!process.stdout.isTTY) return false;
+  return true;
+}
+
+function detectPlatform() {
+  // Only filter when explicitly running inside an agent
+  if (process.env.CODEX_AGENT) return 'codex';
+  if (process.env.CLAUDE_CODE) return 'claude';
+  // Default: show all (CODEX_HOME alone is not enough — tests set it too)
+  return 'all';
+}
+
+function filterSkillsByPlatform(skills, platform) {
+  if (platform === 'all') return skills;
+  if (platform === 'codex') {
+    return skills.filter(s => (s.sources || []).some(src => 
+      ['codex-user', 'codex-plugin', 'openai-system', 'cc-switch'].includes(src)));
+  }
+  if (platform === 'claude') {
+    return skills.filter(s => (s.sources || []).some(src => 
+      ['claude-user', 'claude-plugin', 'cc-switch'].includes(src)));
+  }
+  return skills;
 }
 
 function skillRoots() {
@@ -1081,6 +1310,57 @@ function renderRecommendHTML(data, recommendations, user) {
 </div>
 </body>
 </html>`;
+}
+
+
+function renderDimensionRadar(dimensions) {
+  const size = 280;
+  const center = size / 2;
+  const radius = 100;
+  const levels = 5;
+  const n = dimensions.length;
+
+  function polygonPoints(r) {
+    return Array.from({ length: n }, (_, i) => {
+      const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+      return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
+    }).join(' ');
+  }
+
+  const dataPoints = dimensions.map((d, i) => {
+    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+    const r = (d.score / 100) * radius;
+    return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
+  }).join(' ');
+
+  const labels = dimensions.map((d, i) => {
+    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+    const labelR = radius + 22;
+    const x = center + labelR * Math.cos(angle);
+    const y = center + labelR * Math.sin(angle);
+    const anchor = i === 0 || i === n / 2 ? 'middle' : i < n / 2 ? 'start' : 'end';
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="#94a3b8" font-size="10" font-family="monospace">${d.name}</text>`;
+  }).join('');
+
+  const scoreLabels = dimensions.map((d, i) => {
+    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+    const r = (d.score / 100) * radius;
+    const x = center + (r + 12) * Math.cos(angle);
+    const y = center + (r + 12) * Math.sin(angle);
+    return `<text x="${x}" y="${y}" text-anchor="middle" fill="#e2e8f0" font-size="10" font-weight="600">${d.score}</text>`;
+  }).join('');
+
+  return `
+    <svg viewBox="0 0 ${size} ${size}" style="max-width:280px;margin:0 auto;display:block">
+      ${Array.from({ length: levels }, (_, i) => {
+        const r = (radius / levels) * (i + 1);
+        return `<polygon points="${polygonPoints(r)}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+      }).join('')}
+      <polygon points="${dataPoints}" fill="rgba(34,197,94,0.15)" stroke="#22c55e" stroke-width="2"/>
+      ${labels}
+      ${scoreLabels}
+    </svg>
+  `;
 }
 
 function renderRadarChart(skills) {
@@ -1452,6 +1732,188 @@ function renderHealthTerminal(data) {
 
   return lines.join('\n');
 }
+
+function renderDefaultTerminal(skills) {
+  const isZh = lang() === 'zh';
+  const health = computeHealthStats(skills);
+  const personality = analyzeSkillPersonality(skills);
+  const radar = computeRadarScores(skills, health);
+  const wrapped = computeWrappedStats(skills, health);
+  const totalTokens = skills.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
+  const tokenK = (totalTokens / 1000).toFixed(1);
+  const pct = Math.round((totalTokens / 200000) * 100 * 100) / 100;
+  const scoreColor = (s) => s >= 80 ? '🟢' : s >= 60 ? '🟡' : '🔴';
+  const groups = groupBy(skills, 'category');
+  const cats = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+
+  const lines = [
+    '╔══════════════════════════════════════════════════════════════╗',
+    isZh
+      ? `║  skill-guide · ${skills.length} 个技能 · 你是${personality.type}  ║`
+      : `║  skill-guide · ${skills.length} skills · You are ${personality.type}  ║`,
+    '╚══════════════════════════════════════════════════════════════╝',
+    '',
+    `  ${scoreColor(radar.overall)} ${isZh ? '健康度' : 'Health'}: ${radar.overall}/100`,
+    `  ${personality.emoji} ${personality.description}`,
+    '',
+    `  📦 ${skills.length} ${isZh ? '个技能' : 'skills'} · ${cats.length}/9 ${isZh ? '个领域' : 'categories'} · 🔤 ~${tokenK}K tokens (${pct}% ${isZh ? 'of context' : 'of context'})`,
+    `  🏆 ${isZh ? '超过了' : 'Exceeds'} ${wrapped.skillPercentile}% ${isZh ? '的用户' : 'of users'} · 💎 ${wrapped.rareFound.length} ${isZh ? '个稀有技能' : 'rare skills'}`,
+    '',
+  ];
+
+  // Radar
+  lines.push(isZh ? '  ── 五维雷达 ──────────────────────────────────────────' : '  ── Radar ──────────────────────────────────────────────');
+  for (const d of radar.dimensions) {
+    const bar = '█'.repeat(Math.round(d.score / 10)) + '░'.repeat(10 - Math.round(d.score / 10));
+    lines.push(`  ${d.name.padEnd(10)} ${bar} ${d.score}/100`);
+  }
+  lines.push('');
+
+  // Top 3 insights
+  lines.push(isZh ? '  ── 关键洞察 ──────────────────────────────────────────' : '  ── Insights ───────────────────────────────────────────');
+
+  // Source breakdown
+  const userCount = skills.filter(s => (s.sources || []).some(src => ['claude-user', 'codex-user', 'cc-switch'].includes(src))).length;
+  const pluginCount = skills.filter(s => (s.sources || []).some(src => ['claude-plugin', 'codex-plugin'].includes(src))).length;
+  lines.push(isZh
+    ? `  📂 来源: ${userCount} 个手动安装 · ${pluginCount} 个插件自动安装`
+    : `  📂 Sources: ${userCount} you installed · ${pluginCount} auto-installed by plugins`);
+
+  // Dormant skills
+  const dormant = wrapped.untappedCount || 0;
+  const dormantPct = skills.length > 0 ? Math.round((dormant / skills.length) * 100) : 0;
+  if (dormant > 0) {
+    lines.push(isZh
+      ? `  ⚠️ ${dormant} 个技能（${dormantPct}%）配置不完整 — Claude 难以自动调用`
+      : `  ⚠️ ${dormant} skills (${dormantPct}%) are under-configured — hard for Claude to activate`);
+  }
+
+  // Budget
+  if (pct > 5) {
+    lines.push(isZh
+      ? `  💰 你的技能在每次对话开始前就占用了 ${pct}% 的 context window`
+      : `  💰 Your skills consume ${pct}% of your context window before you type a single word`);
+  }
+
+  // Cold skills
+  if (wrapped.coldSkills && wrapped.coldSkills.length > 0) {
+    lines.push(isZh
+      ? `  🔍 最冷门: ${wrapped.coldSkills.slice(0, 3).join(', ')}`
+      : `  🔍 Coldest: ${wrapped.coldSkills.slice(0, 3).join(', ')}`);
+  }
+
+  // Safety
+  lines.push(isZh
+    ? '  🛡️ 技能之间零依赖 — 删除任何一个都不会影响其他'
+    : '  🛡️ Zero dependencies between skills — safe to remove any');
+
+  // Rare skills
+  if (wrapped.rareFound && wrapped.rareFound.length > 0) {
+    lines.push(isZh
+      ? `  💎 稀有技能: ${wrapped.rareFound.slice(0, 3).join(', ')}`
+      : `  💎 Rare: ${wrapped.rareFound.slice(0, 3).join(', ')}`);
+  }
+
+  lines.push('');
+  lines.push(isZh ? '  💡 使用 --open 打开完整的交互式报告' : '  💡 Run --open for the full interactive report');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+function renderInsightTerminal(data) {
+  const skills = data.skills || [];
+  const health = computeHealthStats(skills);
+  const personality = analyzeSkillPersonality(skills);
+  const radar = computeRadarScores(skills, health);
+  const wrapped = computeWrappedStats(skills, health);
+  const isZh = lang() === 'zh';
+  const scoreColor = (s) => s >= 80 ? '🟢' : s >= 60 ? '🟡' : '🔴';
+  const groups = groupBy(skills, 'category');
+  const categoryCounts = Object.entries(groups)
+    .filter(([cat]) => cat !== 'other')
+    .map(([cat, items]) => ({ cat, count: items.length }))
+    .sort((a, b) => b.count - a.count);
+  const strongest = categoryCounts[0];
+  const weakest = categoryCounts[categoryCounts.length - 1];
+
+  const lines = [
+    '╔══════════════════════════════════════════════════════════════╗',
+    isZh ? '║              技能洞察报告                                   ║'
+         : '║              Skill Insight Report                          ║',
+    '╚══════════════════════════════════════════════════════════════╝',
+    '',
+  ];
+
+  // Health section
+  lines.push(isZh ? '── 健康度 ───────────────────────────────────────────────' : '── Health ─────────────────────────────────────────────────');
+  lines.push(`  ${scoreColor(radar.overall)} ${isZh ? '分数' : 'Score'}: ${radar.overall}/100 · ${personality.emoji} ${isZh ? '类型' : 'Type'}: ${personality.type}`);
+  lines.push(`  ${personality.description}`);
+  lines.push(`  ⚡ ${wrapped.coreCount} ${isZh ? '个精心配置' : 'fully configured'} | ${wrapped.readyCount} ${isZh ? '个基本可用' : 'mostly ready'} | ${wrapped.untappedCount} ${isZh ? '个几乎空白' : 'nearly empty'}`);
+  lines.push('');
+
+  // Radar
+  lines.push(isZh ? '── 五维评分 ─────────────────────────────────────────────' : '── Dimensions ────────────────────────────────────────────');
+  for (const d of radar.dimensions) {
+    const bar = '█'.repeat(Math.round(d.score / 10)) + '░'.repeat(10 - Math.round(d.score / 10));
+    lines.push(`  ${d.name} ${bar} ${d.score}/100`);
+  }
+  lines.push('');
+
+  // Budget
+  lines.push(isZh ? '── Token 预算 ───────────────────────────────────────────' : '── Token Budget ──────────────────────────────────────────');
+  lines.push(isZh
+    ? `  📦 ${skills.length} 个技能 · 🔤 ~${(health.totalTokenEstimate / 1000).toFixed(1)}K tokens（占 context ${health.contextWindowPercent}%）`
+    : `  📦 ${skills.length} skills · 🔤 ~${(health.totalTokenEstimate / 1000).toFixed(1)}K tokens (${health.contextWindowPercent}% of context)`);
+  lines.push(isZh
+    ? `  ⚠️ 预算超支 ${health.budgetUsedPercent}%`
+    : `  ⚠️ Budget overage: ${health.budgetUsedPercent}%`);
+  lines.push('');
+
+  // Community
+  lines.push(isZh ? '── 社区对比 ─────────────────────────────────────────────' : '── Community ─────────────────────────────────────────────');
+  lines.push(isZh
+    ? `  🏆 技能数超过了 ${wrapped.skillPercentile}% 的用户（你: ${wrapped.total} | 平均: ${wrapped.communityMean}）`
+    : `  🏆 Skills exceed ${wrapped.skillPercentile}% of users (You: ${wrapped.total} | Avg: ${wrapped.communityMean})`);
+  if (wrapped.rareFound.length > 0) {
+    lines.push(isZh
+      ? `  💎 ${wrapped.rareFound.length} 个稀有技能: ${wrapped.rareFound.slice(0, 5).join(', ')}`
+      : `  💎 ${wrapped.rareFound.length} rare skills: ${wrapped.rareFound.slice(0, 5).join(', ')}`);
+  }
+  lines.push('');
+
+  // Gaps / cleanup
+  lines.push(isZh ? '── 优化建议 ─────────────────────────────────────────────' : '── Gaps & Cleanup ────────────────────────────────────────');
+  if (strongest) {
+    lines.push(isZh
+      ? `  💪 最强领域: ${strongest.cat} (${strongest.count})`
+      : `  💪 Strongest: ${strongest.cat} (${strongest.count})`);
+  }
+  if (weakest && weakest !== strongest) {
+    lines.push(isZh
+      ? `  ⚠️ 最弱领域: ${weakest.cat} (${weakest.count})`
+      : `  ⚠️ Weakest: ${weakest.cat} (${weakest.count})`);
+  }
+  if (wrapped.coldSkills.length > 0) {
+    lines.push(isZh
+      ? `  🔍 最冷门技能: ${wrapped.coldSkills.slice(0, 3).join(', ')}`
+      : `  🔍 Coldest skills: ${wrapped.coldSkills.slice(0, 3).join(', ')}`);
+  }
+  lines.push('');
+
+  // CTA
+  lines.push(isZh ? '── 下一步 ───────────────────────────────────────────────' : '── Next Steps ────────────────────────────────────────────');
+  lines.push(isZh
+    ? '  💡 使用 --open 生成完整的交互式 HTML 报告'
+    : '  💡 Run with --open for the full interactive HTML report');
+  lines.push(isZh
+    ? '  🔗 使用 --open 生成可分享的 HTML 报告'
+    : '  🔗 Use --open to generate a shareable HTML report');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
 
 function renderHealthHTML(data) {
   const skills = data.skills || [];
@@ -1991,11 +2453,11 @@ function computeRadarScores(skills, health) {
 
   return {
     dimensions: [
-      { name: isZh ? 'Token 效率' : 'Token Efficiency', nameEn: 'Token Efficiency', score: Math.round(tokenScore) },
-      { name: isZh ? '组织性' : 'Organization', nameEn: 'Organization', score: Math.round(dupScore) },
-      { name: isZh ? '安全性' : 'Security', nameEn: 'Security', score: Math.round(secScore) },
-      { name: isZh ? '新鲜度' : 'Freshness', nameEn: 'Freshness', score: Math.round(freshScore) },
-      { name: isZh ? '预算控制' : 'Budget Control', nameEn: 'Budget Control', score: Math.round(budgetScore) },
+      { name: isZh ? '效率' : 'Efficiency', nameEn: 'Efficiency', score: Math.round(tokenScore) },
+      { name: isZh ? '组织' : 'Organize', nameEn: 'Organize', score: Math.round(dupScore) },
+      { name: isZh ? '安全' : 'Security', nameEn: 'Security', score: Math.round(secScore) },
+      { name: isZh ? '新鲜' : 'Fresh', nameEn: 'Fresh', score: Math.round(freshScore) },
+      { name: isZh ? '预算' : 'Budget', nameEn: 'Budget', score: Math.round(budgetScore) },
     ],
     overall: Math.round((tokenScore + dupScore + secScore + freshScore + budgetScore) / 5),
   };
@@ -2756,103 +3218,108 @@ function main() {
     return;
   }
 
-  const data = runScanner(mode);
+  // --doctor: terminal-only diagnostic
   if (mode.mode === 'doctor') {
+    const data = runScanner(mode);
     process.stdout.write(`${printDoctor(data)}\n`);
     return;
   }
 
-  if (mode.mode === 'health') {
-    process.stdout.write(renderHealthTerminal(data));
+  const format = getArgValue('--format') || 'html';
 
-    const shouldOpen = hasFlag('--open') && !hasFlag('--no-open');
-    const outputFile = getArgValue('--output');
-    if (shouldOpen || outputFile) {
-      const html = renderHealthHTML(data);
-      const defaultFile = path.join(os.tmpdir(), 'skill-guide-health.html');
-      const targetFile = outputFile ? path.resolve(outputFile) : defaultFile;
-      fs.mkdirSync(path.dirname(targetFile), { recursive: true });
-      fs.writeFileSync(targetFile, html, 'utf8');
-      if (shouldOpen) openFile(targetFile);
-      process.stdout.write(`Generated: ${targetFile}\n`);
+  // --find mode: try skill deep-dive, fall back to search
+  if (mode.mode === 'find') {
+    const skillData = runScanner(mode);
+    if (skillData.error) {
+      // Skill not found — fall back to search
+      mode.mode = 'search';
+      const searchArgs = ['--search', mode.value];
+      if (hasFlag('--refresh')) searchArgs.push('--refresh');
+      const result = spawnSync(process.execPath, [SCANNER, ...searchArgs], {
+        cwd: process.cwd(), encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      if (result.status !== 0) {
+        process.stderr.write(result.stderr || '');
+        process.exit(result.status || 1);
+      }
+      const data = JSON.parse(result.stdout);
+      if (format === 'json') {
+        process.stdout.write(JSON.stringify(data, null, 2) + '\n');
+        return;
+      }
+      process.stdout.write(renderDefaultTerminal(data.skills || []));
+      const output = path.resolve(getArgValue('--output') || defaultOutputPath(mode));
+      fs.mkdirSync(path.dirname(output), { recursive: true });
+      fs.writeFileSync(output, renderHtml(data, mode), 'utf8');
+      if (shouldAutoOpen()) openFile(output);
+      process.stdout.write(`Generated ${output}\n`);
+    } else {
+      // Skill found — deep dive
+      mode.mode = 'skill';
+      if (format === 'json') {
+        process.stdout.write(JSON.stringify(skillData, null, 2) + '\n');
+        return;
+      }
+      const output = path.resolve(getArgValue('--output') || defaultOutputPath(mode));
+      fs.mkdirSync(path.dirname(output), { recursive: true });
+      fs.writeFileSync(output, renderHtml(skillData, mode), 'utf8');
+      if (shouldAutoOpen()) openFile(output);
+      process.stdout.write(`Generated ${output}\n`);
     }
-
-    process.exit(0);
+    return;
   }
 
-  if (mode.mode === 'wrapped') {
-    process.stdout.write(renderWrappedTerminal(data));
-
-    const shouldOpen = hasFlag('--open') && !hasFlag('--no-open');
-    const outputFile = getArgValue('--output');
-    if (shouldOpen || outputFile) {
-      const html = renderWrappedHTML(data);
-      const defaultFile = path.join(os.tmpdir(), 'skill-guide-wrapped.html');
-      const targetFile = outputFile ? path.resolve(outputFile) : defaultFile;
-      fs.mkdirSync(path.dirname(targetFile), { recursive: true });
-      fs.writeFileSync(targetFile, html, 'utf8');
-      if (shouldOpen) openFile(targetFile);
-      process.stdout.write(`Generated: ${targetFile}\n`);
-    }
-
-    process.exit(0);
-  }
-
+  // --recommend mode (online registry data)
   if (mode.mode === 'recommend') {
+    const data = runScanner(mode);
     const installed = data.skills;
     const refresh = hasFlag('--refresh');
     const onlineEntries = registryModule.fetchRegistry({ refresh });
     const recommendations = registryModule.recommend(installed, onlineEntries);
-
-    const format = getArgValue('--format') || 'html';
     if (format === 'json') {
       process.stdout.write(JSON.stringify({ installed, recommendations }, null, 2) + '\n');
-      process.exit(0);
+      return;
     }
-
-    const terminalOutput = renderRecommendTerminal(data, recommendations);
-    process.stdout.write(terminalOutput);
-
-    const shouldOpen = hasFlag('--open') && !hasFlag('--no-open');
+    process.stdout.write(renderRecommendTerminal(data, recommendations));
     const outputFile = getArgValue('--output');
-    if (shouldOpen || outputFile) {
-      const html = renderRecommendHTML(data, recommendations, getArgValue('--user'));
-      const defaultFile = path.join(os.tmpdir(), 'skill-guide-recommend.html');
-      const targetFile = outputFile ? path.resolve(outputFile) : defaultFile;
-      fs.mkdirSync(path.dirname(targetFile), { recursive: true });
-      fs.writeFileSync(targetFile, html, 'utf8');
-      if (shouldOpen) openFile(targetFile);
-      process.stdout.write(`Generated: ${targetFile}\n`);
-    }
-
-    process.exit(0);
+    const html = renderRecommendHTML(data, recommendations, getArgValue('--user'));
+    const defaultFile = path.join(os.tmpdir(), 'skill-guide-recommend.html');
+    const targetFile = outputFile ? path.resolve(outputFile) : defaultFile;
+    fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+    fs.writeFileSync(targetFile, html, 'utf8');
+    if (shouldAutoOpen()) openFile(targetFile);
+    process.stdout.write(`Generated: ${targetFile}\n`);
+    return;
   }
 
+  // --share mode (portfolio with --user flag)
   if (mode.mode === 'share') {
+    const data = runScanner(mode);
     const user = getArgValue('--user');
-    const format = getArgValue('--format') || 'html';
-
     if (format === 'json') {
       process.stdout.write(JSON.stringify({ skills: data.skills, totalCount: data.totalCount }, null, 2) + '\n');
-      process.exit(0);
+      return;
     }
-
-    const shouldOpen = hasFlag('--open') && !hasFlag('--no-open');
     const outputFile = getArgValue('--output');
     const html = renderShareHTML(data, user);
     const defaultFile = path.join(os.tmpdir(), 'skill-guide-share.html');
     const targetFile = outputFile ? path.resolve(outputFile) : defaultFile;
     fs.mkdirSync(path.dirname(targetFile), { recursive: true });
     fs.writeFileSync(targetFile, html, 'utf8');
-    if (shouldOpen) openFile(targetFile);
+    if (shouldAutoOpen()) openFile(targetFile);
     process.stdout.write(`Generated: ${targetFile}\n`);
-    process.exit(0);
+    return;
   }
 
-  const format = getArgValue('--format') || 'html';
-  if (!['html', 'json'].includes(format)) {
-    process.stderr.write('Error: --format must be "html" or "json"\n');
-    process.exit(1);
+  // Default mode (list): overview dashboard
+  const data = runScanner(mode);
+
+  // Filter by platform unless --all
+  const platform = hasFlag('--all') ? 'all' : detectPlatform();
+  if (platform !== 'all' && data.skills) {
+    data.skills = filterSkillsByPlatform(data.skills, platform);
+    data.totalCount = data.skills.length;
   }
 
   if (format === 'json') {
@@ -2874,11 +3341,18 @@ function main() {
     process.exit(1);
   }
 
+  // Terminal output
+  if (platform !== 'all') {
+    const platformLabel = platform === 'codex' ? 'Codex' : 'Claude Code';
+    process.stdout.write(`  Showing skills for: ${platformLabel} (use --all to see all)\n\n`);
+  }
+  process.stdout.write(renderDefaultTerminal(data.skills || []));
+
   const output = path.resolve(getArgValue('--output') || defaultOutputPath(mode));
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, renderHtml(data, mode), 'utf8');
 
-  if (hasFlag('--open') && !hasFlag('--no-open')) openFile(output);
+  if (shouldAutoOpen()) openFile(output);
   process.stdout.write(`Generated ${output}\n`);
 }
 

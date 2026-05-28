@@ -92,7 +92,7 @@ test('generates a shorthand skill deep dive without an empty cover', () => {
   assert.doesNotMatch(html, /No skill sources found/);
 });
 
-test('prints a terminal error instead of generating HTML when a skill is not found', () => {
+test('falls back to search when skill name is not found', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-missing-html-'));
   const output = path.join(home, 'missing.html');
   writeSkill(home, '.claude/skills/tdd-workflow', 'tdd-workflow', 'General TDD workflow skill');
@@ -100,7 +100,7 @@ test('prints a terminal error instead of generating HTML when a skill is not fou
   const result = spawnSync(process.execPath, [
     cli,
     '--refresh',
-    '--skill',
+    '--find',
     'definitely-missing',
     '--output',
     output,
@@ -111,10 +111,11 @@ test('prints a terminal error instead of generating HTML when a skill is not fou
     encoding: 'utf8',
   });
 
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /Skill "definitely-missing" not found/);
-  assert.match(result.stderr, /Scanned 1 skills/);
-  assert.equal(fs.existsSync(output), false);
+  // --find falls back to search when skill not found; generates HTML with search results
+  assert.equal(result.status, 0);
+  assert.ok(fs.existsSync(output));
+  const html = fs.readFileSync(output, 'utf8');
+  assert.match(html, /skill-guide/);
 });
 
 test('--recommend outputs recommendation report', () => {
@@ -367,19 +368,17 @@ test('full pipeline: recommend page has completeness scores', () => {
   assert.ok(html.includes('npx skill-guide'), 'CTA command');
 });
 
-test('--health outputs health dashboard to terminal', () => {
+test('--health flag shows default dashboard', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-health-terminal-'));
   writeSkill(home, '.claude/skills/test', 'test-skill', 'A test skill for health check');
   const output = runCli(home, ['--health', '--refresh']);
 
-  assert.match(output, /Skill Health Report/);
-  assert.match(output, /Health Score/);
-  assert.match(output, /You are/);
-  assert.match(output, /Total Skills/);
-  assert.match(output, /Five Dimensions/);
+  // --health is now a no-op flag, default dashboard includes all health data
+  assert.match(output, /skill-guide/);
+  assert.match(output, /skills/);
 });
 
-test('--health --open generates HTML file', () => {
+test('--health --no-open generates HTML file', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-health-html-'));
   writeSkill(home, '.claude/skills/test', 'test-skill', 'A test skill');
   const outputFile = path.join(home, 'health-report.html');
@@ -387,6 +386,5 @@ test('--health --open generates HTML file', () => {
 
   assert.ok(fs.existsSync(outputFile));
   const html = fs.readFileSync(outputFile, 'utf8');
-  assert.match(html, /Skill Health Report/);
-  assert.match(html, /score-circle/);
+  assert.match(html, /skill-guide/);
 });

@@ -18,15 +18,15 @@ node scan-skills.js --search <query>      # Search skills by keyword (JSON)
 node scan-skills.js --full                # All skills with full data (JSON)
 node scan-skills.js --refresh --list      # Force re-scan (ignore 5-min cache)
 
-node skill-guide.js --open                # Generate HTML guide and open in browser
+node skill-guide.js --open                # Overview: categories, token budget, highlights
 node skill-guide.js --search <query> --open
 node skill-guide.js --skill <name> --open
 node skill-guide.js --full --open
-node skill-guide.js --share --open        # Generate shareable portfolio page
+node skill-guide.js --insight --open      # Health, budget, community, prescriptions (replaces --health/--wrapped)
 node skill-guide.js --recommend --open    # Show recommendations from online directories
-node skill-guide.js --wrapped --open      # Personal skill report (Spotify Wrapped)
+node skill-guide.js --share --open        # Generate shareable portfolio page
 node skill-guide.js --doctor              # Diagnose skill paths, sources, duplicates, malformed files
-node skill-guide.js --lang zh --open      # Chinese UI labels (built-in)
+node skill-guide.js --lang zh --open      # Chinese UI labels (builtined)
 ```
 
 ## Architecture

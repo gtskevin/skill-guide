@@ -28,18 +28,15 @@ function runCli(home, args) {
   });
 }
 
-test('--wrapped generates terminal output with community comparison', () => {
+test('--wrapped flag shows default dashboard', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-wrapped-'));
   writeSkill(home, '.claude/skills/test-skill', 'test-skill', 'A test skill for wrapped mode');
 
   const stdout = runCli(home, ['--wrapped', '--refresh']);
 
-  assert.match(stdout, /Your AI Skill Report|你的 AI 技能报告/);
-  assert.match(stdout, /Total Skills|总技能数/);
-  assert.match(stdout, /Community Comparison|社区对比/);
-  assert.match(stdout, /Skill DNA|技能 DNA/);
-  assert.match(stdout, /Share Your Report|分享你的报告/);
-  assert.match(stdout, /exceed|超过了/);
+  // --wrapped is now a no-op flag, default dashboard includes all data
+  assert.match(stdout, /skill-guide/);
+  assert.match(stdout, /skills/);
 });
 
 test('--wrapped generates HTML report', () => {
@@ -51,14 +48,10 @@ test('--wrapped generates HTML report', () => {
   const html = fs.readFileSync(output, 'utf8');
 
   assert.match(stdout, /Generated/);
-  assert.match(html, /My AI Skill Report|我的 AI 技能报告/);
-  assert.match(html, /Community Comparison|社区对比/);
-  assert.match(html, /Skill DNA|技能 DNA/);
-  assert.match(html, /Copy Share Text|复制分享文案/);
   assert.match(html, /skill-guide/);
 });
 
-test('--wrapped shows percentile rankings', () => {
+test('--wrapped shows default dashboard with stats', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-wrapped-pct-'));
   writeSkill(home, '.claude/skills/skill-a', 'skill-a', 'Skill A');
   writeSkill(home, '.claude/skills/skill-b', 'skill-b', 'Skill B');
@@ -66,8 +59,8 @@ test('--wrapped shows percentile rankings', () => {
 
   const stdout = runCli(home, ['--wrapped', '--refresh']);
 
-  assert.match(stdout, /\d+%/);
-  assert.match(stdout, /\$15/); // 3 skills * $5
+  assert.match(stdout, /skill-guide/);
+  assert.match(stdout, /3 skills/);
 });
 
 test('--wrapped works with multiple categories', () => {
@@ -78,7 +71,8 @@ test('--wrapped works with multiple categories', () => {
 
   const stdout = runCli(home, ['--wrapped', '--refresh']);
 
-  assert.match(stdout, /security|testing|design/);
+  assert.match(stdout, /skill-guide/);
+  assert.match(stdout, /3 skills/);
 });
 
 test('--wrapped --no-open does not crash', () => {

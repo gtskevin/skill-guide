@@ -35,19 +35,20 @@ npx skill-guide --open        # ← that's it. HTML slides open in your browser.
 
 skill-guide reads every skill from Claude Code, Codex, `~/.cc-switch/skills/`, and plugin marketplaces, then generates a polished slide deck you can view in any browser.
 
-**Plus:** `--health` gives you a personality analysis ("You're a Collector!"), a five-dimension radar chart, and smart prescriptions to optimize your skill library.
+**Plus:** Default output now includes token budget analysis. `--insight` gives you personality analysis, radar chart, community comparison, and smart prescriptions.
 
-**5 modes:**
+**6 modes:**
 
 | Mode | Command | Output |
 |------|---------|--------|
-| **Discovery** | `/skill-guide` or `npx skill-guide --open` | Stats, category map, highlights, quick reference |
-| **Deep-dive** | `/skill-guide investigate` or `npx skill-guide --skill investigate --open` | How it works, when to use, limitations, triggers |
-| **Tool-selection** | "Which skill for security?" | Ranked recommendations with comparison |
-| **Full manual** | `/skill-guide all` or `npx skill-guide --full --open` | One page per skill, complete reference |
-| **Health** | `npx skill-guide --health --open` | Health score, personality, radar chart, prescriptions |
-| **Doctor** | `npx skill-guide --doctor` | Environment and source diagnostics |
-| **Wrapped** | `npx skill-guide --wrapped --open` | HTML report | Personal "Spotify Wrapped" for your skills |
+| **Overview** | `npx skill-guide` or `npx skill-guide --open` | Categories, token budget, highlights, reference |
+| **Search** | `npx skill-guide --search security --open` | Find skills by keyword |
+| **Deep-dive** | `npx skill-guide --skill investigate --open` | How it works, when to use, limitations |
+| **Full** | `npx skill-guide --full --open` | One page per skill, complete reference |
+| **Insight** | `npx skill-guide --insight --open` | Health, budget, community comparison, prescriptions |
+| **Doctor** | `npx skill-guide --doctor` | Environment diagnostics |
+
+> Legacy flags `--health`, `--wrapped` map to `--insight`. `--recommend` and `--share` remain independent.
 
 ## Platform Support
 

@@ -8,3 +8,17 @@ pnpm-debug.log*
 # Generated local outputs
 skill-guide-*.html
 *.tmp
+
+# Generated previews
+wrapped-preview*.png
+
+# Playwright MCP logs
+.playwright-mcp/
+
+# Evaluation docs (internal)
+docs/evaluation-*.html
+docs/evaluation-*.md
+docs/utility-evaluation-*.html
+docs/utility-evaluation-*.md
+docs/action-items-from-eval.md
+docs/mode-consolidation-design.md
