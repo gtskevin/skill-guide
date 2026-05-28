@@ -13,9 +13,9 @@
 </p>
 
 > **200+ agent skills installed but you only use 3?**
-> One command scans everything — Claude Code, Codex, cc-switch, plugins — and generates a beautiful slide deck so you actually know what you have.
+> One command scans everything — Claude Code, Codex, cc-switch, plugins — and generates a beautiful dashboard so you actually know what you have.
 >
-> **Plus:** `--health` gives you a personality analysis, radar chart, and smart prescriptions to optimize your skill library.
+> Shows your skill personality, radar chart, token budget, community ranking, and a cleanup guide — all in one click.
 
 <p align="center">
   <a href="https://gtskevin.github.io/skill-guide/"><strong>Live Demo</strong></a>
@@ -28,27 +28,29 @@
 </p>
 
 ```bash
-npx skill-guide --open        # ← that's it. HTML slides open in your browser.
+npx skill-guide               # ← that's it. Dashboard opens in your browser.
 ```
 
 ## What it does
 
-skill-guide reads every skill from Claude Code, Codex, `~/.cc-switch/skills/`, and plugin marketplaces, then generates a polished slide deck you can view in any browser.
+skill-guide reads every skill from Claude Code, Codex, `~/.cc-switch/skills/`, and plugin marketplaces, then generates a polished dashboard you can view in any browser.
 
-**Plus:** Default output now includes token budget analysis. `--insight` gives you personality analysis, radar chart, community comparison, and smart prescriptions.
+**Platform-aware:** Automatically detects whether you're running inside Codex or Claude Code and shows only the relevant skills. Token budget is calculated per-platform, not across all platforms.
 
-**6 modes:**
+**3 modes:**
 
-| Mode | Command | Output |
-|------|---------|--------|
-| **Overview** | `npx skill-guide` or `npx skill-guide --open` | Categories, token budget, highlights, reference |
-| **Search** | `npx skill-guide --search security --open` | Find skills by keyword |
-| **Deep-dive** | `npx skill-guide --skill investigate --open` | How it works, when to use, limitations |
-| **Full** | `npx skill-guide --full --open` | One page per skill, complete reference |
-| **Insight** | `npx skill-guide --insight --open` | Health, budget, community comparison, prescriptions |
-| **Doctor** | `npx skill-guide --doctor` | Environment diagnostics |
+| Mode | Command | What it does |
+|------|---------|-------------|
+| **Dashboard** | `npx skill-guide` | Personality, radar, token budget, cleanup guide, highlights |
+| **Find** | `npx skill-guide --find <name\|query>` | Search by keyword or deep dive into a specific skill |
+| **Doctor** | `npx skill-guide --doctor` | Environment diagnostics (broken files, duplicates, paths) |
 
-> Legacy flags `--health`, `--wrapped` map to `--insight`. `--recommend` and `--share` remain independent.
+**Flags:**
+- `--all` — Show skills from all platforms (default: current platform only)
+- `--full` — Expand dashboard to include all skill details
+- `--recommend` — Show recommendations from online directories
+- `--share` — Generate shareable portfolio page
+- `--no-open` — Do not open HTML in browser
 
 ## Platform Support
 
@@ -86,7 +88,7 @@ skill-guide reads every skill from Claude Code, Codex, `~/.cc-switch/skills/`, a
 ### Health Dashboard Preview
 
 ```bash
-npx skill-guide --health --open
+npx skill-guide
 ```
 
 **Terminal output:**
@@ -131,9 +133,9 @@ npx skills add gtskevin/skill-guide
 
 **3. Use it** — type `/skill-guide` in Claude Code, or use the CLI:
 ```bash
-npx skill-guide --open                        # Discover all skills
-npx skill-guide --search security --open      # Find skills for a task
-npx skill-guide --skill tdd --open            # Deep-dive one skill
+npx skill-guide                               # See your dashboard
+npx skill-guide --find security               # Find skills for a task
+npx skill-guide --find tdd                    # Deep-dive one skill
 npx skill-guide --full --open                 # Generate a full manual
 npx skill-guide --doctor                      # Diagnose your setup
 ```
@@ -167,7 +169,7 @@ npx skill-guide --search security --open
 npx skill-guide --skill test-driven-development --open
 npx skill-guide --share --open                    # Share your skill stack
 npx skill-guide --recommend --open                # Get recommendations
-npx skill-guide --health --open                   # Health dashboard with personality & radar chart
+npx skill-guide                   # Health dashboard with personality & radar chart
 npx skill-guide --wrapped --open                  # Generate your personal skill report
 npx skill-guide --format json
 npx skill-guide --doctor
@@ -213,7 +215,7 @@ npx skill-guide --recommend --format json         # JSON for agents
 
 ### Health check your skills
 ```bash
-npx skill-guide --health --open                   # Full HTML dashboard
+npx skill-guide                   # Full HTML dashboard
 npx skill-guide --health                          # Terminal output
 npx skill-guide --health --lang zh --open         # Chinese UI
 ```
