@@ -5,6 +5,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Isolated development worktrees
+.worktrees/
+
 # Generated local outputs
 skill-guide-*.html
 *.tmp
