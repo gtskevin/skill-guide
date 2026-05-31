@@ -11,34 +11,6 @@ const SCANNER = path.join(ROOT, 'scan-skills.js');
 const registryModule = require('./skill-registry');
 const args = process.argv.slice(2);
 
-// ---------------------------------------------------------------------------
-// Synthetic community baseline (Phase 1: based on GitHub public data estimates)
-// Will be replaced with real telemetry data as user base grows
-// ---------------------------------------------------------------------------
-const COMMUNITY_BASELINE = {
-  version: '1.0.0',
-  sample_size: 1500,
-  skill_count: {
-    mean: 45,
-    median: 23,
-    stddev: 80,
-    percentiles: { p10: 5, p25: 12, p50: 23, p75: 65, p90: 156, p95: 250, p99: 400 },
-  },
-  category_count: {
-    mean: 4.2,
-    percentiles: { p10: 1, p25: 2, p50: 4, p75: 6, p90: 8, p95: 9, p99: 9 },
-  },
-  token_cost: {
-    mean: 8500,
-    percentiles: { p10: 500, p25: 2000, p50: 4200, p75: 12000, p90: 25000, p95: 40000, p99: 80000 },
-  },
-  top_categories: ['design', 'security', 'automation', 'testing', 'deployment'],
-  rare_skills: [
-    'inventory-demand-planning', 'defi-amm-security', 'enterprise-agent-ops',
-    'quality-nonconformance', 'ecc-tools-cost-audit',
-  ],
-};
-
 function hasFlag(flag) {
   return args.includes(flag);
 }
@@ -106,10 +78,10 @@ const LABELS = {
     gapAnalysis: 'Gap Analysis',
     noSkillsInCategory: 'You have no {category} skills installed',
     tryThese: 'Try these',
-    overlapAlert: 'Overlap Alert',
+    overlapAlert: 'Review Candidates',
     skillsInCategory: 'You have {count} skills in "{category}" category',
-    considerKeeping: 'Consider keeping only the most-used one',
-    popularYoureMissing: 'Popular Skills You\'re Missing',
+    considerKeeping: 'Review which ones you actually use',
+    popularYoureMissing: 'Skills Mentioned in Directories',
     categoriesCovered: 'categories covered',
     myAiSkillStack: 'My AI Skill Stack',
     sharedBy: 'Shared by {user}',
@@ -122,8 +94,8 @@ const LABELS = {
     ctaGithub: 'Star on GitHub',
     strongest: 'Strongest',
     weakest: 'Weakest',
-    cleanupOpportunities: 'Cleanup Opportunities',
-    significantOverlap: 'significant overlap',
+    cleanupOpportunities: 'Review Candidates',
+    significantOverlap: 'same-category review candidates',
     mostDocumented: 'Most documented:',
     basedOnCompleteness: 'Based on documentation completeness',
     stackInsights: 'Stack Insights',
@@ -162,10 +134,10 @@ const LABELS = {
     gapAnalysis: '空白分析',
     noSkillsInCategory: '你没有安装 {category} 类技能',
     tryThese: '试试这些',
-    overlapAlert: '重叠检测',
+    overlapAlert: '待复核候选',
     skillsInCategory: '你在 "{category}" 分类下有 {count} 个技能',
-    considerKeeping: '建议只保留最常用的',
-    popularYoureMissing: '你还没装的热门技能',
+    considerKeeping: '请复核哪些技能确实常用',
+    popularYoureMissing: '目录中提到的技能',
     categoriesCovered: '个分类已覆盖',
     myAiSkillStack: '我的 AI 技能栈',
     sharedBy: '由 {user} 分享',
@@ -178,8 +150,8 @@ const LABELS = {
     ctaGithub: '在 GitHub 上 Star',
     strongest: '最强',
     weakest: '最弱',
-    cleanupOpportunities: '清理机会',
-    significantOverlap: '显著重叠',
+    cleanupOpportunities: '待复核候选',
+    significantOverlap: '同类技能候选',
     mostDocumented: '文档最完善:',
     basedOnCompleteness: '基于文档完整度',
     stackInsights: '技能栈洞察',
@@ -569,8 +541,7 @@ function renderCover(data, mode) {
   let personalityLine = '';
   if (mode.mode === 'list' && skills.length > 0) {
     const personality = analyzeSkillPersonality(skills);
-    const wrapped = computeWrappedStats(skills, computeHealthStats(skills));
-    personalityLine = `<p class="sub" style="font-size:1.3rem;color:var(--accent);font-weight:600;margin-top:8px">${personality.emoji} ${escapeHtml(personality.type)} · Exceeds ${wrapped.skillPercentile}% of users</p>`;
+    personalityLine = `<p class="sub" style="font-size:1.3rem;color:var(--accent);font-weight:600;margin-top:8px">${personality.emoji} ${escapeHtml(personality.type)} · ${lang() === 'zh' ? '本地画像' : 'local profile'}</p>`;
   }
 
   return `<section class="slide cover">
@@ -716,13 +687,13 @@ function renderInsightDashboardSlide(skills) {
       <div class="stats" style="margin:24px 0">
         <div class="stat"><b>${skills.length}</b><span>${isZh ? '技能' : 'skills'}</span></div>
         <div class="stat"><b>${radar.overall}/100</b><span>${isZh ? '健康度' : 'health'}</span></div>
-        <div class="stat"><b>${wrapped.skillPercentile}%</b><span>${isZh ? '超越' : 'exceed'}</span></div>
+        <div class="stat"><b>${Object.keys(groupBy(skills, 'category')).length}/9</b><span>${isZh ? '领域' : 'categories'}</span></div>
         <div class="stat"><b>~${tokenK}K</b><span>tokens</span></div>
       </div>
       ${renderDimensionRadar(radar.dimensions)}
       <p class="sub" style="margin-top:16px;font-size:14px;color:var(--muted)">${isZh
-        ? `🔤 技能在你开口前就占了 ${pct}% 的 context window`
-        : `🔤 Your skills consume ${pct}% of your context window before you type a single word`}</p>
+        ? `🔤 描述 Token 估算：约为 200K 参考 context 的 ${pct}%`
+        : `🔤 Estimated description tokens: ${pct}% of a 200K reference context`}</p>
     </div>
   </section>`;
 }
@@ -761,20 +732,13 @@ function renderCleanupSlide(skills) {
       <div class="kicker" data-i18n="label">${isZh ? '清理指南' : 'CLEANUP GUIDE'}</div>
       <h2>${isZh ? '你的技能从哪来的？' : 'Where did your skills come from?'}</h2>
       <div class="stats" style="margin:20px 0">
-        <div class="stat" style="border-color:var(--accent)"><b>${userSkills.length}</b><span>${isZh ? '你手动安装' : 'you installed'}</span></div>
-        <div class="stat"><b>${pluginSkills.length}</b><span>${isZh ? '插件自动安装' : 'auto-installed'}</span></div>
-        <div class="stat"><b>${systemSkills.length}</b><span>${isZh ? '系统内置' : 'system'}</span></div>
+        <div class="stat" style="border-color:var(--accent)"><b>${userSkills.length}</b><span>${isZh ? '用户目录来源' : 'user-directory sources'}</span></div>
+        <div class="stat"><b>${pluginSkills.length}</b><span>${isZh ? '插件目录来源' : 'plugin-directory sources'}</span></div>
+        <div class="stat"><b>${systemSkills.length}</b><span>${isZh ? '系统目录来源' : 'system-directory sources'}</span></div>
       </div>
       <div style="background:var(--bg);border-radius:8px;height:12px;max-width:400px;margin:0 auto 20px;overflow:hidden;display:flex">
-        <div style="background:var(--accent);height:100%;width:${userPct}%" title="${isZh ? '手动安装' : 'User installed'}"></div>
-        <div style="background:var(--ab);height:100%;width:${pluginPct}%" title="${isZh ? '插件安装' : 'Plugin installed'}"></div>
-      </div>
-
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;max-width:580px;margin:0 auto 16px;text-align:left">
-        <p style="margin:0 0 8px;color:var(--accent);font-weight:600;font-size:14px">🛡️ ${isZh ? '放心：技能之间没有依赖关系' : 'Good news: skills have zero dependencies'}</p>
-        <p style="font-size:13px;color:var(--muted);margin:0">${isZh
-          ? '每个 SKILL.md 是独立文件。删除任何一个都不会影响其他技能。你的恐惧是多余的。'
-          : 'Each SKILL.md is self-contained. Removing any skill will not break others. You can safely clean up.'}</p>
+        <div style="background:var(--accent);height:100%;width:${userPct}%" title="${isZh ? '用户目录来源' : 'User-directory sources'}"></div>
+        <div style="background:var(--ab);height:100%;width:${pluginPct}%" title="${isZh ? '插件目录来源' : 'Plugin-directory sources'}"></div>
       </div>
 
       ${duplicates.length > 0 ? (() => {
@@ -789,23 +753,23 @@ function renderCleanupSlide(skills) {
         return `<div style="background:var(--card);border:1px solid rgba(234,179,8,0.3);border-radius:var(--r);padding:16px;max-width:580px;margin:0 auto 16px;text-align:left">
           <p style="margin:0 0 8px;color:#f59e0b;font-weight:600;font-size:14px">⚠️ ${isZh ? `${duplicates.length} 个重复技能` : `${duplicates.length} duplicate skills`}</p>
           <p style="font-size:13px;color:var(--muted);margin:0 0 8px">${isZh
-            ? '这些技能同时存在于你的目录和插件目录中。删除用户目录的副本即可，插件版本会保留。'
-            : 'These exist in both your directory and the plugin directory. Remove the user copy — the plugin version stays.'}</p>
+            ? '这些技能同时存在于你的目录和插件目录中。请先确认自定义改动和实际使用情况，再决定是否移除用户目录副本。'
+            : 'These exist in both your directory and the plugin directory. Review custom changes and actual usage before removing a user copy.'}</p>
           ${dupeDetails.map(d => `<div style="margin:6px 0;display:flex;align-items:center;gap:8px">
             <code style="flex:1;padding:4px 8px;background:var(--bg);border-radius:4px;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(d.dir)}</code>
-            <code style="padding:4px 8px;background:var(--bg);border-radius:4px;font-size:12px;color:var(--accent2);cursor:pointer;white-space:nowrap" onclick="copyText('Please delete the skill at ${d.dir}')">📋 copy</code>
+            <code style="padding:4px 8px;background:var(--bg);border-radius:4px;font-size:12px;color:var(--accent2);cursor:pointer;white-space:nowrap" onclick="copyText('Please review whether the skill at ${d.dir} duplicates a plugin copy. Do not delete anything until I confirm.')">📋 copy</code>
           </div>`).join('')}
           <p style="font-size:12px;color:var(--muted);margin:8px 0 0;font-style:italic">${isZh
-            ? '💡 复制后粘贴给 Claude，它会删除指定路径的 skill'
-            : '💡 Paste to Claude — it will remove the skill at that exact path'}</p>
+            ? '💡 复制后粘贴给 Agent，让它先复核来源；确认前不要删除'
+            : '💡 Paste to your agent for source review; do not delete anything until you confirm'}</p>
         </div>`;
       })() : ''}
 
       ${dormant > 0 ? `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;max-width:580px;margin:0 auto;text-align:left">
         <p style="margin:0 0 8px;color:var(--muted);font-weight:600;font-size:14px">📋 ${isZh ? `${dormant} 个配置不完整（${dormantPct}%）` : `${dormant} under-configured (${dormantPct}%)`}</p>
         <p style="font-size:13px;color:var(--muted);margin:0">${isZh
-          ? '这些技能缺少描述或触发词，Claude 难以自动调用。如果你用不到，可以直接删除。'
-          : 'These lack descriptions or triggers — Claude cannot activate them. If you do not use them, feel free to remove.'}</p>
+          ? '这些技能缺少描述或触发词，Agent 可能更难发现它们。请先复核内容和使用情况。'
+          : 'These lack descriptions or triggers, so agents may have more difficulty discovering them. Review content and usage first.'}</p>
       </div>` : ''}
     </div>
   </section>`;
@@ -847,7 +811,7 @@ function renderNextStepsSlide(skills) {
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px">
           <p style="margin:0 0 6px;color:var(--accent);font-weight:600;font-size:14px">${isZh ? '🌐 在线推荐' : '🌐 Get recommendations'}</p>
           <code style="display:block;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:13px;color:var(--accent2);cursor:pointer" onclick="copyText('${recommendCmd}')">${recommendCmd}</code>
-          <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">${isZh ? '发现你缺少的热门技能，清理重叠的技能' : 'Discover missing popular skills, clean up overlaps'}</p>
+          <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">${isZh ? '查看目录提及项，并复核同类技能候选' : 'Review directory mentions and same-category candidates'}</p>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px">
           <p style="margin:0 0 6px;color:var(--accent);font-weight:600;font-size:14px">${isZh ? '📤 分享你的技能栈' : '📤 Share your skill stack'}</p>
@@ -1644,17 +1608,12 @@ function computeHealthStats(skills) {
     .filter(([, names]) => names.length > 1)
     .map(([normalized, names]) => ({ normalized, names }));
 
-  const hiddenCount = DESCRIPTION_BUDGET > 0
-    ? Math.max(0, Math.floor((totalDescriptionLength - DESCRIPTION_BUDGET) / 100))
-    : 0;
-
   return {
     totalSkills: skills.length,
     totalDescriptionLength,
     totalTokenEstimate,
     descriptionBudget: DESCRIPTION_BUDGET,
     budgetUsedPercent: Math.round((totalDescriptionLength / DESCRIPTION_BUDGET) * 100),
-    hiddenSkillEstimate: Math.min(hiddenCount, skills.length),
     staleSkills: [],  // Scanner doesn't pass _mdFile to skill-guide
     securityFlags,
     duplicateGroups,
@@ -1680,32 +1639,29 @@ function renderHealthTerminal(data) {
     '',
     `${scoreColor(radar.overall)} Health Score: ${radar.overall}/100`,
     '',
-    `${personality.emoji} ${isZh ? '你是' : 'You are'}: ${personality.type} (${personality.title})`,
+    `${personality.emoji} ${isZh ? '本地画像' : 'Local profile'}: ${personality.type} (${personality.title})`,
     `   ${personality.description}`,
     '',
     isZh ? '── 你的数据 ─────────────────────────────────────────────' : '── Your Stats ─────────────────────────────────────────────',
     `   📦 ${isZh ? '总技能数' : 'Total Skills'}: ${skills.length}`,
-    `   🔤 ${isZh ? 'Token 成本' : 'Token Cost'}: ~${(health.totalTokenEstimate / 1000).toFixed(1)}K (${health.contextWindowPercent}% ${isZh ? 'of context' : 'of context'})`,
-    `   📏 ${isZh ? '预算使用' : 'Budget Usage'}: ${health.budgetUsedPercent}%`,
+    `   🔤 ${isZh ? '描述 Token 估算' : 'Description Token Estimate'}: ~${(health.totalTokenEstimate / 1000).toFixed(1)}K (${health.contextWindowPercent}% ${isZh ? 'of 200K reference context' : 'of 200K reference context'})`,
+    `   📏 ${isZh ? '本地参考预算使用' : 'Local Reference Budget Usage'}: ${health.budgetUsedPercent}%`,
     '',
   ];
 
-  // Fun Fact
+  // Description estimate
   const tokenPerSkill = skills.length > 0 ? Math.round(health.totalTokenEstimate / skills.length) : 0;
-  lines.push(isZh ? '── 趣味数据 ─────────────────────────────────────────────' : '── Fun Fact ───────────────────────────────────────────────');
+  lines.push(isZh ? '── 描述估算 ─────────────────────────────────────────────' : '── Description Estimate ─────────────────────────────────');
   lines.push(isZh
     ? `   💡 你的 ${skills.length} 个技能，平均每个 ~${tokenPerSkill} tokens。`
     : `   💡 Your ${skills.length} skills average ~${tokenPerSkill} tokens each.`);
   lines.push(isZh
-    ? `      这意味着你还没说话，就用掉了 ${health.contextWindowPercent}% 的上下文窗口。`
-    : `      This means you've used ${health.contextWindowPercent}% of your context window before typing a single character.`);
-  lines.push(isZh
-    ? `      想象一下，你的笔记本电脑开机就占了 ${health.contextWindowPercent}% 内存。`
-    : `      Imagine your laptop using ${health.contextWindowPercent}% of RAM just by booting up.`);
+    ? `      描述总量估算约为 200K 参考 context 的 ${health.contextWindowPercent}%。`
+    : `      The estimated description total is ${health.contextWindowPercent}% of a 200K reference context.`);
   lines.push('');
 
   if (topConsumers.length > 0) {
-    lines.push(isZh ? '── Top 5 Token 消耗者 ──────────────────────────────────' : '── Top 5 Token Consumers ──────────────────────────────────');
+    lines.push(isZh ? '── Top 5 最长描述 ───────────────────────────────────────' : '── Top 5 Longest Descriptions ─────────────────────────────');
     for (const c of topConsumers) {
       const bar = '█'.repeat(Math.round(c.barWidth / 10)) + '░'.repeat(10 - Math.round(c.barWidth / 10));
       lines.push(`   ${c.rank}. ${c.name} ${bar} ${c.tokenCost.toLocaleString()} tokens`);
@@ -1714,7 +1670,7 @@ function renderHealthTerminal(data) {
   }
 
   if (prescriptions.length > 0) {
-    lines.push(isZh ? '── 处方 ──────────────────────────────────────────────────' : '── Prescriptions ──────────────────────────────────────────');
+    lines.push(isZh ? '── 复核提示 ──────────────────────────────────────────────' : '── Review Prompts ─────────────────────────────────────────');
     for (const p of prescriptions) {
       lines.push(`   ${p.emoji} ${isZh ? p.title : p.titleEn} [${p.impact}]`);
       lines.push(`      ${isZh ? p.description : p.descriptionEn}`);
@@ -1749,15 +1705,15 @@ function renderDefaultTerminal(skills) {
   const lines = [
     '╔══════════════════════════════════════════════════════════════╗',
     isZh
-      ? `║  skill-guide · ${skills.length} 个技能 · 你是${personality.type}  ║`
-      : `║  skill-guide · ${skills.length} skills · You are ${personality.type}  ║`,
+      ? `║  skill-guide · ${skills.length} 个技能 · 本地画像：${personality.type}  ║`
+      : `║  skill-guide · ${skills.length} skills · Local profile: ${personality.type}  ║`,
     '╚══════════════════════════════════════════════════════════════╝',
     '',
     `  ${scoreColor(radar.overall)} ${isZh ? '健康度' : 'Health'}: ${radar.overall}/100`,
     `  ${personality.emoji} ${personality.description}`,
     '',
-    `  📦 ${skills.length} ${isZh ? '个技能' : 'skills'} · ${cats.length}/9 ${isZh ? '个领域' : 'categories'} · 🔤 ~${tokenK}K tokens (${pct}% ${isZh ? 'of context' : 'of context'})`,
-    `  🏆 ${isZh ? '超过了' : 'Exceeds'} ${wrapped.skillPercentile}% ${isZh ? '的用户' : 'of users'} · 💎 ${wrapped.rareFound.length} ${isZh ? '个稀有技能' : 'rare skills'}`,
+    `  📦 ${skills.length} ${isZh ? '个技能' : 'skills'} · ${cats.length}/9 ${isZh ? '个领域' : 'categories'} · 🔤 ~${tokenK}K ${isZh ? '描述 tokens' : 'description tokens'} (${pct}% ${isZh ? 'of 200K 参考 context' : 'of 200K reference context'})`,
+    `  📍 ${isZh ? '本地画像：仅基于当前扫描结果' : 'Local profile: based only on the current scan'}`,
     '',
   ];
 
@@ -1776,42 +1732,30 @@ function renderDefaultTerminal(skills) {
   const userCount = skills.filter(s => (s.sources || []).some(src => ['claude-user', 'codex-user', 'cc-switch'].includes(src))).length;
   const pluginCount = skills.filter(s => (s.sources || []).some(src => ['claude-plugin', 'codex-plugin'].includes(src))).length;
   lines.push(isZh
-    ? `  📂 来源: ${userCount} 个手动安装 · ${pluginCount} 个插件自动安装`
-    : `  📂 Sources: ${userCount} you installed · ${pluginCount} auto-installed by plugins`);
+    ? `  📂 来源: ${userCount} 个用户目录来源 · ${pluginCount} 个插件目录来源`
+    : `  📂 Sources: ${userCount} user-directory · ${pluginCount} plugin-directory`);
 
   // Dormant skills
   const dormant = wrapped.untappedCount || 0;
   const dormantPct = skills.length > 0 ? Math.round((dormant / skills.length) * 100) : 0;
   if (dormant > 0) {
     lines.push(isZh
-      ? `  ⚠️ ${dormant} 个技能（${dormantPct}%）配置不完整 — Claude 难以自动调用`
-      : `  ⚠️ ${dormant} skills (${dormantPct}%) are under-configured — hard for Claude to activate`);
+      ? `  ⚠️ ${dormant} 个技能（${dormantPct}%）元数据较少 — 建议复核描述和触发词`
+      : `  ⚠️ ${dormant} skills (${dormantPct}%) have sparse metadata — review descriptions and triggers`);
   }
 
   // Budget
   if (pct > 5) {
     lines.push(isZh
-      ? `  💰 你的技能在每次对话开始前就占用了 ${pct}% 的 context window`
-      : `  💰 Your skills consume ${pct}% of your context window before you type a single word`);
+      ? `  🔤 描述 Token 估算约为 200K 参考 context 的 ${pct}%`
+      : `  🔤 Estimated description tokens: ${pct}% of a 200K reference context`);
   }
 
-  // Cold skills
-  if (wrapped.coldSkills && wrapped.coldSkills.length > 0) {
+  // Short descriptions are review candidates, not usage signals.
+  if (wrapped.shortestDescriptions && wrapped.shortestDescriptions.length > 0) {
     lines.push(isZh
-      ? `  🔍 最冷门: ${wrapped.coldSkills.slice(0, 3).join(', ')}`
-      : `  🔍 Coldest: ${wrapped.coldSkills.slice(0, 3).join(', ')}`);
-  }
-
-  // Safety
-  lines.push(isZh
-    ? '  🛡️ 技能之间零依赖 — 删除任何一个都不会影响其他'
-    : '  🛡️ Zero dependencies between skills — safe to remove any');
-
-  // Rare skills
-  if (wrapped.rareFound && wrapped.rareFound.length > 0) {
-    lines.push(isZh
-      ? `  💎 稀有技能: ${wrapped.rareFound.slice(0, 3).join(', ')}`
-      : `  💎 Rare: ${wrapped.rareFound.slice(0, 3).join(', ')}`);
+      ? `  🔍 描述最短: ${wrapped.shortestDescriptions.slice(0, 3).join(', ')}`
+      : `  🔍 Shortest descriptions: ${wrapped.shortestDescriptions.slice(0, 3).join(', ')}`);
   }
 
   lines.push('');
@@ -1849,7 +1793,7 @@ function renderInsightTerminal(data) {
   lines.push(isZh ? '── 健康度 ───────────────────────────────────────────────' : '── Health ─────────────────────────────────────────────────');
   lines.push(`  ${scoreColor(radar.overall)} ${isZh ? '分数' : 'Score'}: ${radar.overall}/100 · ${personality.emoji} ${isZh ? '类型' : 'Type'}: ${personality.type}`);
   lines.push(`  ${personality.description}`);
-  lines.push(`  ⚡ ${wrapped.coreCount} ${isZh ? '个精心配置' : 'fully configured'} | ${wrapped.readyCount} ${isZh ? '个基本可用' : 'mostly ready'} | ${wrapped.untappedCount} ${isZh ? '个几乎空白' : 'nearly empty'}`);
+  lines.push(`  ⚡ ${wrapped.coreCount} ${isZh ? '个元数据较完整' : 'metadata-rich'} | ${wrapped.readyCount} ${isZh ? '个元数据一般' : 'partial metadata'} | ${wrapped.untappedCount} ${isZh ? '个元数据较少' : 'sparse metadata'}`);
   lines.push('');
 
   // Radar
@@ -1863,23 +1807,11 @@ function renderInsightTerminal(data) {
   // Budget
   lines.push(isZh ? '── Token 预算 ───────────────────────────────────────────' : '── Token Budget ──────────────────────────────────────────');
   lines.push(isZh
-    ? `  📦 ${skills.length} 个技能 · 🔤 ~${(health.totalTokenEstimate / 1000).toFixed(1)}K tokens（占 context ${health.contextWindowPercent}%）`
-    : `  📦 ${skills.length} skills · 🔤 ~${(health.totalTokenEstimate / 1000).toFixed(1)}K tokens (${health.contextWindowPercent}% of context)`);
+    ? `  📦 ${skills.length} 个技能 · 🔤 ~${(health.totalTokenEstimate / 1000).toFixed(1)}K 描述 tokens（约为 200K 参考 context 的 ${health.contextWindowPercent}%）`
+    : `  📦 ${skills.length} skills · 🔤 ~${(health.totalTokenEstimate / 1000).toFixed(1)}K description tokens (${health.contextWindowPercent}% of 200K reference context)`);
   lines.push(isZh
-    ? `  ⚠️ 预算超支 ${health.budgetUsedPercent}%`
-    : `  ⚠️ Budget overage: ${health.budgetUsedPercent}%`);
-  lines.push('');
-
-  // Community
-  lines.push(isZh ? '── 社区对比 ─────────────────────────────────────────────' : '── Community ─────────────────────────────────────────────');
-  lines.push(isZh
-    ? `  🏆 技能数超过了 ${wrapped.skillPercentile}% 的用户（你: ${wrapped.total} | 平均: ${wrapped.communityMean}）`
-    : `  🏆 Skills exceed ${wrapped.skillPercentile}% of users (You: ${wrapped.total} | Avg: ${wrapped.communityMean})`);
-  if (wrapped.rareFound.length > 0) {
-    lines.push(isZh
-      ? `  💎 ${wrapped.rareFound.length} 个稀有技能: ${wrapped.rareFound.slice(0, 5).join(', ')}`
-      : `  💎 ${wrapped.rareFound.length} rare skills: ${wrapped.rareFound.slice(0, 5).join(', ')}`);
-  }
+    ? `  📏 本地参考预算使用: ${health.budgetUsedPercent}%`
+    : `  📏 Local reference budget usage: ${health.budgetUsedPercent}%`);
   lines.push('');
 
   // Gaps / cleanup
@@ -1894,10 +1826,10 @@ function renderInsightTerminal(data) {
       ? `  ⚠️ 最弱领域: ${weakest.cat} (${weakest.count})`
       : `  ⚠️ Weakest: ${weakest.cat} (${weakest.count})`);
   }
-  if (wrapped.coldSkills.length > 0) {
+  if (wrapped.shortestDescriptions.length > 0) {
     lines.push(isZh
-      ? `  🔍 最冷门技能: ${wrapped.coldSkills.slice(0, 3).join(', ')}`
-      : `  🔍 Coldest skills: ${wrapped.coldSkills.slice(0, 3).join(', ')}`);
+      ? `  🔍 描述最短: ${wrapped.shortestDescriptions.slice(0, 3).join(', ')}`
+      : `  🔍 Shortest descriptions: ${wrapped.shortestDescriptions.slice(0, 3).join(', ')}`);
   }
   lines.push('');
 
@@ -2235,15 +2167,15 @@ function renderHealthHTML(data) {
       </div>
       <div class="stat-card">
         <div class="stat-number">~${(health.totalTokenEstimate / 1000).toFixed(1)}K</div>
-        <div class="stat-label">Token Cost</div>
+        <div class="stat-label">Description Token Estimate</div>
       </div>
       <div class="stat-card">
         <div class="stat-number">${health.contextWindowPercent}%</div>
-        <div class="stat-label">Context Usage</div>
+        <div class="stat-label">200K Reference Context</div>
       </div>
       <div class="stat-card">
         <div class="stat-number">${health.budgetUsedPercent}%</div>
-        <div class="stat-label">Budget Usage</div>
+        <div class="stat-label">Local Reference Budget</div>
       </div>
     </div>
 
@@ -2255,7 +2187,7 @@ function renderHealthHTML(data) {
     </div>
 
     <div class="section">
-      <div class="section-title">🏆 Top 10 Token Consumers</div>
+      <div class="section-title">🏆 Top 10 Longest Descriptions</div>
       ${topConsumers.map(c => `
         <div class="consumer-row">
           <div class="consumer-rank">${c.rank}</div>
@@ -2269,7 +2201,7 @@ function renderHealthHTML(data) {
     </div>
 
     <div class="section">
-      <div class="section-title">💊 Prescriptions</div>
+      <div class="section-title">📋 Review Prompts</div>
       ${prescriptions.map(p => `
         <div class="prescription-card" onclick="this.classList.toggle('expanded')">
           <div class="prescription-header">
@@ -2303,13 +2235,13 @@ function renderHealthHTML(data) {
       const report = \`🏆 Skill Health Report
 
 Score: ${radar.overall}/100 (${scoreLabel(radar.overall)})
-Personality: ${personality.emoji} ${personality.type} · ${personality.title}
+Local Profile: ${personality.emoji} ${personality.type} · ${personality.title}
 
 📊 Stats:
 • Total Skills: ${skills.length}
-• Token Cost: ~${(health.totalTokenEstimate / 1000).toFixed(1)}K
-• Context Usage: ${health.contextWindowPercent}%
-• Budget Usage: ${health.budgetUsedPercent}%
+• Description Token Estimate: ~${(health.totalTokenEstimate / 1000).toFixed(1)}K
+• 200K Reference Context: ${health.contextWindowPercent}%
+• Local Reference Budget: ${health.budgetUsedPercent}%
 
 ${personality.description}
 
@@ -2349,8 +2281,8 @@ function analyzeSkillPersonality(skills) {
       emoji: '🏛️',
       title: 'The Collector',
       description: isZh
-        ? '你的技能库像一个博物馆——丰富、全面，但可能需要一个策展人。你相信"有备无患"，但有时候少即是多。'
-        : 'Your skill library is like a museum — rich and comprehensive, but may need a curator. You believe in "better safe than sorry," but sometimes less is more.',
+        ? '本地扫描发现了较大的技能库。建议定期复核描述、来源和实际需要。'
+        : 'The local scan found a large skill inventory. Review descriptions, sources, and actual needs periodically.',
       advice: isZh ? '建议：定期审视，保留精品。质量 > 数量。' : 'Advice: Review regularly, keep the best. Quality > Quantity.',
     };
   }
@@ -2361,33 +2293,33 @@ function analyzeSkillPersonality(skills) {
       emoji: '🧘',
       title: 'The Minimalist',
       description: isZh
-        ? '你的技能库像一个精心策划的展览——每一件都有其 purpose。你懂得"少即是多"的智慧。'
-        : 'Your skill library is like a curated exhibition — every piece has its purpose. You understand the wisdom of "less is more."',
+        ? '本地扫描发现了较小的技能库。建议复核它是否覆盖你实际需要的工作。'
+        : 'The local scan found a small skill inventory. Review whether it covers the work you actually need.',
       advice: isZh ? '建议：保持精简，但可以探索新领域。' : 'Advice: Stay lean, but explore new domains.',
     };
   }
 
   if (securityCount > total * 0.3) {
     return {
-      type: isZh ? '安全专家' : 'Security Expert',
+      type: isZh ? '工具声明较多' : 'Tool-Declared Profile',
       emoji: '🛡️',
-      title: 'The Security Expert',
+      title: 'The Tool-Declared Profile',
       description: isZh
-        ? '你的技能库像一个安全堡垒——你关注权限、审计和风险控制。安全是你的第一优先级。'
-        : 'Your skill library is like a security fortress — you focus on permissions, audits, and risk control. Security is your top priority.',
-      advice: isZh ? '建议：安全很好，但别让安全成为效率的障碍。' : 'Advice: Security is great, but don\'t let it block efficiency.',
+        ? '较多技能声明了可用工具。建议按需复核权限、命令和风险。'
+        : 'Many skills declare allowed tools. Review permissions, commands, and risks where needed.',
+      advice: isZh ? '建议：按需复核权限和命令。' : 'Advice: Review permissions and commands where needed.',
     };
   }
 
   if (pluginCount > total * 0.5) {
     return {
-      type: isZh ? '插件达人' : 'Plugin Enthusiast',
+      type: isZh ? '插件来源较多' : 'Plugin-Heavy Profile',
       emoji: '🔌',
-      title: 'The Plugin Enthusiast',
+      title: 'The Plugin-Heavy Profile',
       description: isZh
-        ? '你的技能库像一个插件博览会——你相信社区的力量，喜欢尝试新工具。'
-        : 'Your skill library is like a plugin expo — you believe in the power of community and love trying new tools.',
-      advice: isZh ? '建议：插件很好，但要注意质量和维护状态。' : 'Advice: Plugins are great, but watch for quality and maintenance.',
+        ? '本地扫描发现较多插件目录来源。建议关注来源、质量和维护状态。'
+        : 'The local scan found many plugin-directory sources. Review provenance, quality, and maintenance status.',
+      advice: isZh ? '建议：关注来源、质量和维护状态。' : 'Advice: Review provenance, quality, and maintenance status.',
     };
   }
 
@@ -2405,20 +2337,20 @@ function analyzeSkillPersonality(skills) {
       emoji: '🎯',
       title: 'The Specialist',
       description: isZh
-        ? `你的技能库专注于 ${topCategory[0]} 领域——你是这个领域的专家，深度优于广度。`
-        : `Your skill library focuses on ${topCategory[0]} — you're an expert in this domain, depth over breadth.`,
-      advice: isZh ? '建议：在专精领域继续深耕，适当扩展边界。' : 'Advice: Keep deepening your expertise, expand boundaries when ready.',
+        ? `本地元数据集中在 ${topCategory[0]} 类别。建议复核这种分布是否符合实际需要。`
+        : `Local metadata is concentrated in the ${topCategory[0]} category. Review whether that distribution matches your needs.`,
+      advice: isZh ? '建议：复核类别分布是否符合实际需要。' : 'Advice: Review whether the category distribution matches your needs.',
     };
   }
 
   return {
-    type: isZh ? '全能选手' : 'All-Rounder',
+    type: isZh ? '覆盖较广' : 'Broad Coverage',
     emoji: '🌟',
     title: 'The All-Rounder',
     description: isZh
-      ? '你的技能库像一个工具箱——什么都有一点，平衡而全面。你是个多面手。'
-      : 'Your skill library is like a toolbox — a bit of everything, balanced and comprehensive. You\'re a versatile player.',
-    advice: isZh ? '建议：在全面的基础上，找到自己的专长领域。' : 'Advice: Build on your breadth, find your specialty.',
+      ? '本地扫描显示技能分布覆盖多个类别。建议复核是否存在不再需要的来源。'
+      : 'The local scan shows skills across several categories. Review whether any sources are no longer needed.',
+    advice: isZh ? '建议：复核来源和类别分布。' : 'Advice: Review sources and category distribution.',
   };
 }
 
@@ -2472,28 +2404,6 @@ function computeWrappedStats(skills, health) {
   const categoryCount = Object.keys(categories).length;
   const totalTokens = skills.reduce((sum, s) => sum + (s.tokenCost || 0), 0);
 
-  // Percentile calculation using synthetic distribution
-  function getPercentile(value, percentiles) {
-    const entries = Object.entries(percentiles).sort((a, b) => a[1] - b[1]);
-    for (let i = 0; i < entries.length; i++) {
-      if (value <= entries[i][1]) {
-        if (i === 0) return parseInt(entries[i][0].slice(1));
-        const prev = entries[i - 1];
-        const next = entries[i];
-        const ratio = (value - prev[1]) / (next[1] - prev[1]);
-        return Math.round(parseInt(prev[0].slice(1)) + ratio * (parseInt(next[0].slice(1)) - parseInt(prev[0].slice(1))));
-      }
-    }
-    return 99;
-  }
-
-  const skillPercentile = getPercentile(total, COMMUNITY_BASELINE.skill_count.percentiles);
-  const categoryPercentile = getPercentile(categoryCount, COMMUNITY_BASELINE.category_count.percentiles);
-  const tokenPercentile = getPercentile(totalTokens, COMMUNITY_BASELINE.token_cost.percentiles);
-
-  // Skill valuation (fun metric: $5 per skill as baseline)
-  const skillValue = total * 5;
-
   // Category breakdown
   const categoryBreakdown = Object.entries(categories)
     .sort((a, b) => b[1] - a[1])
@@ -2503,16 +2413,13 @@ function computeWrappedStats(skills, health) {
       percent: Math.round((count / total) * 100),
     }));
 
-  // Cold/uncommon skills: skills with low token cost
-  const coldSkills = [...skills]
+  // Short descriptions are useful review candidates, but do not imply low usage.
+  const shortestDescriptions = [...skills]
     .sort((a, b) => (a.tokenCost || 0) - (b.tokenCost || 0))
     .slice(0, 5)
     .map(s => s.name);
 
-  // Rare skills this user has (from community baseline)
-  const rareFound = skills.filter(s => COMMUNITY_BASELINE.rare_skills.includes(s.name)).map(s => s.name);
-
-  // --- Usage gap analysis (readiness-based: description + tools + triggers + tokens) ---
+  // --- Metadata completeness analysis (description + tools + triggers + tokens) ---
   function computeReadinessScore(skill) {
     let score = 0;
     const descLen = (skill.description || '').length;
@@ -2541,25 +2448,25 @@ function computeWrappedStats(skills, health) {
   // Top categories for display (still useful for archetype)
   const sortedCats = Object.entries(categories).sort((a, b) => b[1] - a[1]);
 
-  // --- Developer archetype detection ---
+  // --- Local inventory profile ---
   const topCatPercent = sortedCats.length > 0 ? Math.round((sortedCats[0][1] / total) * 100) : 0;
   let archetype;
   if (total <= 3) {
-    archetype = { name: 'Newcomer', emoji: '🌱', tagline: 'Just getting started — every expert was once a beginner' };
+    archetype = { name: 'Small Inventory', emoji: '🌱', tagline: 'A few local skills were detected' };
   } else if (total <= 10) {
-    archetype = { name: 'Curious Starter', emoji: '🔍', tagline: 'Exploring the landscape with purpose' };
+    archetype = { name: 'Compact Inventory', emoji: '🔍', tagline: 'A compact set of local skills was detected' };
   } else if (topCatPercent >= 60 && total >= 20) {
-    archetype = { name: 'Domain Expert', emoji: '🎯', tagline: 'Depth over breadth — you go deep' };
+    archetype = { name: 'Category-Focused Inventory', emoji: '🎯', tagline: 'Local metadata is concentrated in one category' };
   } else if (total >= 200 && categoryCount >= 7) {
-    archetype = { name: 'Full-Stack Collector', emoji: '🏗️', tagline: 'You build across the entire stack' };
+    archetype = { name: 'Large Broad Inventory', emoji: '🏗️', tagline: 'Many local skills span several categories' };
   } else if (total >= 200) {
-    archetype = { name: 'Power User', emoji: '⚡', tagline: 'Your skill arsenal rivals a small army' };
+    archetype = { name: 'Large Inventory', emoji: '⚡', tagline: 'Many local skills were detected' };
   } else if (categoryCount >= 6 && total < 100) {
-    archetype = { name: 'Explorer', emoji: '🧭', tagline: 'Curiosity drives you to every corner' };
+    archetype = { name: 'Broad Inventory', emoji: '🧭', tagline: 'Local skills span several categories' };
   } else if (total >= 50 && categoryCount <= 4) {
-    archetype = { name: 'Specialist Builder', emoji: '🔬', tagline: 'Focused mastery in chosen domains' };
+    archetype = { name: 'Focused Inventory', emoji: '🔬', tagline: 'Many local skills are concentrated in a few categories' };
   } else {
-    archetype = { name: 'Balanced Developer', emoji: '⚖️', tagline: 'Steady growth across the board' };
+    archetype = { name: 'Balanced Inventory', emoji: '⚖️', tagline: 'Local skills are distributed across categories' };
   }
 
   // Core categories from high-readiness skills
@@ -2579,13 +2486,8 @@ function computeWrappedStats(skills, health) {
     total,
     categoryCount,
     totalTokens,
-    skillPercentile,
-    categoryPercentile,
-    tokenPercentile,
-    skillValue,
     categoryBreakdown,
-    coldSkills,
-    rareFound,
+    shortestDescriptions,
     coreCount,
     readyCount,
     untappedCount,
@@ -2594,9 +2496,6 @@ function computeWrappedStats(skills, health) {
     untappedPercent,
     coreCats,
     archetype,
-    communityMean: COMMUNITY_BASELINE.skill_count.mean,
-    communityMedian: COMMUNITY_BASELINE.skill_count.median,
-    sampleSize: COMMUNITY_BASELINE.sample_size,
   };
 }
 
@@ -2613,39 +2512,26 @@ function renderWrappedTerminal(data) {
          : '║              Your AI Skill Report                         ║',
     '╚══════════════════════════════════════════════════════════════╝',
     '',
-    `${wrapped.archetype.emoji} ${isZh ? '你的开发者类型' : 'Your Developer Type'}: ${wrapped.archetype.name}`,
-    `   ${isZh ? '你的技能 DNA 指向：' : 'Your skill DNA says:'} ${wrapped.archetype.tagline}`,
+    `${wrapped.archetype.emoji} ${isZh ? '本地技能画像' : 'Local Inventory Profile'}: ${wrapped.archetype.name}`,
+    `   ${isZh ? '本地元数据特征：' : 'Local metadata pattern:'} ${wrapped.archetype.tagline}`,
     '',
     isZh ? '── 你的数据 ─────────────────────────────────────────────' : '── Your Stats ─────────────────────────────────────────────',
     `   📦 ${isZh ? '总技能数' : 'Total Skills'}: ${wrapped.total}`,
     `   📂 ${isZh ? '覆盖领域' : 'Categories'}: ${wrapped.categoryCount}`,
-    `   🔤 ${isZh ? 'Token 成本' : 'Token Cost'}: ~${(wrapped.totalTokens / 1000).toFixed(1)}K`,
+    `   🔤 ${isZh ? '描述 Token 估算' : 'Description Token Estimate'}: ~${(wrapped.totalTokens / 1000).toFixed(1)}K`,
     '',
-    isZh ? '── 技能就绪度 ─────────────────────────────────────────' : '── Readiness Breakdown ────────────────────────────────────',
+    isZh ? '── 元数据完整度 ───────────────────────────────────────' : '── Metadata Completeness ──────────────────────────────────',
     isZh
-      ? `   ⚡ 你有 ${wrapped.total} 个技能，但只有 ${wrapped.coreCount} 个是精心配置的`
-      : `   ⚡ You have ${wrapped.total} skills, but only ${wrapped.coreCount} are fully configured`,
+      ? `   ⚡ ${wrapped.total} 个技能中，${wrapped.coreCount} 个元数据较完整`
+      : `   ⚡ ${wrapped.coreCount} of ${wrapped.total} skills have richer metadata`,
     isZh
-      ? `      ${wrapped.readyCount} 个基本可用 | ${wrapped.untappedCount} 个几乎空白`
-      : `      ${wrapped.readyCount} mostly ready | ${wrapped.untappedCount} nearly empty`,
+      ? `      ${wrapped.readyCount} 个元数据一般 | ${wrapped.untappedCount} 个元数据较少`
+      : `      ${wrapped.readyCount} partial metadata | ${wrapped.untappedCount} sparse metadata`,
     isZh
       ? `   🎯 核心领域: ${wrapped.coreCats.join(', ')}`
       : `   🎯 Core domains: ${wrapped.coreCats.join(', ')}`,
     '',
   ];
-
-  // Community comparison with archetype
-  lines.push(isZh ? '── 社区对比 ─────────────────────────────────────────────' : '── Community Comparison ───────────────────────────────────');
-  lines.push(isZh
-    ? `   🏆 技能数超过了 ${wrapped.skillPercentile}% 的用户`
-    : `   🏆 Skills exceed ${wrapped.skillPercentile}% of users`);
-  lines.push(`      ${isZh ? '你' : 'You'}: ${wrapped.total} | ${isZh ? '社区平均' : 'Community avg'}: ${wrapped.communityMean} | ${isZh ? '中位数' : 'Median'}: ${wrapped.communityMedian}`);
-  if (wrapped.rareFound.length > 0) {
-    lines.push(isZh
-      ? `   💎 你拥有 ${wrapped.rareFound.length} 个稀有技能: ${wrapped.rareFound.join(', ')}`
-      : `   💎 You own ${wrapped.rareFound.length} rare skill(s): ${wrapped.rareFound.join(', ')}`);
-  }
-  lines.push('');
 
   // Category breakdown
   lines.push(isZh ? '── 技能 DNA ─────────────────────────────────────────────' : '── Skill DNA ─────────────────────────────────────────────');
@@ -2655,26 +2541,23 @@ function renderWrappedTerminal(data) {
   }
   lines.push('');
 
-  // Fun facts
-  lines.push(isZh ? '── 趣味数据 ─────────────────────────────────────────────' : '── Fun Facts ──────────────────────────────────────────────');
-  lines.push(isZh
-    ? `   💡 你的技能栈估值 $${wrapped.skillValue.toLocaleString()}（按每个技能 $5 计算）`
-    : `   💡 Your skill stack is valued at $${wrapped.skillValue.toLocaleString()} (at $5 per skill)`);
-  lines.push(isZh
-    ? `   🎯 你超过了 ${wrapped.skillPercentile}% 的 Claude Code 用户`
-    : `   🎯 You exceed ${wrapped.skillPercentile}% of Claude Code users`);
-  if (wrapped.coldSkills.length > 0) {
+  // Local review candidates
+  lines.push(isZh ? '── 本地复核提示 ─────────────────────────────────────────' : '── Local Review Notes ─────────────────────────────────────');
+  if (wrapped.shortestDescriptions.length > 0) {
     lines.push(isZh
-      ? `   🔍 你最冷门的技能: ${wrapped.coldSkills[0]}`
-      : `   🔍 Your coldest skill: ${wrapped.coldSkills[0]}`);
+      ? `   🔍 描述最短的技能: ${wrapped.shortestDescriptions[0]}`
+      : `   🔍 Shortest skill description: ${wrapped.shortestDescriptions[0]}`);
   }
+  lines.push(isZh
+    ? '   📍 以上结论仅基于本地扫描结果，不代表社区排名或实际使用频率'
+    : '   📍 These notes use local scan data only; they are not community rankings or usage metrics');
   lines.push('');
 
   // CTA with suspense-driven share text
   lines.push(isZh ? '── 分享你的报告 ─────────────────────────────────────────' : '── Share Your Report ──────────────────────────────────────');
   const shareHint = isZh
-    ? `   📤 "${wrapped.archetype.name} — ${wrapped.total} 个技能，${wrapped.untappedCount} 个待探索。你的类型是什么？"`
-    : `   📤 "I'm a ${wrapped.archetype.name} — ${wrapped.total} skills, only ${wrapped.coreCount} configured. What's your type?"`;
+    ? `   📤 "${wrapped.archetype.name} — 本地扫描到 ${wrapped.total} 个技能，其中 ${wrapped.untappedCount} 个元数据较少。"`
+    : `   📤 "${wrapped.archetype.name} — ${wrapped.total} local skills scanned, including ${wrapped.untappedCount} with sparse metadata."`;
   lines.push(shareHint);
   lines.push(isZh
     ? '   🔗 使用 --open 生成可分享的 HTML 报告'
@@ -2745,8 +2628,8 @@ function renderWrappedHTML(data) {
   }).join('');
 
   const shareText = isZh
-    ? `${wrapped.archetype.emoji} 我是「${wrapped.archetype.name}」— ${wrapped.total} 个技能，只有 ${wrapped.coreCount} 个精心配置。你的开发者类型是什么？`
-    : `${wrapped.archetype.emoji} I'm a ${wrapped.archetype.name} — ${wrapped.total} skills, only ${wrapped.coreCount} fully configured. What's your developer type?`;
+    ? `${wrapped.archetype.emoji} ${wrapped.archetype.name} — 本地扫描到 ${wrapped.total} 个技能，其中 ${wrapped.untappedCount} 个元数据较少。`
+    : `${wrapped.archetype.emoji} ${wrapped.archetype.name} — ${wrapped.total} local skills scanned, including ${wrapped.untappedCount} with sparse metadata.`;
 
   return `<!DOCTYPE html>
 <html lang="${lang()}">
@@ -3003,33 +2886,33 @@ function renderWrappedHTML(data) {
         </div>
         <div class="stat-card">
           <div class="stat-value">${(wrapped.totalTokens / 1000).toFixed(1)}K</div>
-          <div class="stat-label">${isZh ? 'Token 成本' : 'Token Cost'}</div>
+          <div class="stat-label">${isZh ? '描述 Token 估算' : 'Description Token Estimate'}</div>
         </div>
       </div>
     </div>
 
     <div class="section" style="background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(124,58,237,0.08));border:1px solid rgba(245,158,11,0.15)">
-      <h2 class="section-title">${isZh ? '⚡ 技能就绪度' : '⚡ Readiness Breakdown'}</h2>
+      <h2 class="section-title">${isZh ? '⚡ 元数据完整度' : '⚡ Metadata Completeness'}</h2>
       <p style="color:var(--muted);margin-bottom:1rem;font-size:0.9rem">
         ${isZh ? '基于描述完整度、工具配置和触发词' : 'Based on description depth, tool config, and triggers'}
       </p>
       <div class="gap-visual">
         <div class="gap-core">
           <div class="gap-number">${wrapped.coreCount}</div>
-          <div class="gap-label">${isZh ? '精心配置' : 'Fully Configured'}</div>
-          <div class="gap-detail">${isZh ? '随时可用的核心技能' : 'Ready-to-use core skills'}</div>
+          <div class="gap-label">${isZh ? '元数据较完整' : 'Richer Metadata'}</div>
+          <div class="gap-detail">${isZh ? '描述、工具或触发词较完整' : 'More description, tool, or trigger metadata'}</div>
         </div>
         <div class="gap-divider"><div class="gap-vs">+</div></div>
         <div class="gap-ready">
           <div class="gap-number">${wrapped.readyCount}</div>
-          <div class="gap-label">${isZh ? '基本可用' : 'Mostly Ready'}</div>
-          <div class="gap-detail">${isZh ? '需要一些配置' : 'Needs a bit of config'}</div>
+          <div class="gap-label">${isZh ? '元数据一般' : 'Partial Metadata'}</div>
+          <div class="gap-detail">${isZh ? '可以按需补充' : 'Review whether more detail is useful'}</div>
         </div>
         <div class="gap-divider"><div class="gap-vs">+</div></div>
         <div class="gap-untapped">
           <div class="gap-number">${wrapped.untappedCount}</div>
-          <div class="gap-label">${isZh ? '几乎空白' : 'Nearly Empty'}</div>
-          <div class="gap-detail">${isZh ? '安装了但没配置' : 'Installed but not configured'}</div>
+          <div class="gap-label">${isZh ? '元数据较少' : 'Sparse Metadata'}</div>
+          <div class="gap-detail">${isZh ? '建议复核描述和触发词' : 'Review descriptions and triggers'}</div>
         </div>
       </div>
       <div class="gap-bar-wrap">
@@ -3038,41 +2921,19 @@ function renderWrappedHTML(data) {
         <div class="gap-bar-untapped" style="width:${wrapped.untappedPercent}%"></div>
       </div>
       <div class="gap-bar-labels">
-        <span>${wrapped.corePercent}% ${isZh ? '核心' : 'core'}</span>
-        <span>${wrapped.readyPercent}% ${isZh ? '可用' : 'ready'}</span>
-        <span>${wrapped.untappedPercent}% ${isZh ? '空白' : 'empty'}</span>
+        <span>${wrapped.corePercent}% ${isZh ? '较完整' : 'richer'}</span>
+        <span>${wrapped.readyPercent}% ${isZh ? '一般' : 'partial'}</span>
+        <span>${wrapped.untappedPercent}% ${isZh ? '较少' : 'sparse'}</span>
       </div>
     </div>
 
     <div class="section">
-      <h2 class="section-title">${isZh ? '🏆 社区对比' : '🏆 Community Comparison'}</h2>
-      <p style="color:var(--muted);margin-bottom:1rem;font-size:0.9rem">
-        ${isZh ? `基于 ${wrapped.sampleSize.toLocaleString()} 个公开仓库的数据` : `Based on data from ${wrapped.sampleSize.toLocaleString()} public repositories`}
+      <h2 class="section-title">${isZh ? '📍 本地画像说明' : '📍 Local Profile Notes'}</h2>
+      <p style="color:var(--muted);font-size:0.9rem">
+        ${isZh
+          ? '此报告只使用当前设备扫描到的技能元数据。它不会推断社区排名、实际使用频率或删除安全性。'
+          : 'This report uses skill metadata scanned on this device only. It does not infer community rank, actual usage, or whether deletion is safe.'}
       </p>
-      <div class="compare-row">
-        <span class="compare-label">${isZh ? '技能数' : 'Skills'}</span>
-        <div class="compare-bar-wrap">
-          <div class="compare-bar">
-            <div class="compare-fill" style="width:${wrapped.skillPercentile}%"></div>
-          </div>
-        </div>
-        <span class="compare-value">Top ${100 - wrapped.skillPercentile}%</span>
-      </div>
-      <div class="compare-row">
-        <span class="compare-label">${isZh ? '领域覆盖' : 'Categories'}</span>
-        <div class="compare-bar-wrap">
-          <div class="compare-bar">
-            <div class="compare-fill" style="width:${wrapped.categoryPercentile}%"></div>
-          </div>
-        </div>
-        <span class="compare-value">Top ${100 - wrapped.categoryPercentile}%</span>
-      </div>
-      ${wrapped.rareFound.length > 0 ? `
-      <div style="margin-top:1rem;padding:1rem;background:rgba(245,158,11,0.08);border-radius:12px;border:1px solid rgba(245,158,11,0.15)">
-        <div style="font-weight:600;margin-bottom:0.5rem">${isZh ? '💎 稀有技能收藏' : '💎 Rare Skills Found'}</div>
-        <div style="color:var(--muted);font-size:0.9rem">${wrapped.rareFound.map(s => `<code style="background:rgba(255,255,255,0.08);padding:0.2rem 0.5rem;border-radius:4px;margin:0.2rem;display:inline-block">${escapeHtml(s)}</code>`).join(' ')}</div>
-        <div style="color:var(--muted);font-size:0.85rem;margin-top:0.5rem">${isZh ? `只有不到 2% 的用户拥有这些技能` : `Less than 2% of users own these skills`}</div>
-      </div>` : ''}
     </div>
 
     <div class="section">
@@ -3137,19 +2998,19 @@ function generatePrescription(skills, health) {
     prescriptions.push({
       type: 'optimize',
       emoji: isSignificant ? '🎯' : '💡',
-      title: isSignificant ? '快速瘦身' : '优化建议',
-      titleEn: isSignificant ? 'Quick Diet' : 'Optimization Tips',
+      title: isSignificant ? '描述复核' : '优化建议',
+      titleEn: isSignificant ? 'Description Review' : 'Optimization Tips',
       description: isSignificant
-        ? `删除这 ${topConsumers.length} 个最大消耗者，立刻节省 ${topTokens.toLocaleString()} tokens (${percent}%)`
+        ? `这 ${topConsumers.length} 个技能占描述 Token 估算的 ${percent}%，建议复核是否需要精简`
         : `你的技能库很均衡，没有明显的瘦身空间。Top ${topConsumers.length} 只占 ${percent}%`,
       descriptionEn: isSignificant
-        ? `Remove these ${topConsumers.length} top consumers to save ${topTokens.toLocaleString()} tokens (${percent}%)`
+        ? `These ${topConsumers.length} skills account for ${percent}% of estimated description tokens; review whether their descriptions should be shortened`
         : `Your skill library is well-balanced. Top ${topConsumers.length} only account for ${percent}%`,
       items: topConsumers.map(s => ({
         name: s.name,
         tokens: s.tokenCost,
-        action: isSignificant ? '考虑删除或精简描述' : '保持现状',
-        actionEn: isSignificant ? 'Consider removing or shortening description' : 'Keep as is',
+        action: isSignificant ? '复核并按需精简描述' : '保持现状',
+        actionEn: isSignificant ? 'Review and shorten the description if appropriate' : 'Keep as is',
       })),
       impact: isSignificant ? 'high' : 'low',
     });
@@ -3179,12 +3040,12 @@ function generatePrescription(skills, health) {
       emoji: '🔄',
       title: '去重优化',
       titleEn: 'Deduplication',
-      description: `发现 ${health.duplicateGroups.length} 组重复技能，建议合并或删除`,
-      descriptionEn: `Found ${health.duplicateGroups.length} duplicate groups, consider merging or removing`,
+      description: `发现 ${health.duplicateGroups.length} 组同名技能，请复核来源和自定义改动`,
+      descriptionEn: `Found ${health.duplicateGroups.length} same-name groups; review sources and custom changes`,
       items: health.duplicateGroups.slice(0, 3).map(g => ({
         name: g.names.join(' = '),
-        action: '选择保留一个，删除其他',
-        actionEn: 'Keep one, remove others',
+        action: '复核来源后再决定是否处理',
+        actionEn: 'Review sources before deciding what to change',
       })),
       impact: 'low',
     });
@@ -3197,8 +3058,8 @@ function generatePrescription(skills, health) {
       emoji: '📦',
       title: '预算超支',
       titleEn: 'Budget Overage',
-      description: `描述总长度超出预算 ${overAmount.toLocaleString()} 字符，约 ${Math.min(Math.floor(overAmount / 100), skills.length)} 个技能可能被隐藏`,
-      descriptionEn: `Total description exceeds budget by ${overAmount.toLocaleString()} chars, ~${Math.min(Math.floor(overAmount / 100), skills.length)} skills may be hidden`,
+      description: `描述总长度超出本地参考预算 ${overAmount.toLocaleString()} 字符，建议复核较长描述`,
+      descriptionEn: `Total description length exceeds the local reference budget by ${overAmount.toLocaleString()} chars; review longer descriptions`,
       items: [{
         name: '整体',
         action: '精简技能描述，删除不必要的细节',

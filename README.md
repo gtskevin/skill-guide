@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Platform-Claude%20Code%20%7C%20Codex%20%7C%20cc--switch-818cf8?style=flat-square" />
   <img src="https://img.shields.io/github/actions/workflow/status/gtskevin/skill-guide/test.yml?branch=main&style=flat-square&label=tests" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
-  <img src="https://img.shields.io/badge/Language-Any%20%F0%9F%8C%90-7dd3fc?style=flat-square" />
+  <img src="https://img.shields.io/badge/Language-English%20%7C%20Chinese-7dd3fc?style=flat-square" />
   <img src="https://img.shields.io/badge/Feature-Health%20Dashboard-fbbf24?style=flat-square" />
 </p>
 
@@ -12,10 +12,10 @@
   <img src="demo.gif" alt="skill-guide demo — npx skill-guide --open generates HTML slides" width="760" />
 </p>
 
-> **200+ agent skills installed but you only use 3?**
+> **Installed so many agent skills that you cannot remember what you have?**
 > One command scans everything — Claude Code, Codex, cc-switch, plugins — and generates a beautiful dashboard so you actually know what you have.
 >
-> Shows your skill personality, radar chart, token budget, community ranking, and a cleanup guide — all in one click.
+> Shows your local skill profile, radar chart, token budget estimate, and review candidates — all in one click.
 
 <p align="center">
   <a href="https://gtskevin.github.io/skill-guide/"><strong>Live Demo</strong></a>
@@ -93,31 +93,27 @@ npx skill-guide
 
 **Terminal output:**
 ```
-🟡 Health Score: 66/100
-🏛️ You are: Collector (The Collector)
-Your skill library is like a museum — rich and comprehensive, but may need a curator.
+🟡 Health Score: 68/100
+🏛️ Local profile: Collector (The Collector)
+The local scan found a large skill inventory. Review descriptions, sources, and actual needs periodically.
 
-📦 Total Skills: 341
-🔤 Token Cost: ~20.3K (10.14% of context)
-📏 Budget Usage: 504%
+📦 Total Skills: 338
+🔤 Description Token Estimate: ~20.0K (9.98% of a 200K reference context)
+📍 Local profile: based only on the current scan
 
-💡 Fun Fact: Your 341 skills average ~59 tokens each.
-   This means you've used 10.14% of your context window before typing a single character.
-   Imagine your laptop using 10.14% of RAM just by booting up.
-
-💡 Optimization Tips [low]
-   Your skill library is well-balanced. Top 5 only account for 3%
 🛡️ Security Review [medium]
-   7 skills have security flags, recommend manual review
+   Review skills with security flags manually
 📦 Budget Overage [high]
-   Total description exceeds budget by 64,647 chars, ~341 skills may be hidden
+   Review longer descriptions when the local reference budget is exceeded
 
 Token Efficiency ████████░░ 80/100
 Organization ██████████ 100/100
-Security ███░░░░░░░ 30/100
+Security ████░░░░░░ 40/100
 Freshness ██████████ 100/100
-Budget Control ██░░░░░░░░ 19/100
+Budget Control ██░░░░░░░░ 21/100
 ```
+
+Health scores are local heuristics for review. They do not measure community rank, actual usage frequency, or whether deleting a skill is safe.
 
 ## Quick Start
 
@@ -168,9 +164,9 @@ npx skill-guide --open
 npx skill-guide --search security --open
 npx skill-guide --skill test-driven-development --open
 npx skill-guide --share --open                    # Share your skill stack
-npx skill-guide --recommend --open                # Get recommendations
+npx skill-guide --recommend --open                # Review directory mentions and same-category candidates
 npx skill-guide                   # Health dashboard with personality & radar chart
-npx skill-guide --wrapped --open                  # Generate your personal skill report
+npx skill-guide --wrapped --open                  # Compatibility alias for the local profile
 npx skill-guide --format json
 npx skill-guide --doctor
 ```
@@ -224,24 +220,23 @@ npx skill-guide --health --lang zh --open         # Chinese UI
 - **Health Score** — 0-100 rating of your skill library's health
 - **Personality Analysis** — Are you a Collector, Minimalist, Security Expert, or Specialist?
 - **Five-Dimension Radar Chart** — Token Efficiency, Organization, Security, Freshness, Budget Control
-- **Smart Prescriptions** — Actionable recommendations based on your actual skill data
-- **Fun Facts** — "Your 341 skills use 10% of your context window before you type a single character!"
+- **Review Prompts** — Local candidates based on scanned skill metadata
+- **Token Estimate** — Approximate description cost before a conversation starts
 - **One-Click Share** — Copy report to clipboard for sharing
 
 ### Personal Skill Report (--wrapped)
 
-Your "Spotify Wrapped" for AI skills:
+Your local profile for AI skills:
 - Skill personality type (Collector, Minimalist, Security Expert, etc.)
-- Community comparison (percentile rankings vs other users)
 - Skill DNA breakdown (category distribution)
-- Skill stack valuation
+- Readiness breakdown based on local metadata
 - Shareable HTML report with one-click copy
 
 ## How it works
 
 ```
 skill-guide/
-├── SKILL.md              # Skill definition + HTML generation rules
+├── SKILL.md              # Natural-language CLI entrypoint
 ├── agents/openai.yaml    # Codex/OpenAI skill UI metadata
 ├── skill-guide.js        # Deterministic CLI + HTML generator
 ├── scan-skills.js        # Zero-dependency Node.js scanner
@@ -277,9 +272,9 @@ skill-guide/
 | `--full` | Generate a complete manual |
 | `--share` | Generate a shareable portfolio HTML |
 | `--user <name>` | Add personalized tag to share page |
-| `--recommend` | Show skill recommendations from online directories |
-| `--health` | Generate health dashboard with personality analysis, radar chart, and prescriptions |
-| `--lang <code>` | UI language (en, zh, or any — auto-translated) |
+| `--recommend` | Show directory mentions and same-category review candidates |
+| `--health` | Generate health dashboard with local profile, radar chart, and review prompts |
+| `--lang <code>` | UI language (`en` or built-in `zh`) |
 | `--doctor` | Check paths, sources, and scan counts |
 
 ### Doctor checks
@@ -292,19 +287,19 @@ Skills are automatically sorted into 9 categories: `testing`, `design`, `securit
 
 ## Language Support
 
-Automatic — ask in any language, get output in that language. No configuration needed.
+Dashboard labels are available in English and Chinese. Agents can summarize results in the user's language without modifying the generated HTML.
 
 - **English** — default
 - **Chinese** — built-in (`--lang zh`)
-- **Japanese, Korean, French, German, Spanish, ...** — agent-side translation (works in Claude Code and Codex)
+- **Other languages** — agent summary in the user's language; dashboard labels remain English
 
 ## Why skill-guide?
 
-- **The only skill that maps your skills** — scans Claude Code, Codex, cc-switch, and plugin sources in one visual overview
-- **Health dashboard** — personality analysis, radar chart, and actionable prescriptions to optimize your skill library
+- **Cross-platform inventory** — scans Claude Code, Codex, cc-switch, and plugin sources in one visual overview
+- **Health dashboard** — local profile, radar chart, and review prompts for your skill library
 - **Zero dependencies** — pure Node.js with `fs`, `path`, `os`. No `npm install` needed
 - **Beautiful output** — scroll-snap slides with keyboard nav, animations, and responsive design
-- **Any language** — ask in Chinese, get Chinese. Ask in Japanese, get Japanese. Auto-detected.
+- **Bilingual dashboard** — English by default, with built-in Chinese labels via `--lang zh`
 - **Smart caching** — 5-minute TTL so repeated queries are instant
 - **5 seconds to "wow"** — `npx skill-guide --open` is all you need
 
@@ -315,7 +310,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## Roadmap
 
 - [x] `--share` — generate a shareable standalone HTML or Markdown summary
-- [x] `--health` — health dashboard with personality analysis, radar chart, and prescriptions
+- [x] `--health` — health dashboard with local profile, radar chart, and review prompts
 - [ ] Gemini CLI skill scanning (`~/.gemini/skills`)
 - [ ] `--diff` — show recently added/removed skills since last scan
 - [ ] `--export markdown` — output a Markdown table for pasting into issues and docs

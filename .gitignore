@@ -18,6 +18,9 @@ wrapped-preview*.png
 # Playwright MCP logs
 .playwright-mcp/
 
+# Local agent settings
+.claude/
+
 # Evaluation docs (internal)
 docs/evaluation-*.html
 docs/evaluation-*.md

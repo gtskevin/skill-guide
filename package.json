@@ -1,6 +1,6 @@
 {
   "name": "skill-guide",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Scan 6+ skill directories across Claude Code, Codex, and cc-switch, then generate beautiful HTML slide presentations.",
   "license": "MIT",
   "type": "commonjs",
@@ -14,6 +14,7 @@
     "SKILL.md",
     "skill-guide.js",
     "scan-skills.js",
+    "skill-registry.js",
     "demo.html",
     "demo.gif",
     "social-preview.png",
@@ -31,7 +32,7 @@
     "scan:full": "node scan-skills.js --full",
     "guide": "node skill-guide.js --open",
     "doctor": "node skill-guide.js --doctor",
-    "test": "node --check scan-skills.js && node --check skill-guide.js && node --test test/*.test.js && node scan-skills.js --list >/dev/null && node scan-skills.js --search security >/dev/null && node scan-skills.js --full >/dev/null"
+    "test": "node --check scan-skills.js && node --check skill-guide.js && node --check skill-registry.js && node --test test/*.test.js && node scan-skills.js --list >/dev/null && node scan-skills.js --search security >/dev/null && node scan-skills.js --full >/dev/null"
   },
   "engines": {
     "node": ">=18"

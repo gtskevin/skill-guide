@@ -388,3 +388,23 @@ test('--health --no-open generates HTML file', () => {
   const html = fs.readFileSync(outputFile, 'utf8');
   assert.match(html, /skill-guide/);
 });
+
+test('default dashboard avoids unsupported community claims', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-trustworthy-dashboard-'));
+  const outputFile = path.join(home, 'dashboard.html');
+  writeSkill(home, '.claude/skills/test', 'test-skill', 'A test skill for trustworthy dashboard output');
+
+  const stdout = runCli(home, ['--output', outputFile, '--no-open', '--refresh']);
+  const html = fs.readFileSync(outputFile, 'utf8');
+  const rendered = `${stdout}\n${html}`;
+
+  assert.doesNotMatch(rendered, /Exceeds \d+% of users/i);
+  assert.doesNotMatch(rendered, /rare skills/i);
+  assert.doesNotMatch(rendered, /safe to remove any/i);
+  assert.doesNotMatch(rendered, /Based on data from 1,500 public repositories/i);
+  assert.doesNotMatch(rendered, /you installed/i);
+  assert.doesNotMatch(rendered, /auto-installed/i);
+  assert.doesNotMatch(rendered, /hard for Claude to activate/i);
+  assert.doesNotMatch(rendered, /before you type/i);
+  assert.doesNotMatch(rendered, /Please delete the skill at/i);
+});

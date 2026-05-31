@@ -5,6 +5,32 @@ All notable changes to skill-guide will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-06-01
+
+### Added
+- Local health dashboard with radar chart, token estimate, review prompts, share page, and directory-based recommendations.
+- Packaging regression test that installs the generated npm tarball and starts the installed CLI.
+- Skill-definition regression test that keeps the agent entrypoint concise and trigger-first.
+
+### Changed
+- Health output now describes local metadata heuristics instead of unsupported community percentile comparisons.
+- Recommendation and cleanup wording now requires manual review before installing, editing, or deleting skills.
+- `SKILL.md` is now a thin CLI wrapper with English and Chinese dashboard support.
+- Online directory fetching now invokes `curl` directly without an unnecessary shell wrapper.
+
+### Fixed
+- Added `skill-registry.js` to the npm package so installed `0.3.x` CLI commands can start.
+
+### Removed
+- Tracked local agent settings and browser debug artifacts.
+
+## [0.3.0] - 2026-05-28
+
+Repository-only development version. It was not published to npm.
+
+### Added
+- Initial health dashboard, recommendation registry, share page, and personal profile experiments.
+
 ## [0.2.1] - 2026-05-17
 
 ### Fixed
@@ -19,8 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--doctor` diagnostics for Node.js, Codex home, skill counts, and source breakdown.
 - `--format json` for raw scanner output from the main CLI.
 - `--lang zh` built-in Chinese UI labels with `LABELS.zh` map.
-- Agent-side full translation for any language (ja, ko, fr, de, es, etc.) — SKILL.md workflow step 6.
-- Language auto-detection from user input (Chinese, Japanese, Korean, and others).
+- Built-in English and Chinese dashboard labels.
 - Markdown rendering in HTML output with smart truncation for long sections.
 - `data-i18n` attributes on all translatable HTML elements.
 - GitHub Actions test and Pages workflows.
@@ -35,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `SKILL.md` now delegates HTML generation to the deterministic CLI, with the old scanner-driven instructions as fallback.
 - Cache files are now scoped to the active scan roots, avoiding stale results when switching between Claude Code and Codex environments.
-- Translation generalized from Chinese-only to any language — agent translates both `data-i18n` content and plain text.
+- Chinese dashboard labels can be selected with `--lang zh`.
 
 ## [0.1.0] - 2026-05-15
 

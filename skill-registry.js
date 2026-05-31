@@ -107,7 +107,6 @@ function fetchRegistry(opts = {}) {
     return [];
   }
 
-  const { execFileSync } = require('child_process');
   const allEntries = [];
 
   for (const url of REGISTRY_URLS) {
@@ -116,7 +115,6 @@ function fetchRegistry(opts = {}) {
       const result = spawnSync('curl', ['-sL', '--max-time', '10', url], {
         encoding: 'utf8',
         timeout: 15000,
-        shell: true,
       });
       const markdown = result.stdout || '';
 
