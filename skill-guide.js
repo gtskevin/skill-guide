@@ -27,6 +27,7 @@ function usage() {
     '  skill-guide                          # Dashboard: personality, radar, insights (opens HTML)',
     '  skill-guide --find <name|query>       # Deep dive or search (opens HTML)',
     '  skill-guide --doctor                  # Quick environment diagnostic',
+    '  skill-guide --review --format json    # Structured review brief for agents',
     '',
     'Options:',
     '  --output <file>   Write to file instead of default',
@@ -34,6 +35,7 @@ function usage() {
     '  --lang en|zh      UI language',
     '  --refresh         Force re-scan (ignore cache)',
     '  --all             Show skills from all platforms (default: current platform)',
+    '  --platform <name> Force platform: claude | codex',
     '  --no-open         Do not open HTML in browser',
     '',
     'Examples:',
@@ -41,6 +43,7 @@ function usage() {
     '  npx skill-guide --find investigate     # Deep dive into a skill',
     '  npx skill-guide --find security        # Search for security skills',
     '  npx skill-guide --doctor               # Check for issues',
+    '  npx skill-guide --review --format json # Review brief for agents',
   ].join('\n');
 }
 
@@ -103,6 +106,16 @@ const LABELS = {
     gapHint: '{action}',
     scatteredSkills: 'Scattered skills, no idea what you have?',
     manySkillsPain: '{count}+ skills but no idea what you have?',
+    reviewBrief: 'Skill Review Brief',
+    reviewItems: 'review items',
+    reviewCopyPrompt: 'Copy Review Prompt',
+    reviewPasteToAgent: 'Paste to your agent for semantic review',
+    reviewNoItems: 'No review items found. Your skill stack looks clean!',
+    reviewSecurity: 'Security Flags',
+    reviewDuplicates: 'Duplicate Candidates',
+    reviewOverlap: 'Category Overlap',
+    reviewMalformed: 'Malformed Skills',
+    reviewBudget: 'Budget Overflow',
   },
   zh: {
     yourAgentSkills: '你的 Agent Skills 技能库',
@@ -159,6 +172,16 @@ const LABELS = {
     gapHint: '{action}',
     scatteredSkills: '技能散落，不知道自己有什么？',
     manySkillsPain: '{count}+ 个技能但不知道自己有什么？',
+    reviewBrief: '技能审查简报',
+    reviewItems: '个审查项',
+    reviewCopyPrompt: '复制审查提示词',
+    reviewPasteToAgent: '粘贴给 Agent 进行语义审查',
+    reviewNoItems: '没有发现需要审查的项目，技能栈看起来很干净！',
+    reviewSecurity: '安全标记',
+    reviewDuplicates: '重复候选',
+    reviewOverlap: '类别重叠',
+    reviewMalformed: '配置不完整',
+    reviewBudget: '预算溢出',
   },
 };
 
@@ -386,6 +409,7 @@ function te(text) {
 function parseMode() {
   if (hasFlag('--help') || hasFlag('-h')) return { mode: 'help' };
   if (hasFlag('--doctor')) return { mode: 'doctor' };
+  if (hasFlag('--review')) return { mode: 'review' };
   if (hasFlag('--recommend')) return { mode: 'recommend' };
   if (hasFlag('--share')) return { mode: 'share' };
 
@@ -394,7 +418,7 @@ function parseMode() {
   if (find) return { mode: 'find', value: find };
 
   // Positional arg: treat as --find
-  const valueFlags = new Set(['--output', '--find', '--search', '--skill', '--format', '--lang', '--user']);
+  const valueFlags = new Set(['--output', '--find', '--search', '--skill', '--format', '--lang', '--user', '--platform']);
   const positional = args.find((arg, index) => !arg.startsWith('-') && !valueFlags.has(args[index - 1]));
   if (positional) return { mode: 'find', value: positional };
 
@@ -407,6 +431,8 @@ function scannerArgsFor(mode) {
 
   if (mode.mode === 'list' || mode.mode === 'doctor') {
     scannerArgs.push('--list');
+  } else if (mode.mode === 'review') {
+    scannerArgs.push('--full');
   } else if (mode.mode === 'find') {
     // Try as skill first, fall back to search
     scannerArgs.push('--skill', mode.value);
@@ -701,35 +727,57 @@ function renderInsightDashboardSlide(skills) {
 function renderCleanupSlide(skills) {
   const isZh = lang() === 'zh';
 
+  // Build review brief for evidence-based candidates
+  const data = { skills };
+  const details = doctorDetails(data);
+  const brief = buildReviewBrief(data, details);
+  const copyPrompt = buildCopyPrompt(brief);
+  const promptId = `rp-${crypto.randomUUID().slice(0, 8)}`;
+
   // Source breakdown
   const userSkills = skills.filter(s => (s.sources || []).some(src => ['claude-user', 'codex-user', 'cc-switch'].includes(src)));
   const pluginSkills = skills.filter(s => (s.sources || []).some(src => ['claude-plugin', 'codex-plugin'].includes(src)));
   const systemSkills = skills.filter(s => (s.sources || []).includes('openai-system'));
 
-  // Duplicates (same name in user + plugin)
-  const nameMap = {};
-  for (const s of skills) {
-    if (!nameMap[s.name]) nameMap[s.name] = new Set();
-    for (const src of (s.sources || [])) nameMap[s.name].add(src);
-  }
-  const duplicates = Object.entries(nameMap)
-    .filter(([, srcs]) => 
-      [...srcs].some(s => ['claude-user','codex-user','cc-switch'].includes(s)) &&
-      [...srcs].some(s => ['claude-plugin','codex-plugin'].includes(s))
-    )
-    .map(([name]) => name);
-
-  // Under-configured
-  const wrapped = computeWrappedStats(skills, computeHealthStats(skills));
-  const dormant = wrapped.untappedCount || 0;
-  const dormantPct = skills.length > 0 ? Math.round((dormant / skills.length) * 100) : 0;
-
   const userPct = skills.length > 0 ? Math.round((userSkills.length / skills.length) * 100) : 0;
   const pluginPct = skills.length > 0 ? Math.round((pluginSkills.length / skills.length) * 100) : 0;
 
+  const hasReviewItems = brief.totalReviewItems > 0;
+  const severityColor = { high: '#ef4444', medium: '#f59e0b', low: '#6b7280', info: '#818cf8' };
+  const typeIcon = { security: '🔴', duplicate: '🟡', malformed: '⚪', overlap: '🟣', budget: '🔵' };
+  const typeLabel = {
+    security: isZh ? '安全标记' : 'Security flags',
+    duplicate: isZh ? '重复候选' : 'Duplicate candidates',
+    malformed: isZh ? '配置不完整' : 'Malformed',
+    overlap: isZh ? '类别重叠' : 'Category overlap',
+    budget: isZh ? '预算溢出' : 'Budget overflow',
+  };
+
+  // Build review cards by type
+  const typeOrder = ['security', 'duplicate', 'malformed', 'overlap', 'budget'];
+  let reviewCards = '';
+  for (const type of typeOrder) {
+    const typeItems = brief.items.filter(i => i.type === type);
+    if (typeItems.length === 0) continue;
+    const itemsHtml = typeItems.slice(0, 3).map(item => `
+      <div style="padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:11px;font-weight:700;color:${severityColor[item.severity]};background:${severityColor[item.severity]}22;padding:2px 6px;border-radius:4px">${item.severity.toUpperCase()}</span>
+          <span style="font-size:13px;font-weight:600">${item.skills.map(s => escapeHtml(s)).join(', ')}</span>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin:0">${escapeHtml(truncate(item.evidence, 80))}</p>
+      </div>`).join('');
+    const moreCount = typeItems.length - 3;
+    reviewCards += `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;max-width:580px;margin:0 auto 10px;text-align:left">
+      <p style="margin:0 0 6px;font-weight:600;font-size:13px">${typeIcon[type]} ${typeLabel[type]} (${typeItems.length})</p>
+      ${itemsHtml}
+      ${moreCount > 0 ? `<p style="font-size:11px;color:var(--muted);margin:4px 0 0">+ ${moreCount} more</p>` : ''}
+    </div>`;
+  }
+
   return `<section class="slide">
     <div class="rv center">
-      <div class="kicker" data-i18n="label">${isZh ? '清理指南' : 'CLEANUP GUIDE'}</div>
+      <div class="kicker" data-i18n="label">${isZh ? '复核候选' : 'REVIEW CANDIDATES'}</div>
       <h2>${isZh ? '你的技能从哪来的？' : 'Where did your skills come from?'}</h2>
       <div class="stats" style="margin:20px 0">
         <div class="stat" style="border-color:var(--accent)"><b>${userSkills.length}</b><span>${isZh ? '用户目录来源' : 'user-directory sources'}</span></div>
@@ -741,36 +789,21 @@ function renderCleanupSlide(skills) {
         <div style="background:var(--ab);height:100%;width:${pluginPct}%" title="${isZh ? '插件目录来源' : 'Plugin-directory sources'}"></div>
       </div>
 
-      ${duplicates.length > 0 ? (() => {
-        // Build precise delete commands with paths
-        const dupeDetails = duplicates.map(name => {
-          const skill = skills.find(s => s.name === name);
-          const dir = skill ? skill.dir : '';
-          // Expand ~ to actual path hint
-          const displayDir = dir || `~/.claude/skills/${name}`;
-          return { name, dir: displayDir };
-        });
-        return `<div style="background:var(--card);border:1px solid rgba(234,179,8,0.3);border-radius:var(--r);padding:16px;max-width:580px;margin:0 auto 16px;text-align:left">
-          <p style="margin:0 0 8px;color:#f59e0b;font-weight:600;font-size:14px">⚠️ ${isZh ? `${duplicates.length} 个重复技能` : `${duplicates.length} duplicate skills`}</p>
-          <p style="font-size:13px;color:var(--muted);margin:0 0 8px">${isZh
-            ? '这些技能同时存在于你的目录和插件目录中。请先确认自定义改动和实际使用情况，再决定是否移除用户目录副本。'
-            : 'These exist in both your directory and the plugin directory. Review custom changes and actual usage before removing a user copy.'}</p>
-          ${dupeDetails.map(d => `<div style="margin:6px 0;display:flex;align-items:center;gap:8px">
-            <code style="flex:1;padding:4px 8px;background:var(--bg);border-radius:4px;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(d.dir)}</code>
-            <code style="padding:4px 8px;background:var(--bg);border-radius:4px;font-size:12px;color:var(--accent2);cursor:pointer;white-space:nowrap" onclick="copyText('Please review whether the skill at ${d.dir} duplicates a plugin copy. Do not delete anything until I confirm.')">📋 copy</code>
-          </div>`).join('')}
-          <p style="font-size:12px;color:var(--muted);margin:8px 0 0;font-style:italic">${isZh
-            ? '💡 复制后粘贴给 Agent，让它先复核来源；确认前不要删除'
-            : '💡 Paste to your agent for source review; do not delete anything until you confirm'}</p>
-        </div>`;
-      })() : ''}
-
-      ${dormant > 0 ? `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;max-width:580px;margin:0 auto;text-align:left">
-        <p style="margin:0 0 8px;color:var(--muted);font-weight:600;font-size:14px">📋 ${isZh ? `${dormant} 个配置不完整（${dormantPct}%）` : `${dormant} under-configured (${dormantPct}%)`}</p>
-        <p style="font-size:13px;color:var(--muted);margin:0">${isZh
-          ? '这些技能缺少描述或触发词，Agent 可能更难发现它们。请先复核内容和使用情况。'
-          : 'These lack descriptions or triggers, so agents may have more difficulty discovering them. Review content and usage first.'}</p>
-      </div>` : ''}
+      ${hasReviewItems ? `
+        <div style="max-width:580px;margin:0 auto">
+          <p style="font-size:13px;color:var(--muted);margin:0 0 12px">${isZh
+            ? `${brief.totalReviewItems} 个候选需要复核 — 点击下方按钮生成审查提示词，粘贴给你的 Agent 进行语义判断`
+            : `${brief.totalReviewItems} candidates to review — click below to generate a review prompt, paste it to your agent for semantic judgment`}</p>
+          ${reviewCards}
+          <div style="text-align:center;margin-top:12px">
+            <button onclick="copyText(window['${promptId}'])" style="background:var(--accent);color:#0F172A;border:none;border-radius:var(--r);padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer">${isZh ? '📋 复制审查提示词' : '📋 Copy Review Prompt'}</button>
+            <p style="font-size:11px;color:var(--muted);margin:8px 0 0;font-style:italic">${isZh
+              ? 'Agent 会对每项回复 CONFIRM / DISMISS / SUGGEST，确认前不要删除任何东西'
+              : 'Agent responds CONFIRM / DISMISS / SUGGEST per item; do not delete anything until you confirm'}</p>
+          </div>
+          <script>window['${promptId}']=${JSON.stringify(copyPrompt)};</script>
+        </div>
+      ` : `<p style="font-size:14px;color:var(--accent)">${isZh ? '没有发现需要复核的候选，技能栈看起来很干净！' : 'No review candidates found. Your skill stack looks clean!'}</p>`}
     </div>
   </section>`;
 }
@@ -780,8 +813,8 @@ function renderNextStepsSlide(skills) {
   const sample = (skills || []).filter(s => (s.description || '').length > 100).slice(0, 3);
   const sampleName = sample.length > 0 ? sample[0].name : 'investigate';
   const sampleName2 = sample.length > 1 ? sample[1].name : 'security-audit';
-  const searchCmd = `npx skill-guide --find security`;
-  const skillCmd = `npx skill-guide --find ${sampleName}`;
+  const searchCmd = `npx skill-guide security`;
+  const skillCmd = `npx skill-guide ${sampleName}`;
   const fullCmd = `npx skill-guide --full`;
   const recommendCmd = `npx skill-guide --recommend`;
   const shareCmd = `npx skill-guide --share`;
@@ -915,11 +948,17 @@ function shouldAutoOpen() {
   return true;
 }
 
+const PLATFORM_LABELS = { claude: 'Claude Code', codex: 'Codex', all: 'All Platforms' };
+
 function detectPlatform() {
-  // Only filter when explicitly running inside an agent
+  if (hasFlag('--all')) return 'all';
+  const explicit = getArgValue('--platform');
+  if (explicit && PLATFORM_LABELS[explicit]) return explicit;
   if (process.env.CODEX_AGENT) return 'codex';
   if (process.env.CLAUDE_CODE) return 'claude';
-  // Default: show all (CODEX_HOME alone is not enough — tests set it too)
+  const dir = __dirname;
+  if (dir.includes(path.join('.claude', 'skills')) || dir.includes(path.join('.claude', 'plugins'))) return 'claude';
+  if (dir.includes(path.join('.codex', 'skills')) || dir.includes(path.join('.codex', 'plugins'))) return 'codex';
   return 'all';
 }
 
@@ -934,6 +973,35 @@ function filterSkillsByPlatform(skills, platform) {
       ['claude-user', 'claude-plugin', 'cc-switch'].includes(src)));
   }
   return skills;
+}
+
+function applyPlatformFilter(data) {
+  const platform = detectPlatform();
+  if (platform === 'all') {
+    data._platform = 'all';
+    return data;
+  }
+  data._platform = platform;
+  if (data.skills) {
+    data.skills = filterSkillsByPlatform(data.skills, platform);
+    data.totalCount = data.skills.length;
+  }
+  if (data.sources) {
+    const keep = platform === 'claude'
+      ? ['claude-user', 'claude-plugin', 'cc-switch']
+      : ['codex-user', 'codex-plugin', 'openai-system', 'cc-switch'];
+    const filtered = {};
+    for (const [k, v] of Object.entries(data.sources)) {
+      if (keep.includes(k)) filtered[k] = v;
+    }
+    data.sources = filtered;
+  }
+  return data;
+}
+
+function platformLabel() {
+  const p = detectPlatform();
+  return PLATFORM_LABELS[p] || p;
 }
 
 function skillRoots() {
@@ -1619,6 +1687,133 @@ function computeHealthStats(skills) {
     duplicateGroups,
     contextWindowPercent: Math.round((totalTokenEstimate / CONTEXT_WINDOW) * 100 * 100) / 100,
   };
+}
+
+// ---------------------------------------------------------------------------
+// --review: LLM review brief
+// ---------------------------------------------------------------------------
+function buildReviewBrief(data, details) {
+  const skills = data.skills || [];
+  const health = computeHealthStats(skills);
+  const items = [];
+  let counter = 0;
+  function nextId(prefix) { return `${prefix}-${++counter}`; }
+
+  // 1. Security flags
+  for (const flag of health.securityFlags) {
+    const skill = skills.find(s => s.name === flag.name);
+    items.push({
+      id: nextId('sec'),
+      type: 'security',
+      severity: 'high',
+      skills: [flag.name],
+      evidence: `Patterns: ${flag.flags.join(', ')}`,
+      context: `Description: ${truncate(skill?.description || '', 200)}`,
+      question: `Does "${flag.name}" actually pose a security risk, or are these patterns used safely in context?`,
+      actionHint: 'Review the full skill content. If the patterns are in example code or are safe, dismiss. If genuinely risky, flag for revision.',
+    });
+  }
+
+  // 2. Duplicate candidates
+  for (const group of health.duplicateGroups) {
+    const descriptions = group.names.map(n => {
+      const s = skills.find(sk => sk.name === n);
+      return `${n}: ${truncate(s?.description || '(no description)', 100)}`;
+    });
+    items.push({
+      id: nextId('dup'),
+      type: 'duplicate',
+      severity: 'medium',
+      skills: group.names,
+      evidence: `Normalized name: "${group.normalized}"`,
+      context: descriptions.join('\n'),
+      question: `Are "${group.names.join('" and "')}" truly duplicate skills, or do they serve different purposes despite similar names?`,
+      actionHint: 'If they differ in scope or purpose, consider renaming to clarify. If truly redundant, keep the one with better documentation.',
+    });
+  }
+
+  // 3. Malformed skills
+  for (const file of (details.malformed || []).slice(0, 10)) {
+    const basename = path.basename(path.dirname(file));
+    items.push({
+      id: nextId('mal'),
+      type: 'malformed',
+      severity: 'low',
+      skills: [basename],
+      evidence: `Missing frontmatter in: ${file.replace(os.homedir(), '~')}`,
+      context: '',
+      question: `What name, description, and triggers should be added to the skill at "${basename}"?`,
+      actionHint: 'Read the file, understand its purpose, and suggest appropriate frontmatter fields.',
+    });
+  }
+
+  // 4. Category overlap (3+ skills in same category)
+  const groups = groupBy(skills, 'category');
+  for (const [cat, catSkills] of Object.entries(groups)) {
+    if (catSkills.length >= 3) {
+      const names = catSkills.slice(0, 5).map(s => s.name);
+      const descs = catSkills.slice(0, 5).map(s =>
+        `  - ${s.name}: ${truncate(s.description || '(no description)', 80)}`
+      );
+      items.push({
+        id: nextId('ovr'),
+        type: 'overlap',
+        severity: 'info',
+        skills: names,
+        evidence: `${catSkills.length} skills in "${cat}" category`,
+        context: descs.join('\n'),
+        question: `Are these ${catSkills.length} "${cat}" skills overlapping (doing the same thing) or complementary (covering different aspects)?`,
+        actionHint: 'If overlapping, suggest which to consolidate. If complementary, clarify how they differ.',
+      });
+    }
+  }
+
+  // 5. Budget overflow
+  if (health.budgetUsedPercent > 100) {
+    const topConsumers = [...skills]
+      .sort((a, b) => (b.description?.length || 0) - (a.description?.length || 0))
+      .slice(0, 5);
+    items.push({
+      id: nextId('bud'),
+      type: 'budget',
+      severity: 'medium',
+      skills: topConsumers.map(s => s.name),
+      evidence: `Description budget used: ${health.budgetUsedPercent}% (~${health.totalTokenEstimate} tokens)`,
+      context: topConsumers.map(s => `  - ${s.name}: ${(s.description || '').length} chars`).join('\n'),
+      question: 'Which skill descriptions should be shortened to fit within the token budget?',
+      actionHint: 'Prioritize trimming the longest descriptions. Preserve key information about triggers and use cases.',
+    });
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    totalSkills: skills.length,
+    totalReviewItems: items.length,
+    summary: {
+      security: items.filter(i => i.type === 'security').length,
+      duplicate: items.filter(i => i.type === 'duplicate').length,
+      malformed: items.filter(i => i.type === 'malformed').length,
+      overlap: items.filter(i => i.type === 'overlap').length,
+      budget: items.filter(i => i.type === 'budget').length,
+    },
+    items,
+  };
+}
+
+function buildCopyPrompt(brief) {
+  const lines = [
+    `Review the following ${brief.totalReviewItems} findings from skill-guide and provide your assessment.`,
+    '',
+  ];
+  for (const item of brief.items) {
+    lines.push(`## [${item.severity.toUpperCase()}] ${item.type}: ${item.skills.join(', ')}`);
+    lines.push(`Evidence: ${item.evidence}`);
+    if (item.context) lines.push(`Context:\n${item.context}`);
+    lines.push(`Question: ${item.question}`);
+    lines.push('');
+  }
+  lines.push('For each item, respond with: CONFIRM (agree with the finding), DISMISS (false positive with reason), or SUGGEST (alternative action).');
+  return lines.join('\n');
 }
 
 function renderHealthTerminal(data) {
@@ -3082,6 +3277,7 @@ function main() {
   // --doctor: terminal-only diagnostic
   if (mode.mode === 'doctor') {
     const data = runScanner(mode);
+    applyPlatformFilter(data);
     process.stdout.write(`${printDoctor(data)}\n`);
     return;
   }
@@ -3105,6 +3301,7 @@ function main() {
         process.exit(result.status || 1);
       }
       const data = JSON.parse(result.stdout);
+      applyPlatformFilter(data);
       if (format === 'json') {
         process.stdout.write(JSON.stringify(data, null, 2) + '\n');
         return;
@@ -3118,6 +3315,7 @@ function main() {
     } else {
       // Skill found — deep dive
       mode.mode = 'skill';
+      applyPlatformFilter(skillData);
       if (format === 'json') {
         process.stdout.write(JSON.stringify(skillData, null, 2) + '\n');
         return;
@@ -3131,9 +3329,21 @@ function main() {
     return;
   }
 
+  // --review mode (JSON-only for agent programmatic consumption)
+  if (mode.mode === 'review') {
+    const data = runScanner(mode);
+    applyPlatformFilter(data);
+    const details = doctorDetails(data);
+    const brief = buildReviewBrief(data, details);
+    brief.copyPrompt = buildCopyPrompt(brief);
+    process.stdout.write(JSON.stringify(brief, null, 2) + '\n');
+    return;
+  }
+
   // --recommend mode (online registry data)
   if (mode.mode === 'recommend') {
     const data = runScanner(mode);
+    applyPlatformFilter(data);
     const installed = data.skills;
     const refresh = hasFlag('--refresh');
     const onlineEntries = registryModule.fetchRegistry({ refresh });
@@ -3157,6 +3367,7 @@ function main() {
   // --share mode (portfolio with --user flag)
   if (mode.mode === 'share') {
     const data = runScanner(mode);
+    applyPlatformFilter(data);
     const user = getArgValue('--user');
     if (format === 'json') {
       process.stdout.write(JSON.stringify({ skills: data.skills, totalCount: data.totalCount }, null, 2) + '\n');
@@ -3175,13 +3386,7 @@ function main() {
 
   // Default mode (list): overview dashboard
   const data = runScanner(mode);
-
-  // Filter by platform unless --all
-  const platform = hasFlag('--all') ? 'all' : detectPlatform();
-  if (platform !== 'all' && data.skills) {
-    data.skills = filterSkillsByPlatform(data.skills, platform);
-    data.totalCount = data.skills.length;
-  }
+  applyPlatformFilter(data);
 
   if (format === 'json') {
     const serialized = JSON.stringify(data, null, 2);
@@ -3202,10 +3407,8 @@ function main() {
     process.exit(1);
   }
 
-  // Terminal output
-  if (platform !== 'all') {
-    const platformLabel = platform === 'codex' ? 'Codex' : 'Claude Code';
-    process.stdout.write(`  Showing skills for: ${platformLabel} (use --all to see all)\n\n`);
+  if (data._platform && data._platform !== 'all') {
+    process.stdout.write(`  Showing: ${platformLabel()} (use --all to see all)\n\n`);
   }
   process.stdout.write(renderDefaultTerminal(data.skills || []));
 

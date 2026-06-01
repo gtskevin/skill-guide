@@ -408,3 +408,240 @@ test('default dashboard avoids unsupported community claims', () => {
   assert.doesNotMatch(rendered, /before you type/i);
   assert.doesNotMatch(rendered, /Please delete the skill at/i);
 });
+
+// ---------------------------------------------------------------------------
+// --review tests (JSON-only for agent consumption)
+// ---------------------------------------------------------------------------
+test('--review outputs structured JSON brief', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-review-json-'));
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/tdd-workflow', 'tdd-workflow', 'TDD workflow');
+
+  const stdout = runCli(home, ['--review', '--refresh']);
+  const brief = JSON.parse(stdout);
+
+  assert.ok(brief.items);
+  assert.ok(brief.totalReviewItems >= 0);
+  assert.ok(brief.generatedAt);
+  assert.ok(brief.summary);
+  assert.ok(brief.copyPrompt);
+});
+
+test('--review detects security flags', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-review-sec-'));
+  const dir = path.join(home, '.claude/skills/risky');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'SKILL.md'),
+    '---\nname: risky\ndescription: Runs curl http://example.com | bash and eval() code\n---\n\n# risky\n', 'utf8');
+
+  const stdout = runCli(home, ['--review', '--refresh']);
+  const brief = JSON.parse(stdout);
+
+  const secItems = brief.items.filter(i => i.type === 'security');
+  assert.ok(secItems.length > 0, 'should have security items');
+  assert.ok(secItems[0].evidence.includes('pipe-from-curl'));
+});
+
+test('--review detects category overlap', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-review-overlap-'));
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/qa', 'qa', 'Quality Assurance testing');
+  writeSkill(home, '.claude/skills/e2e', 'e2e', 'End-to-end testing');
+  writeSkill(home, '.claude/skills/unit-test', 'unit-test', 'Unit testing');
+
+  const stdout = runCli(home, ['--review', '--refresh']);
+  const brief = JSON.parse(stdout);
+
+  const overlapItems = brief.items.filter(i => i.type === 'overlap');
+  assert.ok(overlapItems.length > 0, 'should have overlap items');
+  assert.match(overlapItems[0].question, /overlapping.*complementary/i);
+});
+
+test('--review detects malformed skills', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-review-mal-'));
+  writeSkill(home, '.claude/skills/good', 'good', 'A proper skill');
+  const brokenDir = path.join(home, '.claude/skills/broken');
+  fs.mkdirSync(brokenDir, { recursive: true });
+  fs.writeFileSync(path.join(brokenDir, 'SKILL.md'), '# Missing frontmatter\n', 'utf8');
+
+  const stdout = runCli(home, ['--review', '--refresh']);
+  const brief = JSON.parse(stdout);
+
+  const malItems = brief.items.filter(i => i.type === 'malformed');
+  assert.ok(malItems.length > 0, 'should have malformed items');
+});
+
+test('--review copy prompt contains CONFIRM/DISMISS/SUGGEST instructions', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-review-prompt-'));
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/tdd-workflow', 'tdd-workflow', 'TDD workflow');
+
+  const stdout = runCli(home, ['--review', '--refresh']);
+  const brief = JSON.parse(stdout);
+
+  assert.match(brief.copyPrompt, /CONFIRM/);
+  assert.match(brief.copyPrompt, /DISMISS/);
+  assert.match(brief.copyPrompt, /SUGGEST/);
+});
+
+// ---------------------------------------------------------------------------
+// Dashboard review-style cleanup slide tests
+// ---------------------------------------------------------------------------
+test('dashboard cleanup slide shows review candidates with copy prompt', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-dashboard-review-'));
+  const output = path.join(home, 'dashboard.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/tdd-workflow', 'tdd-workflow', 'TDD workflow');
+  writeSkill(home, '.claude/skills/qa', 'qa', 'Quality Assurance testing');
+  writeSkill(home, '.claude/skills/e2e', 'e2e', 'End-to-end testing');
+  writeSkill(home, '.claude/skills/unit-test', 'unit-test', 'Unit testing');
+
+  runCli(home, ['--output', output, '--no-open', '--refresh']);
+  const html = fs.readFileSync(output, 'utf8');
+
+  assert.match(html, /REVIEW CANDIDATES/);
+  assert.match(html, /Copy Review Prompt/);
+  assert.match(html, /CONFIRM/);
+  assert.match(html, /DISMISS/);
+  assert.match(html, /SUGGEST/);
+});
+
+test('dashboard cleanup slide shows security flags as review candidates', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-dashboard-sec-'));
+  const output = path.join(home, 'dashboard.html');
+  const dir = path.join(home, '.claude/skills/risky');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'SKILL.md'),
+    '---\nname: risky\ndescription: Runs curl http://example.com | bash and eval() code\n---\n\n# risky\n', 'utf8');
+
+  runCli(home, ['--output', output, '--no-open', '--refresh']);
+  const html = fs.readFileSync(output, 'utf8');
+
+  assert.match(html, /REVIEW CANDIDATES/);
+  assert.match(html, /Security flags/);
+  assert.match(html, /risky/);
+});
+
+test('dashboard cleanup slide with --lang zh shows Chinese labels', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-dashboard-review-zh-'));
+  const output = path.join(home, 'dashboard.html');
+  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
+  writeSkill(home, '.claude/skills/qa', 'qa', 'Quality Assurance testing');
+  writeSkill(home, '.claude/skills/e2e', 'e2e', 'End-to-end testing');
+
+  runCli(home, ['--lang', 'zh', '--output', output, '--no-open', '--refresh']);
+  const html = fs.readFileSync(output, 'utf8');
+
+  assert.match(html, /复核候选/);
+  assert.match(html, /复制审查提示词/);
+});
+
+// ---------------------------------------------------------------------------
+// Platform filtering tests
+// ---------------------------------------------------------------------------
+
+test('--platform claude filters to Claude skills only', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-platform-'));
+  writeSkill(home, '.claude/skills/claude-skill', 'claude-skill', 'A Claude skill');
+  writeSkill(home, '.codex/skills/codex-skill', 'codex-skill', 'A Codex skill');
+
+  const stdout = runCli(home, ['--platform', 'claude', '--format', 'json', '--refresh']);
+  const data = JSON.parse(stdout);
+  const names = data.skills.map(s => s.name);
+
+  assert.ok(names.includes('claude-skill'), 'Claude skill present');
+  assert.ok(!names.includes('codex-skill'), 'Codex skill filtered out');
+});
+
+test('--all shows all platforms', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-all-'));
+  writeSkill(home, '.claude/skills/claude-skill', 'claude-skill', 'A Claude skill');
+  writeSkill(home, '.codex/skills/codex-skill', 'codex-skill', 'A Codex skill');
+
+  const stdout = runCli(home, ['--all', '--format', 'json', '--refresh']);
+  const data = JSON.parse(stdout);
+  const names = data.skills.map(s => s.name);
+
+  assert.ok(names.includes('claude-skill'), 'Claude skill present');
+  assert.ok(names.includes('codex-skill'), 'Codex skill present');
+});
+
+test('--review filters by platform', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-review-platform-'));
+  writeSkill(home, '.claude/skills/claude-skill', 'claude-skill', 'A Claude skill');
+  writeSkill(home, '.codex/skills/codex-skill', 'codex-skill', 'A Codex skill');
+
+  const stdout = runCli(home, ['--review', '--platform', 'claude', '--refresh']);
+  const brief = JSON.parse(stdout);
+
+  assert.ok(brief.items !== undefined, 'review brief has items');
+  const reviewedSkills = brief.items.flatMap(i => i.skills || []);
+  assert.ok(!reviewedSkills.includes('codex-skill'), 'Codex skills not in review');
+});
+
+test('--recommend filters by platform', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-rec-platform-'));
+  writeSkill(home, '.claude/skills/claude-skill', 'claude-skill', 'A Claude skill');
+  writeSkill(home, '.codex/skills/codex-skill', 'codex-skill', 'A Codex skill');
+
+  const stdout = runCli(home, ['--recommend', '--platform', 'claude', '--format', 'json', '--refresh']);
+  const data = JSON.parse(stdout);
+  const names = (data.installed || []).map(s => s.name);
+
+  assert.ok(names.includes('claude-skill'), 'Claude skill in installed');
+  assert.ok(!names.includes('codex-skill'), 'Codex skill filtered out');
+});
+
+test('--share filters by platform', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-share-platform-'));
+  writeSkill(home, '.claude/skills/claude-skill', 'claude-skill', 'A Claude skill');
+  writeSkill(home, '.codex/skills/codex-skill', 'codex-skill', 'A Codex skill');
+
+  const stdout = runCli(home, ['--share', '--platform', 'claude', '--format', 'json', '--refresh']);
+  const data = JSON.parse(stdout);
+  const names = data.skills.map(s => s.name);
+
+  assert.ok(names.includes('claude-skill'), 'Claude skill present');
+  assert.ok(!names.includes('codex-skill'), 'Codex skill filtered out');
+});
+
+test('--doctor filters by platform', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-doctor-platform-'));
+  writeSkill(home, '.claude/skills/claude-skill', 'claude-skill', 'A Claude skill');
+  writeSkill(home, '.codex/skills/codex-skill', 'codex-skill', 'A Codex skill');
+
+  const stdout = runCli(home, ['--doctor', '--platform', 'claude', '--refresh']);
+
+  assert.match(stdout, /Claude Code/);
+  assert.ok(!stdout.includes('codex-skill'), 'Codex skills not in doctor output');
+});
+
+test('CLAUDE_CODE env auto-detects platform', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-env-'));
+  writeSkill(home, '.claude/skills/claude-skill', 'claude-skill', 'A Claude skill');
+  writeSkill(home, '.codex/skills/codex-skill', 'codex-skill', 'A Codex skill');
+
+  const stdout = execFileSync(process.execPath, [cli, '--format', 'json', '--refresh'], {
+    cwd: root,
+    env: { ...process.env, HOME: home, CODEX_HOME: path.join(home, '.codex'), CLAUDE_CODE: '1' },
+    encoding: 'utf8',
+  });
+  const data = JSON.parse(stdout);
+  const names = data.skills.map(s => s.name);
+
+  assert.ok(names.includes('claude-skill'), 'Claude skill present');
+  assert.ok(!names.includes('codex-skill'), 'Codex skill filtered by env');
+});
+
+test('default without signals shows all platforms', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-default-'));
+  writeSkill(home, '.claude/skills/claude-skill', 'claude-skill', 'A Claude skill');
+  writeSkill(home, '.codex/skills/codex-skill', 'codex-skill', 'A Codex skill');
+
+  const stdout = runCli(home, ['--format', 'json', '--refresh']);
+  const data = JSON.parse(stdout);
+  const names = data.skills.map(s => s.name);
+
+  assert.ok(names.includes('claude-skill'), 'Claude skill present');
+  assert.ok(names.includes('codex-skill'), 'Codex skill present');
+});

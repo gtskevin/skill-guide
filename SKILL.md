@@ -29,12 +29,15 @@ Use the bundled zero-dependency CLI to scan local skill metadata and generate a 
 | Generate a full manual | `node <skill-dir>/skill-guide.js --full` |
 | Return structured data | `node <skill-dir>/skill-guide.js --format json` |
 
-Use `--refresh` when the user expects newly installed or removed skills to appear. Use `--all` only when the user wants a cross-platform inventory.
+Use `--refresh` when the user expects newly installed or removed skills to appear. Use `--all` only when the user wants a cross-platform inventory. Add `--platform claude` or `--platform codex` to force a specific platform view regardless of auto-detection.
 
 ## Guardrails
 
 - The scanner reads local metadata; it does not measure actual usage frequency.
 - Same-category suggestions and directory mentions require human review before installing, editing, or deleting anything.
 - Never delete skills, install packages, or publish results based only on a generated score.
+- The default dashboard includes a "Review Candidates" slide with evidence-based findings and a Copy Prompt button. The CLI only prepares evidence and questions — semantic judgment comes from the agent. Always wait for agent assessment before acting on any finding.
+- The `--review --format json` flag outputs a structured brief for programmatic agent consumption (no HTML).
 - Built-in dashboard labels support English and Chinese. For other languages, summarize the result in the user's language without rewriting generated HTML unless explicitly requested.
 - If the CLI is unavailable, report the missing file instead of silently replacing its behavior.
+- All modes default to the current platform (auto-detected from env vars or install path). Cross-agent duplicates are normal — each agent needs its own skill copies. Use `--all` to see the full inventory across all agents.

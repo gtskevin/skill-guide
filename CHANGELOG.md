@@ -5,6 +5,25 @@ All notable changes to skill-guide will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-06-01
+
+### Added
+- Platform-scoped filtering: all modes (dashboard, doctor, find, review, recommend, share) default to the current agent's skills.
+- Auto-detection via env vars (`CLAUDE_CODE`, `CODEX_AGENT`) or install path.
+- `--platform <claude|codex>` flag to force a specific platform view.
+- `--all` flag to see the full cross-platform inventory.
+- `applyPlatformFilter()` helper for consistent platform filtering across all CLI modes.
+- 8 new tests covering platform detection, filtering, and env var auto-detection.
+
+### Changed
+- Review mode (`--review`) no longer flags cross-agent duplicates as issues — each agent needs its own skill copies.
+- Cover slide title auto-adapts to show "Your Claude Code Skills" or "Your Codex Skills" based on filtered results.
+- `--find` commands in Next Steps slide simplified (removed redundant `--find` flag).
+
+### Fixed
+- `\n` literal rendering in Copy Review Prompt button (replaced inline string with window variable pattern).
+- `--platform` value no longer misinterpreted as a positional `--find` argument.
+
 ## [0.3.1] - 2026-06-01
 
 ### Added
