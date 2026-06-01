@@ -8,6 +8,9 @@ pnpm-debug.log*
 # Isolated development worktrees
 .worktrees/
 
+# Visual brainstorming artifacts
+.superpowers/
+
 # Generated local outputs
 skill-guide-*.html
 *.tmp

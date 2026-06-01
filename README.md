@@ -1,322 +1,228 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/Zero%20Dependencies-Node.js-6ee7b7?style=flat-square" />
-  <img src="https://img.shields.io/badge/Output-HTML%20Slides-f0abfc?style=flat-square" />
-  <img src="https://img.shields.io/badge/Platform-Claude%20Code%20%7C%20Codex%20%7C%20cc--switch-818cf8?style=flat-square" />
-  <img src="https://img.shields.io/github/actions/workflow/status/gtskevin/skill-guide/test.yml?branch=main&style=flat-square&label=tests" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
-  <img src="https://img.shields.io/badge/Language-English%20%7C%20Chinese-7dd3fc?style=flat-square" />
-  <img src="https://img.shields.io/badge/Feature-Health%20Dashboard-fbbf24?style=flat-square" />
-</p>
+<div align="center">
 
-<p align="center">
-  <img src="demo.gif" alt="skill-guide demo — npx skill-guide --open generates HTML slides" width="760" />
-</p>
+<picture>
+  <img src=".github/assets/banner.svg" alt="skill-guide — know what your AI agent can do before you trust it" width="800" />
+</picture>
 
-> **Installed so many agent skills that you cannot remember what you have?**
-> One command scans everything — Claude Code, Codex, cc-switch, plugins — and generates a beautiful dashboard so you actually know what you have.
+<br />
+
+[![npm version](https://img.shields.io/npm/v/skill-guide?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/skill-guide)
+[![npm downloads](https://img.shields.io/npm/dm/skill-guide?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/skill-guide)
+[![tests](https://img.shields.io/github/actions/workflow/status/gtskevin/skill-guide/test.yml?branch=main&style=for-the-badge&label=tests)](https://github.com/gtskevin/skill-guide/actions/workflows/test.yml)
+[![license](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](LICENSE)
+
+**Inspect, find, and review your installed Agent Skills across Codex and Claude Code.**
+
+[Live Demo](https://gtskevin.github.io/skill-guide/) · [Quick Start](#quick-start) · [npm](https://www.npmjs.com/package/skill-guide) · [FAQ](#faq)
+
+</div>
+
+---
+
+> [!NOTE]
+> You installed a useful Skill from someone else. But what will it actually do? When should it activate? Do you already have another Skill for the same job? Is its description heavy enough to deserve a closer look?
 >
-> Shows your local skill profile, radar chart, token budget estimate, and review candidates — all in one click.
+> `skill-guide` gives you a local map before you place uncertain trust in downloaded Agent Skills.
 
-<p align="center">
-  <a href="https://gtskevin.github.io/skill-guide/"><strong>Live Demo</strong></a>
-  ·
-  <a href="#quick-start">Try it now</a>
-  ·
-  <a href="#install-methods">Install</a>
-  ·
-  <a href="#how-it-works">How it works</a>
-</p>
+## Highlights
 
-```bash
-npx skill-guide               # ← that's it. Dashboard opens in your browser.
-```
+| | Capability | Why it matters |
+|---|---|---|
+| 🔍 | **Inventory your Skills** | See what is installed across Codex, Claude Code, cc-switch, and plugin directories. |
+| 🎯 | **Find a Skill for a task** | Search names, descriptions, and declared triggers before installing another tool. |
+| 📖 | **Inspect how a Skill is designed to work** | Review its source, declared tools, use cases, limitations, and document structure. |
+| 🛡️ | **Review before you trust** | Surface local metadata signals such as sparse descriptions, duplicate sources, and estimated description tokens. |
 
-## What it does
+## Quick Start
 
-skill-guide reads every skill from Claude Code, Codex, `~/.cc-switch/skills/`, and plugin marketplaces, then generates a polished dashboard you can view in any browser.
+> ⏱️ **Get started in 30 seconds**
 
-**Platform-aware:** Automatically detects whether you're running inside Codex or Claude Code and shows only the relevant skills. Token budget is calculated per-platform, not across all platforms.
-
-**3 modes:**
-
-| Mode | Command | What it does |
-|------|---------|-------------|
-| **Dashboard** | `npx skill-guide` | Personality, radar, token budget, cleanup guide, highlights |
-| **Find** | `npx skill-guide --find <name\|query>` | Search by keyword or deep dive into a specific skill |
-| **Doctor** | `npx skill-guide --doctor` | Environment diagnostics (broken files, duplicates, paths) |
-
-**Flags:**
-- `--all` — Show skills from all platforms (default: current platform only)
-- `--full` — Expand dashboard to include all skill details
-- `--recommend` — Show recommendations from online directories
-- `--share` — Generate shareable portfolio page
-- `--no-open` — Do not open HTML in browser
-
-## Platform Support
-
-| Platform | Status | Scanned paths |
-|----------|--------|---------------|
-| **Claude Code** | Supported | `~/.claude/skills`, `~/.claude/plugins/marketplaces` |
-| **Codex** | Supported | `~/.codex/skills`, `$CODEX_HOME/skills`, Codex plugin cache |
-| **OpenAI system skills** | Supported | `$CODEX_HOME/skills/.system` as a separate source |
-| **cc-switch** | Supported | `~/.cc-switch/skills` |
-| **Agent Skills** | Compatible | Standard `SKILL.md` skill folders |
-
-## Screenshots
-
-![skill-guide social preview](social-preview.png)
-
-<table>
-  <tr>
-    <td><img src="demo-cover.png" alt="Cover slide" width="400" /></td>
-    <td><img src="demo-categories.png" alt="Category map" width="400" /></td>
-  </tr>
-  <tr>
-    <td align="center"><em>Cover — total count & sources</em></td>
-    <td align="center"><em>Category map — grouped cards</em></td>
-  </tr>
-  <tr>
-    <td><img src="demo-highlights.png" alt="Top picks" width="400" /></td>
-    <td><img src="demo-reference.png" alt="Quick reference" width="400" /></td>
-  </tr>
-  <tr>
-    <td align="center"><em>Top picks — best skills</em></td>
-    <td align="center"><em>Quick reference table</em></td>
-  </tr>
-</table>
-
-### Health Dashboard Preview
+No installation is required for the CLI:
 
 ```bash
 npx skill-guide
 ```
 
-**Terminal output:**
-```
-🟡 Health Score: 68/100
-🏛️ Local profile: Collector (The Collector)
-The local scan found a large skill inventory. Review descriptions, sources, and actual needs periodically.
+The dashboard opens in your browser. The terminal also prints a local summary:
 
-📦 Total Skills: 338
-🔤 Description Token Estimate: ~20.0K (9.98% of a 200K reference context)
-📍 Local profile: based only on the current scan
+```text
+skill-guide · 338 skills · Local profile: Collector
 
-🛡️ Security Review [medium]
-   Review skills with security flags manually
-📦 Budget Overage [high]
-   Review longer descriptions when the local reference budget is exceeded
-
-Token Efficiency ████████░░ 80/100
-Organization ██████████ 100/100
-Security ████░░░░░░ 40/100
-Freshness ██████████ 100/100
-Budget Control ██░░░░░░░░ 21/100
+Health: 68/100
+338 skills · 9/9 categories · ~20.0K description tokens
+Sources: 59 user-directory · 280 plugin-directory
+16 skills have sparse metadata — review descriptions and triggers
 ```
 
-Health scores are local heuristics for review. They do not measure community rank, actual usage frequency, or whether deleting a skill is safe.
+> [!IMPORTANT]
+> Token numbers are rough estimates for Skill descriptions, not measured runtime cost. Health output is a local review prompt, not a verdict on quality or safety.
 
-## Quick Start
+## Demo
 
-**1. Try instantly** — no install needed:
-```bash
-npx skill-guide --open
+<div align="center">
+  <img src="demo.gif" alt="skill-guide scans installed Agent Skills and opens an HTML dashboard" width="760" />
+</div>
+
+<table>
+  <tr>
+    <td><img src="demo-cover.png" alt="skill-guide cover slide with local Skill sources" width="400" /></td>
+    <td><img src="demo-categories.png" alt="skill-guide category map grouped by Skill type" width="400" /></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Local inventory and sources</em></td>
+    <td align="center"><em>Category map</em></td>
+  </tr>
+  <tr>
+    <td><img src="demo-highlights.png" alt="skill-guide review highlights for installed Skills" width="400" /></td>
+    <td><img src="demo-reference.png" alt="skill-guide searchable reference table" width="400" /></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Review highlights</em></td>
+    <td align="center"><em>Quick reference</em></td>
+  </tr>
+</table>
+
+## What It Can Tell You
+
+`skill-guide` is a local inventory, discovery, and **pre-use review** tool. It deliberately separates evidence from inference.
+
+| Question | What `skill-guide` does today | Boundary |
+|---|---|---|
+| What Skills do I have? | Scans local user, system, cc-switch, and plugin directories. | Reports what is visible on the current machine. |
+| Do I already have a Skill for this task? | Searches names, descriptions, and declared triggers with `--find`. | Returns metadata matches, not a semantic guarantee. |
+| How is this Skill designed to work? | Shows source, declared tools, use cases, limitations, and document sections. | Explains documented intent; it does not execute an audit of every command. |
+| Could Skill descriptions be heavy? | Estimates description tokens and highlights longer descriptions. | Does not measure runtime tokens, API cost, or context injection behavior. |
+| Was a Skill actually invoked? | Not yet. | Runtime invocation tracking requires logging integrations. |
+| Is the output good or cost-effective? | Not yet. | Result quality and actual cost require runtime evidence and evaluation. |
+
+## Commands
+
+| Goal | Command |
+|---|---|
+| Open your local dashboard | `npx skill-guide` |
+| Find a Skill for a task | `npx skill-guide --find security` |
+| Inspect one Skill | `npx skill-guide --find test-driven-development` |
+| Diagnose local setup | `npx skill-guide --doctor` |
+| Review directory mentions and same-category candidates | `npx skill-guide --recommend` |
+| Generate a shareable local profile | `npx skill-guide --share` |
+| Return structured scanner data | `npx skill-guide --format json` |
+| Include every detected platform | `npx skill-guide --all` |
+
+### Example Prompts
+
+When `skill-guide` is installed as an Agent Skill, try:
+
+```text
+What Skills do I already have for code review?
+Show me how the test-driven-development Skill is designed to work.
+帮我看看我有哪些 Codex Skills，并找出描述信息较少、值得人工复核的项目。
 ```
 
-**2. Install for Claude Code:**
+## Install as an Agent Skill
+
+For Claude Code:
+
 ```bash
 npx skills add gtskevin/skill-guide
 ```
 
-**3. Use it** — type `/skill-guide` in Claude Code, or use the CLI:
-```bash
-npx skill-guide                               # See your dashboard
-npx skill-guide --find security               # Find skills for a task
-npx skill-guide --find tdd                    # Deep-dive one skill
-npx skill-guide --full --open                 # Generate a full manual
-npx skill-guide --doctor                      # Diagnose your setup
-```
-
-## Install Methods
+For Codex:
 
 ```bash
-# Claude Code: npx skills (recommended)
-npx skills add gtskevin/skill-guide
-
-# Claude Code: manual symlink
-git clone https://github.com/gtskevin/skill-guide.git
-ln -s $(pwd)/skill-guide ~/.claude/skills/skill-guide
-
-# Claude Code: direct download
-mkdir -p ~/.claude/skills/skill-guide
-curl -sL https://github.com/gtskevin/skill-guide/archive/refs/heads/main.tar.gz | tar xz --strip-components=1 -C ~/.claude/skills/skill-guide
-
-# Codex: manual symlink
 git clone https://github.com/gtskevin/skill-guide.git
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 ln -s "$(pwd)/skill-guide" "${CODEX_HOME:-$HOME/.codex}/skills/skill-guide"
 ```
 
-## Usage Examples
+<details>
+<summary>More installation options</summary>
 
-### Run as a CLI
 ```bash
-npx skill-guide --open
-npx skill-guide --search security --open
-npx skill-guide --skill test-driven-development --open
-npx skill-guide --share --open                    # Share your skill stack
-npx skill-guide --recommend --open                # Review directory mentions and same-category candidates
-npx skill-guide                   # Health dashboard with personality & radar chart
-npx skill-guide --wrapped --open                  # Compatibility alias for the local profile
-npx skill-guide --format json
-npx skill-guide --doctor
+# Claude Code: manual symlink
+git clone https://github.com/gtskevin/skill-guide.git
+ln -s "$(pwd)/skill-guide" ~/.claude/skills/skill-guide
+
+# Claude Code: direct download
+mkdir -p ~/.claude/skills/skill-guide
+curl -sL https://github.com/gtskevin/skill-guide/archive/refs/heads/main.tar.gz \
+  | tar xz --strip-components=1 -C ~/.claude/skills/skill-guide
 ```
 
-### Discover all your skills
-```
-/skill-guide
-```
-Or say: "What skills do I have?" / "帮我看看我有哪些技能"
+</details>
 
-In Codex, you can also say: "What Codex skills do I have?"
+## Platform Support
 
-### Deep-dive one skill
-```
-/skill-guide investigate
-```
-Or say: "Tell me about the TDD skill" / "介绍一下 investigate 技能"
+| Platform | Status | Scanned paths |
+|---|---|---|
+| Claude Code | Supported | `~/.claude/skills`, `~/.claude/plugins/marketplaces` |
+| Codex | Supported | `~/.codex/skills`, `$CODEX_HOME/skills`, Codex plugin cache |
+| OpenAI system Skills | Supported | `$CODEX_HOME/skills/.system` |
+| cc-switch | Supported | `~/.cc-switch/skills` |
+| Agent Skills | Compatible | Standard `SKILL.md` folders |
 
-### Find the right skill
-```
-Which skill should I use for code review?
-```
-Or: "帮我推荐一个做测试的技能"
+## How It Works
 
-### Generate a full manual
-```
-/skill-guide all
+```mermaid
+flowchart LR
+    A["Local Skill directories"] --> B["scan-skills.js"]
+    B --> C["Parse metadata and document sections"]
+    C --> D["skill-guide.js"]
+    D --> E["Browser-ready HTML dashboard"]
+    C --> F["Search, doctor, and review prompts"]
 ```
 
-### Share your skill stack
-```bash
-npx skill-guide --share --open                    # Generate portfolio page
-npx skill-guide --share --user @gtskevin --open   # With personalized tag
-```
+The scanner uses Node.js built-ins only:
 
-### Get recommendations
-```bash
-npx skill-guide --recommend --open                # HTML report
-npx skill-guide --recommend                       # Terminal output
-npx skill-guide --recommend --format json         # JSON for agents
-```
+1. Scan local Skill directories and plugin caches.
+2. Parse frontmatter, descriptions, triggers, declared tools, and selected document sections.
+3. Estimate description tokens and surface deterministic local review prompts.
+4. Render a standalone HTML dashboard that opens in your browser.
 
-### Health check your skills
-```bash
-npx skill-guide                   # Full HTML dashboard
-npx skill-guide --health                          # Terminal output
-npx skill-guide --health --lang zh --open         # Chinese UI
-```
+> [!WARNING]
+> `skill-guide` does not silently delete, install, or modify your Skills. Review prompts require human judgment.
 
-**What you get:**
-- **Health Score** — 0-100 rating of your skill library's health
-- **Personality Analysis** — Are you a Collector, Minimalist, Security Expert, or Specialist?
-- **Five-Dimension Radar Chart** — Token Efficiency, Organization, Security, Freshness, Budget Control
-- **Review Prompts** — Local candidates based on scanned skill metadata
-- **Token Estimate** — Approximate description cost before a conversation starts
-- **One-Click Share** — Copy report to clipboard for sharing
+## FAQ
 
-### Personal Skill Report (--wrapped)
+<details>
+<summary>Does skill-guide send my local Skills to a server?</summary>
 
-Your local profile for AI skills:
-- Skill personality type (Collector, Minimalist, Security Expert, etc.)
-- Skill DNA breakdown (category distribution)
-- Readiness breakdown based on local metadata
-- Shareable HTML report with one-click copy
+No. Core scanning and dashboard generation run locally with Node.js built-ins. The optional `--recommend` command reads public online directories to show directory mentions.
+</details>
 
-## How it works
+<details>
+<summary>Can it tell whether Claude Code or Codex actually invoked a Skill?</summary>
 
-```
-skill-guide/
-├── SKILL.md              # Natural-language CLI entrypoint
-├── agents/openai.yaml    # Codex/OpenAI skill UI metadata
-├── skill-guide.js        # Deterministic CLI + HTML generator
-├── scan-skills.js        # Zero-dependency Node.js scanner
-├── skill-registry.js     # Online directory fetching + recommendation engine
-├── demo.html             # Demo presentation (this is what you see above)
-└── LICENSE               # MIT
-```
+Not yet. The current release scans local metadata. Reliable invocation tracking requires runtime logs or platform integrations.
+</details>
 
-1. `scan-skills.js` scans Claude Code, Codex, cc-switch, and plugin skill directories; parses YAML frontmatter; extracts sections and key paragraphs
-2. `skill-guide.js` turns scanner JSON into deterministic HTML slides with scroll-snap navigation, keyboard controls, and animations
-3. `SKILL.md` lets Claude Code and Codex invoke the same CLI from natural language
-4. Output opens in your browser — zero config, zero dependencies
+<details>
+<summary>Does the token estimate equal my real API cost?</summary>
 
-### Scanner modes
+No. It is a rough estimate based on description text. Runtime token usage depends on the platform, model, loaded context, and execution path.
+</details>
 
-| Flag | Purpose | Data |
-|------|---------|------|
-| `--list` | Discovery | Name + description + category |
-| `--skill <name>` | Deep-dive | Full metadata + sections + key paragraphs |
-| `--search <query>` | Recommendations | Matching skills with full data |
-| `--full` | Complete manual | All skills with full data |
-| `--refresh` | Force re-scan | Ignores 5-min cache |
+<details>
+<summary>Does a health warning mean I should delete a Skill?</summary>
 
-### CLI flags
+No. Warnings are review candidates. Read the Skill, check its source, and confirm your actual needs before changing anything.
+</details>
 
-| Flag | Purpose |
-|------|---------|
-| `--open` | Open the generated HTML in your browser |
-| `--output <file>` | Save HTML to a specific path |
-| `--format html,json` | Choose HTML slides or raw scanner JSON |
-| `--search <query>` | Generate recommendations for a task |
-| `--skill <name>` | Generate a deep-dive for one skill |
-| `--full` | Generate a complete manual |
-| `--share` | Generate a shareable portfolio HTML |
-| `--user <name>` | Add personalized tag to share page |
-| `--recommend` | Show directory mentions and same-category review candidates |
-| `--health` | Generate health dashboard with local profile, radar chart, and review prompts |
-| `--lang <code>` | UI language (`en` or built-in `zh`) |
-| `--doctor` | Check paths, sources, and scan counts |
+<details>
+<summary>Which languages are supported?</summary>
 
-### Doctor checks
-
-`npx skill-guide --doctor` reports Node.js version, Claude Code and Codex skill paths, source counts, duplicate skill names, malformed skill files, and suggested install paths.
-
-### Auto-categorization
-
-Skills are automatically sorted into 9 categories: `testing`, `design`, `security`, `documentation`, `automation`, `deployment`, `code-quality`, `development`, `other`.
-
-## Language Support
-
-Dashboard labels are available in English and Chinese. Agents can summarize results in the user's language without modifying the generated HTML.
-
-- **English** — default
-- **Chinese** — built-in (`--lang zh`)
-- **Other languages** — agent summary in the user's language; dashboard labels remain English
-
-## Why skill-guide?
-
-- **Cross-platform inventory** — scans Claude Code, Codex, cc-switch, and plugin sources in one visual overview
-- **Health dashboard** — local profile, radar chart, and review prompts for your skill library
-- **Zero dependencies** — pure Node.js with `fs`, `path`, `os`. No `npm install` needed
-- **Beautiful output** — scroll-snap slides with keyboard nav, animations, and responsive design
-- **Bilingual dashboard** — English by default, with built-in Chinese labels via `--lang zh`
-- **Smart caching** — 5-minute TTL so repeated queries are instant
-- **5 seconds to "wow"** — `npx skill-guide --open` is all you need
+Dashboard labels are built in for English and Chinese. Agents can summarize the result in other languages without rewriting the generated HTML.
+</details>
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## Roadmap
-
-- [x] `--share` — generate a shareable standalone HTML or Markdown summary
-- [x] `--health` — health dashboard with local profile, radar chart, and review prompts
-- [ ] Gemini CLI skill scanning (`~/.gemini/skills`)
-- [ ] `--diff` — show recently added/removed skills since last scan
-- [ ] `--export markdown` — output a Markdown table for pasting into issues and docs
-
-Have an idea? [Open a feature request](https://github.com/gtskevin/skill-guide/issues/new?template=feature_request.yml).
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the zero-dependency constraint and test commands.
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+---
+
+<div align="center">
+  <sub>Built with care by <a href="https://github.com/gtskevin">@gtskevin</a> for developers who want to understand Agent Skills before trusting them.</sub>
+</div>

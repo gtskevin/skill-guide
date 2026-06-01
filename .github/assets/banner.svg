@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200" role="img" aria-labelledby="title desc">
+  <title id="title">skill-guide</title>
+  <desc id="desc">Know what your AI agent can do. Inspect and find installed Agent Skills before you trust them.</desc>
+  <defs>
+    <linearGradient id="background" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+    <style>
+      .bg { fill: url(#background); }
+      .title { fill: #f8fafc; }
+      .subtitle { fill: #cbd5e1; }
+      .kicker { fill: #6ee7b7; }
+      .pill { fill: rgba(255,255,255,0.09); stroke: rgba(255,255,255,0.16); }
+      .pill-text { fill: #e2e8f0; }
+      @media (prefers-color-scheme: dark) {
+        .bg { fill: url(#background); }
+        .title { fill: #f8fafc; }
+        .subtitle { fill: #cbd5e1; }
+        .kicker { fill: #6ee7b7; }
+        .pill { fill: rgba(255,255,255,0.09); stroke: rgba(255,255,255,0.16); }
+        .pill-text { fill: #e2e8f0; }
+      }
+    </style>
+  </defs>
+  <rect class="bg" width="800" height="200" rx="18"/>
+  <circle cx="78" cy="48" r="72" fill="#6ee7b7" opacity="0.08"/>
+  <circle cx="732" cy="168" r="92" fill="#818cf8" opacity="0.10"/>
+  <rect x="62" y="53" width="14" height="14" rx="4" fill="#6ee7b7"/>
+  <rect x="80" y="53" width="14" height="14" rx="4" fill="#818cf8"/>
+  <rect x="98" y="53" width="14" height="14" rx="4" fill="#f0abfc"/>
+  <text class="kicker" x="128" y="66" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" letter-spacing="2">AGENT SKILL INVENTORY</text>
+  <text class="title" x="62" y="118" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="800">skill-guide</text>
+  <text class="subtitle" x="64" y="148" font-family="system-ui, -apple-system, sans-serif" font-size="18">Know what your AI agent can do before you trust it.</text>
+  <g transform="translate(540,53)">
+    <rect class="pill" width="104" height="29" rx="14"/>
+    <text class="pill-text" x="52" y="19" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, monospace" font-size="12">Claude Code</text>
+  </g>
+  <g transform="translate(654,53)">
+    <rect class="pill" width="79" height="29" rx="14"/>
+    <text class="pill-text" x="39.5" y="19" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, monospace" font-size="12">Codex</text>
+  </g>
+  <g transform="translate(540,92)">
+    <rect class="pill" width="193" height="29" rx="14"/>
+    <text class="pill-text" x="96.5" y="19" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, monospace" font-size="12">npx skill-guide</text>
+  </g>
+  <rect x="540" y="145" width="193" height="3" rx="1.5" fill="url(#accent)"/>
+</svg>
