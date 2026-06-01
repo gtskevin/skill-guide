@@ -32,6 +32,7 @@
 | 🎯 | **Find a Skill for a task** | Search names, descriptions, and declared triggers before installing another tool. |
 | 📖 | **Inspect how a Skill is designed to work** | Review its source, declared tools, use cases, limitations, and document structure. |
 | 🛡️ | **Review before you trust** | Surface local metadata signals such as sparse descriptions, duplicate sources, and estimated description tokens. |
+| 🎯 | **Platform-scoped views** | Default to your current agent's Skills; use `--platform` or `--all` to switch scope. |
 
 ## Quick Start
 
@@ -88,7 +89,7 @@ Sources: 59 user-directory · 280 plugin-directory
 
 | Question | What `skill-guide` does today | Boundary |
 |---|---|---|
-| What Skills do I have? | Scans local user, system, cc-switch, and plugin directories. | Reports what is visible on the current machine. |
+| What Skills do I have? | Scans local user, system, cc-switch, and plugin directories. Defaults to the current agent's Skills. | Reports what is visible on the current machine. Use `--all` for cross-platform inventory. |
 | Do I already have a Skill for this task? | Searches names, descriptions, and declared triggers with `--find`. | Returns metadata matches, not a semantic guarantee. |
 | How is this Skill designed to work? | Shows source, declared tools, use cases, limitations, and document sections. | Explains documented intent; it does not execute an audit of every command. |
 | Could Skill descriptions be heavy? | Estimates description tokens and highlights longer descriptions. | Does not measure runtime tokens, API cost, or context injection behavior. |
@@ -106,6 +107,7 @@ Sources: 59 user-directory · 280 plugin-directory
 | Review directory mentions and same-category candidates | `npx skill-guide --recommend` |
 | Generate a shareable local profile | `npx skill-guide --share` |
 | Return structured scanner data | `npx skill-guide --format json` |
+| Focus on one agent's Skills | `npx skill-guide --platform claude` |
 | Include every detected platform | `npx skill-guide --all` |
 
 ### Example Prompts
