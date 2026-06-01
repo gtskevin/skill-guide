@@ -28,6 +28,7 @@ function usage() {
     '  skill-guide --find <name|query>       # Deep dive or search (opens HTML)',
     '  skill-guide --doctor                  # Quick environment diagnostic',
     '  skill-guide --review --format json    # Structured review brief for agents',
+    '  skill-guide --check [path]             # Check SKILL.md Review Readiness',
     '',
     'Options:',
     '  --output <file>   Write to file instead of default',
@@ -412,13 +413,24 @@ function parseMode() {
   if (hasFlag('--review')) return { mode: 'review' };
   if (hasFlag('--recommend')) return { mode: 'recommend' };
   if (hasFlag('--share')) return { mode: 'share' };
+  if (hasFlag('--check')) {
+    const checkVal = getArgValue('--check');
+    if (checkVal && !checkVal.startsWith('-')) return { mode: 'check', value: checkVal };
+    return { mode: 'check' };
+  }
+  // Legacy alias
+  if (hasFlag('--lint')) {
+    const lintVal = getArgValue('--lint');
+    if (lintVal && !lintVal.startsWith('-')) return { mode: 'check', value: lintVal };
+    return { mode: 'check' };
+  }
 
   // --find: unified search + deep dive (also supports legacy --search, --skill)
   const find = getArgValue('--find') || getArgValue('--search') || getArgValue('--skill');
   if (find) return { mode: 'find', value: find };
 
   // Positional arg: treat as --find
-  const valueFlags = new Set(['--output', '--find', '--search', '--skill', '--format', '--lang', '--user', '--platform']);
+  const valueFlags = new Set(['--output', '--find', '--search', '--skill', '--format', '--lang', '--user', '--platform', '--check', '--lint']);
   const positional = args.find((arg, index) => !arg.startsWith('-') && !valueFlags.has(args[index - 1]));
   if (positional) return { mode: 'find', value: positional };
 
@@ -436,6 +448,8 @@ function scannerArgsFor(mode) {
   } else if (mode.mode === 'find') {
     // Try as skill first, fall back to search
     scannerArgs.push('--skill', mode.value);
+  } else if (mode.mode === 'check') {
+    if (!mode.value) scannerArgs.push('--full'); // check all: need full data
   } else {
     scannerArgs.push('--full');
   }
@@ -1814,6 +1828,261 @@ function buildCopyPrompt(brief) {
   }
   lines.push('For each item, respond with: CONFIRM (agree with the finding), DISMISS (false positive with reason), or SUGGEST (alternative action).');
   return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Lint: Review Readiness scoring
+// ---------------------------------------------------------------------------
+const LINT_PATTERNS = {
+  whenToUse:   /when\s+(?:to\s+)?use|何时用|适用场景/i,
+  howItWorks:  /how\s+it\s+works|运作原理|how\s+to\s+use|workflow|流程/i,
+  limitations: /limit|局限|not\s+do|anti.?pattern|caveat|注意事项/i,
+  examples:    /example|实例|demo|sample/i,
+};
+const GENERIC_TRIGGERS = /^(use\s+(this\s+)?(when\s+)?(needed|appropriate|relevant|required)|按需|需要时使用)$/i;
+
+function lintExtractContextual(bodyContent) {
+  const result = { whenToUse: '', howItWorks: '', limitations: '', examples: '' };
+  const cleaned = bodyContent.replace(/```[\s\S]*?```/g, '');
+  const paragraphs = cleaned.split(/\n\s*\n/);
+  for (const para of paragraphs) {
+    const trimmed = para.trim();
+    const lines = trimmed.split('\n').filter(l => !l.startsWith('|') && !l.match(/^!\[/) && l.trim().length > 0);
+    const text = lines.join(' ').trim();
+    if (text.length < 20 || text.length > 800) continue;
+    for (const [key, regex] of Object.entries(LINT_PATTERNS)) {
+      if (!result[key] && regex.test(text)) result[key] = text.slice(0, 500);
+    }
+  }
+  return result;
+}
+
+function lintSingleSkill(skill, bodyData) {
+  const issues = [];
+  const desc = (skill.description || '').trim();
+  const descLen = desc.length;
+  const triggers = Array.isArray(skill.triggers) ? skill.triggers : skill.triggers ? [skill.triggers] : [];
+  const tools = Array.isArray(skill.allowedTools || skill['allowed-tools'])
+    ? (skill.allowedTools || skill['allowed-tools'])
+    : typeof (skill.allowedTools || skill['allowed-tools']) === 'string'
+      ? [(skill.allowedTools || skill['allowed-tools'])]
+      : [];
+  const ctx = bodyData || {};
+
+  // Dimension 1: Metadata Completeness (0-100)
+  let meta = 0;
+  if (skill.name) meta += 25; else issues.push({ id: 'meta-no-name', dimension: 'metadata', message: 'Missing skill name in frontmatter', severity: 'error' });
+  if (desc) meta += 25; else issues.push({ id: 'meta-no-desc', dimension: 'metadata', message: 'No description provided', severity: 'error' });
+  if (descLen >= 50) meta += 15;
+  else if (descLen > 0) { meta += 5; issues.push({ id: 'meta-short-desc', dimension: 'metadata', message: `Description too short (${descLen} chars, recommended 50+)`, severity: 'warning' }); }
+  if (triggers.length > 0) meta += 15; else issues.push({ id: 'meta-no-triggers', dimension: 'metadata', message: 'No triggers defined — agent may not know when to activate', severity: 'warning' });
+  if (tools.length > 0) meta += 10; else issues.push({ id: 'meta-no-tools', dimension: 'metadata', message: 'No allowed-tools declared', severity: 'info' });
+  if (skill.tags && (Array.isArray(skill.tags) ? skill.tags : [skill.tags]).length > 0) meta += 10;
+
+  // Dimension 2: Activation Clarity (0-100)
+  let activ = 0;
+  if (ctx.whenToUse && ctx.whenToUse.length > 30) activ += 30;
+  else issues.push({ id: 'activ-no-when', dimension: 'activation', message: "Missing 'When to Use' section", severity: 'warning' });
+  const hasGeneric = triggers.some(t => GENERIC_TRIGGERS.test(String(t).trim()));
+  if (!hasGeneric && triggers.length > 0) activ += 25;
+  else if (hasGeneric) { activ += 5; issues.push({ id: 'activ-generic-trigger', dimension: 'activation', message: 'Trigger is overly generic (e.g. "use when needed")', severity: 'warning' }); }
+  if (triggers.length >= 2) activ += 25; else if (triggers.length === 1) activ += 10;
+  if (ctx.examples && ctx.examples.length > 30) activ += 20;
+  else issues.push({ id: 'activ-no-examples', dimension: 'activation', message: 'No examples found', severity: 'info' });
+
+  // Dimension 3: Scope Clarity (0-100)
+  let scope = 0;
+  if (ctx.limitations && ctx.limitations.length > 30) scope += 30;
+  else issues.push({ id: 'scope-no-limits', dimension: 'scope', message: 'Missing Limitations section — agents may apply skill inappropriately', severity: 'warning' });
+  if (ctx.howItWorks && ctx.howItWorks.length > 30) scope += 20;
+  else issues.push({ id: 'scope-no-how', dimension: 'scope', message: "Missing 'How It Works' section", severity: 'info' });
+  const body = [ctx.whenToUse, ctx.howItWorks, ctx.limitations, desc].join(' ');
+  if (/do\s+not|don'?t|avoid|never|不要|避免/i.test(body)) scope += 20;
+  else issues.push({ id: 'scope-no-negatives', dimension: 'scope', message: 'Missing negative use cases (when NOT to use)', severity: 'info' });
+  if (descLen > 0 && descLen < 1000) scope += 15; else if (descLen > 0) scope += 5;
+  if (ctx.examples && ctx.examples.length > 30) scope += 15;
+
+  // Dimension 4: Context Efficiency (0-100)
+  let effcy = 0;
+  if (descLen >= 50 && descLen <= 1000) effcy += 40;
+  else if (descLen > 1000) { effcy += 10; issues.push({ id: 'ctx-long-desc', dimension: 'context', message: `Description too long (${descLen} chars, recommended ≤1000)`, severity: 'warning' }); }
+  else if (descLen > 0) effcy += 15;
+  const summary = (ctx.summary || '').trim();
+  if (desc && summary && desc !== summary) effcy += 20;
+  else if (desc && summary && desc === summary) issues.push({ id: 'ctx-redundant', dimension: 'context', message: 'Description and summary are identical', severity: 'info' });
+  const tokens = descLen ? Math.round(descLen / 4) : 0;
+  if (tokens <= 500) effcy += 20; else { effcy += 5; issues.push({ id: 'ctx-high-tokens', dimension: 'context', message: `Description token estimate high (~${tokens})`, severity: 'info' }); }
+  if (desc && !desc.replace(/^["']|["']$/g, '').startsWith('---')) effcy += 20;
+  else if (desc) issues.push({ id: 'ctx-yaml-leak', dimension: 'context', message: 'YAML artifact leaked into description', severity: 'error' });
+
+  // Dimension 5: Review Priority (0-100)
+  let revpr = 100;
+  if (tools.some(t => String(t).trim() === 'Bash')) {
+    revpr -= 10;
+    issues.push({ id: 'rev-broad-bash', dimension: 'review', message: 'Bash tool declared without scope restriction', severity: 'warning' });
+  }
+  if (/\beval\(|exec\(/.test(body)) { revpr -= 10; issues.push({ id: 'rev-shell-exec', dimension: 'review', message: 'Shell execution patterns detected (eval/exec)', severity: 'warning' }); }
+  if (/\bapi[_-]?key|token|password|secret\b/i.test(body)) { revpr -= 10; issues.push({ id: 'rev-credentials', dimension: 'review', message: 'Credential-related keywords detected', severity: 'warning' }); }
+  if (/\brm\s+-rf|rmdir/i.test(body)) { revpr -= 10; issues.push({ id: 'rev-destructive', dimension: 'review', message: 'Destructive command patterns detected', severity: 'warning' }); }
+  if (!skill.name) revpr -= 15;
+  if (!desc) revpr -= 15;
+  revpr = Math.max(0, revpr);
+
+  const dimensions = [
+    { name: 'Metadata', score: meta },
+    { name: 'Activation', score: activ },
+    { name: 'Scope', score: scope },
+    { name: 'Context', score: effcy },
+    { name: 'Review', score: revpr },
+  ];
+  const overall = Math.round(dimensions.reduce((s, d) => s + d.score, 0) / dimensions.length);
+
+  return { dimensions, overall, issues };
+}
+
+function lintSkillFile(filePath) {
+  const content = fs.readFileSync(filePath, 'utf8');
+  const fm = readFrontmatter(content) || {};
+  const bodyContent = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+  const contextual = lintExtractContextual(bodyContent);
+
+  // readFrontmatter only parses simple key: value; re-parse arrays from raw frontmatter
+  const fmMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
+  const fmRaw = fmMatch ? fmMatch[1] : '';
+  const extractArray = (key) => {
+    const lines = fmRaw.split('\n');
+    const result = [];
+    let collecting = false;
+    for (const line of lines) {
+      if (line.match(new RegExp(`^${key}\\s*:`))) {
+        collecting = true;
+        const inlineVal = line.replace(new RegExp(`^${key}\\s*:\\s*`), '').trim();
+        if (inlineVal && inlineVal !== '') {
+          // Single-line array: key: val1, val2
+          result.push(...inlineVal.split(/[,，]/).map(s => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean));
+        }
+        continue;
+      }
+      if (collecting) {
+        const item = line.match(/^\s+-\s+(.+)/);
+        if (item) { result.push(item[1].trim().replace(/^['"]|['"]$/g, '')); }
+        else if (!line.match(/^\s/)) { collecting = false; }
+      }
+    }
+    return result;
+  };
+
+  const skill = {
+    name: (fm.name || path.basename(path.dirname(filePath))).replace(/^["']|["']$/g, ''),
+    description: (fm.description || '').replace(/^["']|["']$/g, ''),
+    triggers: extractArray('triggers'),
+    allowedTools: extractArray('allowed-tools').concat(extractArray('allowedTools')),
+    tags: extractArray('tags'),
+  };
+
+  const bodyData = { ...contextual, summary: bodyContent.split(/\n\s*\n/)[0]?.trim() || '' };
+  return { file: filePath, name: skill.name, result: lintSingleSkill(skill, bodyData) };
+}
+
+function lintAllSkills(data) {
+  // Only lint roots for the current platform
+  const platform = detectPlatform();
+  const allRoots = skillRoots();
+  const keepSources = platform === 'all'
+    ? null
+    : platform === 'claude'
+      ? ['claude-user', 'claude-plugin', 'cc-switch']
+      : ['codex-user', 'codex-plugin', 'openai-system', 'cc-switch'];
+  const roots = keepSources ? allRoots.filter(r => keepSources.includes(r.source)) : allRoots;
+
+  const skillFiles = roots.flatMap(r => walkForSkillFiles(r.path, r.source.includes('plugin') ? 4 : 2));
+  const results = [];
+  const seen = new Set();
+  for (const f of skillFiles) {
+    const normalized = f.replace(/\\/g, '/');
+    // Skip plugin command files — they are not SKILL.md definitions
+    if (normalized.includes('/commands/') || normalized.includes('\\commands\\')) continue;
+    if (seen.has(normalized)) continue;
+    seen.add(normalized);
+    results.push(lintSkillFile(f));
+  }
+
+  // Also include any scanner skills that weren't found as files (best-effort)
+  const lintedNames = new Set(results.map(r => r.name.toLowerCase().replace(/[^a-z0-9]/g, '')));
+  for (const skill of data.skills || []) {
+    const key = (skill.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (lintedNames.has(key)) continue;
+    const s = {
+      name: skill.name, description: skill.description || '',
+      triggers: skill.triggers || [], allowedTools: skill.allowedTools || skill['allowed-tools'] || [],
+      tags: skill.tags || [],
+    };
+    results.push({ file: skill.dir || '(scanner data)', name: s.name, result: lintSingleSkill(s, null) });
+    lintedNames.add(key);
+  }
+  return results;
+}
+
+function renderLintTerminal(results) {
+  const ready = results.filter(r => r.result.overall >= 70).length;
+  const needsWork = results.filter(r => r.result.overall >= 40 && r.result.overall < 70).length;
+  const critical = results.filter(r => r.result.overall < 40).length;
+
+  const lines = [
+    '',
+    '╔══════════════════════════════════════════════════════════════╗',
+    `║  skill-guide check · ${results.length} skills · Review Readiness      ║`,
+    '╚══════════════════════════════════════════════════════════════╝',
+    '',
+    `  Summary: ${ready} ready, ${needsWork} needs work, ${critical} critical`,
+    '',
+    '  Name                          Meta  Activ  Scope  Ctx   Rev    Overall',
+    '  ─────────────────────────────────────────────────────────────────────',
+  ];
+
+  const sorted = [...results].sort((a, b) => a.result.overall - b.result.overall);
+  for (const r of sorted) {
+    const dims = r.result.dimensions;
+    const icon = r.result.overall >= 70 ? '🟢' : r.result.overall >= 40 ? '🟡' : '🔴';
+    const name = (r.name || '(unknown)').slice(0, 28).padEnd(28);
+    lines.push(`  ${icon} ${name}  ${String(dims[0].score).padStart(3)}   ${String(dims[1].score).padStart(3)}   ${String(dims[2].score).padStart(3)}   ${String(dims[3].score).padStart(3)}   ${String(dims[4].score).padStart(3)}     ${r.result.overall}`);
+  }
+
+  lines.push('');
+  lines.push('  Legend: 🟢 ≥70 ready   🟡 40-69 needs work   🔴 <40 critical');
+
+  const allIssues = results.flatMap(r => r.result.issues.map(i => ({ ...i, name: r.name })));
+  const warnings = allIssues.filter(i => i.severity === 'error' || i.severity === 'warning');
+  if (warnings.length > 0) {
+    lines.push('');
+    lines.push(`  Top issues (${warnings.length}):`);
+    for (const w of warnings.slice(0, 15)) {
+      lines.push(`    ⚠ ${w.name}: ${w.message}`);
+    }
+  }
+
+  lines.push('');
+  lines.push('  Run with --format json for full details.');
+  return lines.join('\n');
+}
+
+function renderLintJSON(results) {
+  return {
+    generatedAt: new Date().toISOString(),
+    totalChecked: results.length,
+    summary: {
+      ready: results.filter(r => r.result.overall >= 70).length,
+      needsWork: results.filter(r => r.result.overall >= 40 && r.result.overall < 70).length,
+      critical: results.filter(r => r.result.overall < 40).length,
+    },
+    results: results.map(r => ({
+      file: r.file,
+      name: r.name,
+      overall: r.result.overall,
+      dimensions: r.result.dimensions,
+      issues: r.result.issues,
+    })),
+  };
 }
 
 function renderHealthTerminal(data) {
@@ -3337,6 +3606,29 @@ function main() {
     const brief = buildReviewBrief(data, details);
     brief.copyPrompt = buildCopyPrompt(brief);
     process.stdout.write(JSON.stringify(brief, null, 2) + '\n');
+    return;
+  }
+
+  // --check mode: Review Readiness checks
+  if (mode.mode === 'check') {
+    let results;
+    if (mode.value) {
+      const targetPath = path.resolve(mode.value);
+      if (!fs.existsSync(targetPath)) {
+        process.stderr.write(`File not found: ${targetPath}\n`);
+        process.exit(1);
+      }
+      results = [lintSkillFile(targetPath)];
+    } else {
+      const data = runScanner(mode);
+      applyPlatformFilter(data);
+      results = lintAllSkills(data);
+    }
+    if (format === 'json') {
+      process.stdout.write(JSON.stringify(renderLintJSON(results), null, 2) + '\n');
+      return;
+    }
+    process.stdout.write(renderLintTerminal(results) + '\n');
     return;
   }
 

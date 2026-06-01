@@ -26,6 +26,9 @@ node skill-guide.js --insight --open      # Health, budget, community, prescript
 node skill-guide.js --recommend --open    # Show recommendations from online directories
 node skill-guide.js --share --open        # Generate shareable portfolio page
 node skill-guide.js --doctor              # Diagnose skill paths, sources, duplicates, malformed files
+node skill-guide.js --check               # Check all skills for Review Readiness (5 dimensions)
+node skill-guide.js --check path/to/SKILL.md # Check a specific skill file
+node skill-guide.js --check --format json # Check output as JSON
 node skill-guide.js --lang zh --open      # Chinese UI labels (builtined)
 ```
 
@@ -35,11 +38,15 @@ Three-file pipeline, all CommonJS, zero npm dependencies:
 
 - **`scan-skills.js`** (~580 lines) — Data layer. Scans 6 source directories (`~/.claude/skills`, `~/.codex/skills`, `~/.codex/skills/.system`, `~/.cc-switch/skills`, `~/.claude/plugins/marketplaces`, `~/.codex/plugins/cache`), parses YAML frontmatter from `SKILL.md`/`README.md` files using a regex-based parser (no YAML library), auto-categorizes into 9 categories, extracts sections and contextual paragraphs. Caches results in `/tmp/claude/` with 5-minute TTL keyed by source paths. Outputs JSON to stdout.
 
-- **`skill-guide.js`** (~770 lines) — Presentation layer. Invokes `scan-skills.js` via `execFileSync`, transforms scanner JSON into a single-file HTML document with scroll-snap slides, CSS custom properties, IntersectionObserver animations, and keyboard navigation. Built-in i18n for English and Chinese (`--lang zh`). For other languages, SKILL.md workflow delegates translation to the agent. Also handles `--doctor` diagnostics, `--share` portfolio pages, `--recommend` reports, and `--format json` passthrough.
+- **`skill-guide.js`** (~950 lines) — Presentation layer. Invokes `scan-skills.js` via `execFileSync`, transforms scanner JSON into a single-file HTML document with scroll-snap slides, CSS custom properties, IntersectionObserver animations, and keyboard navigation. Built-in i18n for English and Chinese (`--lang zh`). For other languages, SKILL.md workflow delegates translation to the agent. Also handles `--doctor` diagnostics, `--check` Review Readiness scoring, `--share` portfolio pages, `--recommend` reports, and `--format json` passthrough.
 
 - **`skill-registry.js`** (~250 lines) — Online directory layer. Fetches curated skill lists from GitHub awesome-lists and community directories, caches results with 1-hour TTL. Exports `fetchRecommendations()` for `--recommend` mode and `fetchRegistry()` for `--share` mode. Used by `skill-guide.js` via `require()`.
 
-- **`SKILL.md`** (~267 lines) — Skill definition consumed by Claude Code and Codex. Contains mode detection rules (4 modes), 7-step workflow with language detection, HTML generation specs, and anti-patterns. The agent-side translation step handles all non-English/non-Chinese languages.
+- **`SKILL.md`** (~30 lines) — Skill definition consumed by Claude Code and Codex. Simplified to default dashboard mode with sub-command references. The agent-side translation step handles all non-English/non-Chinese languages.
+
+- **`.claude-plugin/plugin.json`** — Plugin manifest declaring 7 sub-commands in `commands/`. Each command file is a thin agent instruction that delegates to the CLI. Exposes `skill-guide: dashboard`, `skill-guide: review`, `skill-guide: find`, `skill-guide: recommend`, `skill-guide: share`, `skill-guide: doctor`, `skill-guide: lint`.
+
+- **`commands/`** — 7 sub-skill `.md` files, each with frontmatter `description` and one CLI command. Named `dashboard.md`, `review.md`, `find.md`, `recommend.md`, `share.md`, `doctor.md`, `lint.md`.
 
 - **`bin/skill-guide`** — npm bin entry point, requires `skill-guide.js`.
 
@@ -65,5 +72,7 @@ Tests use Node.js built-in test runner (`node:test`). Each test creates an isola
 - `test/cli.test.js` — CLI integration tests: HTML generation, doctor mode, JSON output format.
 - `test/registry.test.js` — Registry unit tests: cache key determinism, cache round-trip, expiration, clearing, markdown list parsing.
 - `test/translate.test.js` — Translation tests: Chinese label rendering, English preservation, section title/summary translation, UI label localization.
+- `test/lint.test.js` — Check mode tests: 5-dimension scoring, per-file check, generic triggers, missing limitations, security patterns, platform filtering, command exclusion, terminal/JSON output.
+- `test/plugin-commands.test.js` — Plugin structure tests: plugin.json validity, command file existence, frontmatter, CLI references.
 
 CI runs on Node 18/20/22 across ubuntu-latest and macos-latest (`.github/workflows/test.yml`).

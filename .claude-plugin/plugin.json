@@ -1,0 +1,10 @@
+{
+  "name": "skill-guide",
+  "version": "0.5.0",
+  "description": "Scan local skill directories and generate HTML dashboards, review readiness reports, and structured agent briefs.",
+  "homepage": "https://gtskevin.github.io/skill-guide/",
+  "repository": "https://github.com/gtskevin/skill-guide",
+  "license": "MIT",
+  "keywords": ["claude-code", "skill-scanner", "skill-browser", "agent-tools", "cli"],
+  "commands": ["./commands/"]
+}

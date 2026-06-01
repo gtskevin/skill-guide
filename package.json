@@ -1,6 +1,6 @@
 {
   "name": "skill-guide",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Scan 6+ skill directories across Claude Code, Codex, and cc-switch, then generate beautiful HTML slide presentations.",
   "license": "MIT",
   "type": "commonjs",
@@ -10,7 +10,9 @@
   },
   "files": [
     "agents/openai.yaml",
+    ".claude-plugin/plugin.json",
     "bin/skill-guide",
+    "commands/",
     "SKILL.md",
     "skill-guide.js",
     "scan-skills.js",

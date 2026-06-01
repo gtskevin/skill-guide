@@ -17,8 +17,9 @@ test('SKILL.md is a concise CLI wrapper with trigger-first frontmatter', () => {
   assert.ok(wordCount < 500, `SKILL.md should stay under 500 words, got ${wordCount}`);
   assert.doesNotMatch(markdown, /Post-translate for non-English languages/);
   assert.doesNotMatch(markdown, /Write the translated HTML back/);
-  assert.match(markdown, /--find/);
-  assert.match(markdown, /--doctor/);
-  assert.match(markdown, /--recommend/);
-  assert.match(markdown, /--share/);
+  assert.ok(markdown.match(/--find/) || markdown.match(/skill-guide: find/), 'must reference find mode');
+  assert.ok(markdown.match(/--doctor/) || markdown.match(/skill-guide: doctor/), 'must reference doctor mode');
+  assert.ok(markdown.match(/--recommend/) || markdown.match(/skill-guide: recommend/), 'must reference recommend mode');
+  assert.ok(markdown.match(/--share/) || markdown.match(/skill-guide: share/), 'must reference share mode');
+  assert.ok(markdown.match(/--check/) || markdown.match(/skill-guide: lint/), 'must reference check mode');
 });

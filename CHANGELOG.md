@@ -5,6 +5,24 @@ All notable changes to skill-guide will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-06-01
+
+### Added
+- Plugin sub-skill structure: `.claude-plugin/plugin.json` with `commands/` directory exposing 7 modes (dashboard, review, find, recommend, share, doctor, lint) as `skill-guide: <mode>` sub-commands.
+- `--check` mode: checks SKILL.md files for Review Readiness across 5 dimensions (Metadata Completeness, Activation Clarity, Scope Clarity, Context Efficiency, Review Priority).
+- `--check <path>` for checking a specific SKILL.md file.
+- `--check --format json` for machine-readable output.
+- `--lint` accepted as legacy alias for `--check`.
+- 12 check tests and 4 plugin command structure tests.
+
+### Changed
+- SKILL.md simplified to default dashboard mode with sub-command references.
+- `parseMode()` updated to recognize `--check` flag and file path argument.
+
+### Backward Compatible
+- SKILL.md still works as a standalone skill definition (no plugin required).
+- All existing CLI modes (`--doctor`, `--review`, `--find`, `--recommend`, `--share`) unchanged.
+
 ## [0.4.0] - 2026-06-01
 
 ### Added
