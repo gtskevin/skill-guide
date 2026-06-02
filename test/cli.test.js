@@ -444,17 +444,26 @@ test('--review detects security flags', () => {
 
 test('--review detects category overlap', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-review-overlap-'));
-  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
-  writeSkill(home, '.claude/skills/qa', 'qa', 'Quality Assurance testing');
-  writeSkill(home, '.claude/skills/e2e', 'e2e', 'End-to-end testing');
-  writeSkill(home, '.claude/skills/unit-test', 'unit-test', 'Unit testing');
+  // Write skills with overlapping triggers so detectOverlaps finds them
+  const skills = [
+    { dir: 'tdd', name: 'tdd', desc: 'Test-Driven Development', triggers: ['run tests', 'write tests', 'tdd'] },
+    { dir: 'qa', name: 'qa', desc: 'Quality Assurance testing', triggers: ['run tests', 'testing', 'qa'] },
+    { dir: 'e2e', name: 'e2e', desc: 'End-to-end testing', triggers: ['run tests', 'e2e', 'testing'] },
+    { dir: 'unit-test', name: 'unit-test', desc: 'Unit testing', triggers: ['run tests', 'unit test', 'testing'] },
+  ];
+  for (const s of skills) {
+    const d = path.join(home, '.claude/skills', s.dir);
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, 'SKILL.md'),
+      `---\nname: ${s.name}\ndescription: ${s.desc}\ntriggers:\n${s.triggers.map(t => `  - ${t}`).join('\n')}\n---\n\n# ${s.name}\n`, 'utf8');
+  }
 
   const stdout = runCli(home, ['--review', '--refresh']);
   const brief = JSON.parse(stdout);
 
-  const overlapItems = brief.items.filter(i => i.type === 'overlap');
+  const overlapItems = brief.items.filter(i => i.type === 'overlap' || i.type === 'semantic-overlap');
   assert.ok(overlapItems.length > 0, 'should have overlap items');
-  assert.match(overlapItems[0].question, /overlapping.*complementary/i);
+  assert.match(overlapItems[0].question, /overlap|complementary/i);
 });
 
 test('--review detects malformed skills', () => {
@@ -490,11 +499,20 @@ test('--review copy prompt contains CONFIRM/DISMISS/SUGGEST instructions', () =>
 test('dashboard cleanup slide shows review candidates with copy prompt', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-dashboard-review-'));
   const output = path.join(home, 'dashboard.html');
-  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
-  writeSkill(home, '.claude/skills/tdd-workflow', 'tdd-workflow', 'TDD workflow');
-  writeSkill(home, '.claude/skills/qa', 'qa', 'Quality Assurance testing');
-  writeSkill(home, '.claude/skills/e2e', 'e2e', 'End-to-end testing');
-  writeSkill(home, '.claude/skills/unit-test', 'unit-test', 'Unit testing');
+  // Skills with overlapping triggers so detectOverlaps finds overlaps
+  const skills = [
+    { dir: 'tdd', name: 'tdd', desc: 'Test-Driven Development', triggers: ['run tests', 'write tests', 'tdd'] },
+    { dir: 'tdd-workflow', name: 'tdd-workflow', desc: 'TDD workflow', triggers: ['run tests', 'tdd', 'testing'] },
+    { dir: 'qa', name: 'qa', desc: 'Quality Assurance testing', triggers: ['run tests', 'testing', 'qa'] },
+    { dir: 'e2e', name: 'e2e', desc: 'End-to-end testing', triggers: ['run tests', 'e2e', 'testing'] },
+    { dir: 'unit-test', name: 'unit-test', desc: 'Unit testing', triggers: ['run tests', 'unit test', 'testing'] },
+  ];
+  for (const s of skills) {
+    const d = path.join(home, '.claude/skills', s.dir);
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, 'SKILL.md'),
+      `---\nname: ${s.name}\ndescription: ${s.desc}\ntriggers:\n${s.triggers.map(t => `  - ${t}`).join('\n')}\n---\n\n# ${s.name}\n`, 'utf8');
+  }
 
   runCli(home, ['--output', output, '--no-open', '--refresh']);
   const html = fs.readFileSync(output, 'utf8');
@@ -525,9 +543,17 @@ test('dashboard cleanup slide shows security flags as review candidates', () => 
 test('dashboard cleanup slide with --lang zh shows Chinese labels', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-guide-dashboard-review-zh-'));
   const output = path.join(home, 'dashboard.html');
-  writeSkill(home, '.claude/skills/tdd', 'tdd', 'Test-Driven Development');
-  writeSkill(home, '.claude/skills/qa', 'qa', 'Quality Assurance testing');
-  writeSkill(home, '.claude/skills/e2e', 'e2e', 'End-to-end testing');
+  const skills = [
+    { dir: 'tdd', name: 'tdd', desc: 'Test-Driven Development', triggers: ['run tests', 'tdd', 'testing'] },
+    { dir: 'qa', name: 'qa', desc: 'Quality Assurance testing', triggers: ['run tests', 'testing', 'qa'] },
+    { dir: 'e2e', name: 'e2e', desc: 'End-to-end testing', triggers: ['run tests', 'e2e', 'testing'] },
+  ];
+  for (const s of skills) {
+    const d = path.join(home, '.claude/skills', s.dir);
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, 'SKILL.md'),
+      `---\nname: ${s.name}\ndescription: ${s.desc}\ntriggers:\n${s.triggers.map(t => `  - ${t}`).join('\n')}\n---\n\n# ${s.name}\n`, 'utf8');
+  }
 
   runCli(home, ['--lang', 'zh', '--output', output, '--no-open', '--refresh']);
   const html = fs.readFileSync(output, 'utf8');

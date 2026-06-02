@@ -5,6 +5,21 @@ All notable changes to skill-guide will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-06-02
+
+### Added
+- `--overlap` standalone mode: find semantically overlapping skills by triggers, allowed-tools, and tags using Jaccard similarity.
+- `--overlap --format json` for machine-readable overlap output.
+- `detectOverlaps()` with category-pruned pair-wise comparison (only compares skills in the same category).
+- Overlap results integrated into `--review` mode (replaces naive category-count overlap).
+- Dashboard cleanup slide now shows semantic overlap cards with severity badges.
+- 8 overlap tests: trigger overlap, tool overlap, unrelated skills, empty arrays, category pruning, terminal/JSON output, end-to-end.
+
+### Changed
+- `--lint` renamed to `--check` for non-programmer friendliness. `--lint` kept as legacy alias.
+- Review brief overlap items now use `type: 'semantic-overlap'` with evidence, context, similarity scores, and action hints.
+- Dashboard cleanup slide overlap label changed from "Category overlap" to "Semantic overlap".
+
 ## [0.5.0] - 2026-06-01
 
 ### Added

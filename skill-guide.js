@@ -29,6 +29,7 @@ function usage() {
     '  skill-guide --doctor                  # Quick environment diagnostic',
     '  skill-guide --review --format json    # Structured review brief for agents',
     '  skill-guide --check [path]             # Check SKILL.md Review Readiness',
+    '  skill-guide --overlap                  # Find overlapping skills by triggers/tools/tags',
     '',
     'Options:',
     '  --output <file>   Write to file instead of default',
@@ -425,6 +426,8 @@ function parseMode() {
     return { mode: 'check' };
   }
 
+  if (hasFlag('--overlap')) return { mode: 'overlap' };
+
   // --find: unified search + deep dive (also supports legacy --search, --skill)
   const find = getArgValue('--find') || getArgValue('--search') || getArgValue('--skill');
   if (find) return { mode: 'find', value: find };
@@ -450,6 +453,8 @@ function scannerArgsFor(mode) {
     scannerArgs.push('--skill', mode.value);
   } else if (mode.mode === 'check') {
     if (!mode.value) scannerArgs.push('--full'); // check all: need full data
+  } else if (mode.mode === 'overlap') {
+    scannerArgs.push('--full');
   } else {
     scannerArgs.push('--full');
   }
@@ -763,7 +768,7 @@ function renderCleanupSlide(skills) {
     security: isZh ? '安全标记' : 'Security flags',
     duplicate: isZh ? '重复候选' : 'Duplicate candidates',
     malformed: isZh ? '配置不完整' : 'Malformed',
-    overlap: isZh ? '类别重叠' : 'Category overlap',
+    overlap: isZh ? '语义重叠' : 'Semantic overlap',
     budget: isZh ? '预算溢出' : 'Budget overflow',
   };
 
@@ -771,7 +776,7 @@ function renderCleanupSlide(skills) {
   const typeOrder = ['security', 'duplicate', 'malformed', 'overlap', 'budget'];
   let reviewCards = '';
   for (const type of typeOrder) {
-    const typeItems = brief.items.filter(i => i.type === type);
+    const typeItems = brief.items.filter(i => i.type === type || (type === 'overlap' && i.type === 'semantic-overlap'));
     if (typeItems.length === 0) continue;
     const itemsHtml = typeItems.slice(0, 3).map(item => `
       <div style="padding:8px 0;border-bottom:1px solid var(--border)">
@@ -1761,25 +1766,11 @@ function buildReviewBrief(data, details) {
     });
   }
 
-  // 4. Category overlap (3+ skills in same category)
-  const groups = groupBy(skills, 'category');
-  for (const [cat, catSkills] of Object.entries(groups)) {
-    if (catSkills.length >= 3) {
-      const names = catSkills.slice(0, 5).map(s => s.name);
-      const descs = catSkills.slice(0, 5).map(s =>
-        `  - ${s.name}: ${truncate(s.description || '(no description)', 80)}`
-      );
-      items.push({
-        id: nextId('ovr'),
-        type: 'overlap',
-        severity: 'info',
-        skills: names,
-        evidence: `${catSkills.length} skills in "${cat}" category`,
-        context: descs.join('\n'),
-        question: `Are these ${catSkills.length} "${cat}" skills overlapping (doing the same thing) or complementary (covering different aspects)?`,
-        actionHint: 'If overlapping, suggest which to consolidate. If complementary, clarify how they differ.',
-      });
-    }
+  // 4. Semantic overlap (triggers, tools, tags)
+  const overlaps = detectOverlaps(skills);
+  for (const overlap of overlaps) {
+    overlap.id = nextId('ovr');
+    items.push(overlap);
   }
 
   // 5. Budget overflow
@@ -1807,7 +1798,7 @@ function buildReviewBrief(data, details) {
       security: items.filter(i => i.type === 'security').length,
       duplicate: items.filter(i => i.type === 'duplicate').length,
       malformed: items.filter(i => i.type === 'malformed').length,
-      overlap: items.filter(i => i.type === 'overlap').length,
+      overlap: items.filter(i => i.type === 'overlap' || i.type === 'semantic-overlap').length,
       budget: items.filter(i => i.type === 'budget').length,
     },
     items,
@@ -1832,6 +1823,85 @@ function buildCopyPrompt(brief) {
 
 // ---------------------------------------------------------------------------
 // Lint: Review Readiness scoring
+// ---------------------------------------------------------------------------
+// Overlap detection: Jaccard similarity on triggers, tools, tags
+// ---------------------------------------------------------------------------
+
+function jaccard(setA, setB) {
+  if (!setA.length || !setB.length) return 0;
+  const a = new Set(setA.map(s => s.toLowerCase().trim()));
+  const b = new Set(setB.map(s => s.toLowerCase().trim()));
+  let intersection = 0;
+  for (const item of a) { if (b.has(item)) intersection++; }
+  const union = a.size + b.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
+
+function detectOverlaps(skills) {
+  const THRESHOLDS = { triggers: 0.5, allowedTools: 0.6, tags: 0.5 };
+  const groups = {};
+  for (const s of skills) {
+    const cat = s.category || 'other';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(s);
+  }
+
+  const results = [];
+  const seen = new Set();
+
+  for (const catSkills of Object.values(groups)) {
+    for (let i = 0; i < catSkills.length; i++) {
+      for (let j = i + 1; j < catSkills.length; j++) {
+        const a = catSkills[i];
+        const b = catSkills[j];
+
+        for (const [dimension, threshold] of Object.entries(THRESHOLDS)) {
+          const arrA = Array.isArray(a[dimension]) ? a[dimension] : [];
+          const arrB = Array.isArray(b[dimension]) ? b[dimension] : [];
+          if (!arrA.length || !arrB.length) continue;
+
+          const sim = jaccard(arrA, arrB);
+          if (sim < threshold) continue;
+
+          const key = [a.name, b.name, dimension].sort().join('||');
+          if (seen.has(key)) continue;
+          seen.add(key);
+
+          const setA = new Set(arrA.map(s => s.toLowerCase().trim()));
+          const setB = new Set(arrB.map(s => s.toLowerCase().trim()));
+          const shared = [...setA].filter(x => setB.has(x));
+          const onlyA = [...setA].filter(x => !setB.has(x));
+          const onlyB = [...setB].filter(x => !setA.has(x));
+
+          const pct = Math.round(sim * 100);
+          const severity = sim >= 0.8 ? 'high' : 'medium';
+          const fieldLabel = dimension === 'triggers' ? 'Triggers' : dimension === 'allowedTools' ? 'Allowed tools' : 'Tags';
+
+          results.push({
+            type: 'semantic-overlap',
+            severity,
+            skills: [a.name, b.name],
+            evidence: `${fieldLabel}: ${pct}% overlap (${shared.length}/${new Set([...arrA, ...arrB].map(s => s.toLowerCase().trim())).size} shared)`,
+            context: [
+              `Shared: ${shared.map(s => `"${s}"`).join(', ') || '(none)'}`,
+              onlyA.length ? `Only in ${a.name}: ${onlyA.map(s => `"${s}"`).join(', ')}` : null,
+              onlyB.length ? `Only in ${b.name}: ${onlyB.map(s => `"${s}"`).join(', ')}` : null,
+            ].filter(Boolean).join('\n'),
+            dimension,
+            similarity: Math.round(sim * 100) / 100,
+            question: `Do "${a.name}" and "${b.name}" serve different purposes despite ${pct}% ${fieldLabel.toLowerCase()} overlap?`,
+            actionHint: 'If they cover the same scenarios, consider consolidating. If complementary, add clearer triggers or descriptions to distinguish them.',
+          });
+        }
+      }
+    }
+  }
+
+  results.sort((a, b) => b.similarity - a.similarity);
+  results.forEach((r, i) => { r.id = `ovr-sem-${i + 1}`; });
+  return results;
+}
+
 // ---------------------------------------------------------------------------
 const LINT_PATTERNS = {
   whenToUse:   /when\s+(?:to\s+)?use|何时用|适用场景/i,
@@ -2082,6 +2152,53 @@ function renderLintJSON(results) {
       dimensions: r.result.dimensions,
       issues: r.result.issues,
     })),
+  };
+}
+
+function renderOverlapTerminal(overlaps) {
+  const lines = [
+    '',
+    '╔══════════════════════════════════════════════════════════════╗',
+    `║  skill-guide overlap · ${overlaps.length} overlaps found${' '.repeat(Math.max(0, 22 - String(overlaps.length).length))}║`,
+    '╚══════════════════════════════════════════════════════════════╝',
+  ];
+
+  if (!overlaps.length) {
+    lines.push('', '  No significant overlaps detected.', '');
+    return lines.join('\n');
+  }
+
+  lines.push(
+    '',
+    '  Dimension    Skill A                          Skill B                          Similarity',
+    '  ─────────────────────────────────────────────────────────────────────────────────────',
+  );
+
+  for (const r of overlaps) {
+    const dim = r.dimension.padEnd(12);
+    const a = r.skills[0].slice(0, 30).padEnd(32);
+    const b = r.skills[1].slice(0, 30).padEnd(32);
+    const pct = `${Math.round(r.similarity * 100)}%`;
+    lines.push(`  ${dim}${a}${b}${pct}`);
+  }
+
+  lines.push(
+    '',
+    '  Legend: high ≥ 80% overlap, medium ≥ 50% overlap',
+    '',
+  );
+  return lines.join('\n');
+}
+
+function renderOverlapJSON(overlaps) {
+  return {
+    generatedAt: new Date().toISOString(),
+    totalOverlaps: overlaps.length,
+    summary: {
+      high: overlaps.filter(o => o.severity === 'high').length,
+      medium: overlaps.filter(o => o.severity === 'medium').length,
+    },
+    results: overlaps,
   };
 }
 
@@ -3629,6 +3746,19 @@ function main() {
       return;
     }
     process.stdout.write(renderLintTerminal(results) + '\n');
+    return;
+  }
+
+  // --overlap mode: detect skill overlaps
+  if (mode.mode === 'overlap') {
+    const data = runScanner(mode);
+    applyPlatformFilter(data);
+    const overlaps = detectOverlaps(data.skills || []);
+    if (format === 'json') {
+      process.stdout.write(JSON.stringify(renderOverlapJSON(overlaps), null, 2) + '\n');
+      return;
+    }
+    process.stdout.write(renderOverlapTerminal(overlaps) + '\n');
     return;
   }
 

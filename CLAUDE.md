@@ -29,6 +29,8 @@ node skill-guide.js --doctor              # Diagnose skill paths, sources, dupli
 node skill-guide.js --check               # Check all skills for Review Readiness (5 dimensions)
 node skill-guide.js --check path/to/SKILL.md # Check a specific skill file
 node skill-guide.js --check --format json # Check output as JSON
+node skill-guide.js --overlap             # Find semantically overlapping skills (triggers/tools/tags)
+node skill-guide.js --overlap --format json # Overlap output as JSON
 node skill-guide.js --lang zh --open      # Chinese UI labels (builtined)
 ```
 
@@ -38,7 +40,7 @@ Three-file pipeline, all CommonJS, zero npm dependencies:
 
 - **`scan-skills.js`** (~580 lines) — Data layer. Scans 6 source directories (`~/.claude/skills`, `~/.codex/skills`, `~/.codex/skills/.system`, `~/.cc-switch/skills`, `~/.claude/plugins/marketplaces`, `~/.codex/plugins/cache`), parses YAML frontmatter from `SKILL.md`/`README.md` files using a regex-based parser (no YAML library), auto-categorizes into 9 categories, extracts sections and contextual paragraphs. Caches results in `/tmp/claude/` with 5-minute TTL keyed by source paths. Outputs JSON to stdout.
 
-- **`skill-guide.js`** (~950 lines) — Presentation layer. Invokes `scan-skills.js` via `execFileSync`, transforms scanner JSON into a single-file HTML document with scroll-snap slides, CSS custom properties, IntersectionObserver animations, and keyboard navigation. Built-in i18n for English and Chinese (`--lang zh`). For other languages, SKILL.md workflow delegates translation to the agent. Also handles `--doctor` diagnostics, `--check` Review Readiness scoring, `--share` portfolio pages, `--recommend` reports, and `--format json` passthrough.
+- **`skill-guide.js`** (~1100 lines) — Presentation layer. Invokes `scan-skills.js` via `execFileSync`, transforms scanner JSON into a single-file HTML document with scroll-snap slides, CSS custom properties, IntersectionObserver animations, and keyboard navigation. Built-in i18n for English and Chinese (`--lang zh`). For other languages, SKILL.md workflow delegates translation to the agent. Also handles `--doctor` diagnostics, `--check` Review Readiness scoring, `--overlap` semantic overlap detection, `--share` portfolio pages, `--recommend` reports, and `--format json` passthrough.
 
 - **`skill-registry.js`** (~250 lines) — Online directory layer. Fetches curated skill lists from GitHub awesome-lists and community directories, caches results with 1-hour TTL. Exports `fetchRecommendations()` for `--recommend` mode and `fetchRegistry()` for `--share` mode. Used by `skill-guide.js` via `require()`.
 
@@ -73,6 +75,7 @@ Tests use Node.js built-in test runner (`node:test`). Each test creates an isola
 - `test/registry.test.js` — Registry unit tests: cache key determinism, cache round-trip, expiration, clearing, markdown list parsing.
 - `test/translate.test.js` — Translation tests: Chinese label rendering, English preservation, section title/summary translation, UI label localization.
 - `test/lint.test.js` — Check mode tests: 5-dimension scoring, per-file check, generic triggers, missing limitations, security patterns, platform filtering, command exclusion, terminal/JSON output.
+- `test/overlap.test.js` — Overlap detection tests: trigger/tool overlap, unrelated skills, empty arrays, category pruning, terminal/JSON output, end-to-end.
 - `test/plugin-commands.test.js` — Plugin structure tests: plugin.json validity, command file existence, frontmatter, CLI references.
 
 CI runs on Node 18/20/22 across ubuntu-latest and macos-latest (`.github/workflows/test.yml`).

@@ -23,7 +23,7 @@ Add `--lang zh` for a Chinese dashboard. Add `--refresh` to force re-scan. Add `
 
 ## Sub-commands
 
-For other modes, use sub-commands: `/skill-guide: review`, `/skill-guide: find`, `/skill-guide: doctor`, `/skill-guide: recommend`, `/skill-guide: share`, `/skill-guide: lint`.
+For other modes, use sub-commands: `/skill-guide: review`, `/skill-guide: find`, `/skill-guide: doctor`, `/skill-guide: recommend`, `/skill-guide: share`, `/skill-guide: lint`. Or run `node <skill-dir>/skill-guide.js --overlap` to find semantically overlapping skills.
 
 ## Guardrails
 
